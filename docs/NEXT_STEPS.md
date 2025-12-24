@@ -1,0 +1,256 @@
+# PitchLab JP - Product Roadmap
+
+## Visão do Produto
+
+**Problema:** "Estudei japonês por anos mas ainda soo estrangeiro"
+
+**Solução:** Sistema de treino de pronúncia com feedback visual e mensurável
+
+**Diferencial:** Não é dicionário (OJAD). É **ferramenta de treino ativo**.
+
+---
+
+## Como Features Viram SaaS
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    JORNADA DO USUÁRIO                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. DESCOBERTA        2. ENTENDIMENTO       3. PRÁTICA         │
+│  ─────────────        ───────────────       ────────           │
+│  "Como se fala X?"    "Ah, tem padrão!"     "Deixa eu tentar"  │
+│                                                                 │
+│  ┌───────────┐        ┌───────────┐        ┌───────────┐       │
+│  │ Análise   │   →    │ Mora/Type │   →    │ Record &  │       │
+│  │ de Texto  │        │ Breakdown │        │ Compare   │       │
+│  └───────────┘        └───────────┘        └───────────┘       │
+│       │                     │                    │              │
+│       ▼                     ▼                    ▼              │
+│  ┌───────────┐        ┌───────────┐        ┌───────────┐       │
+│  │ Furigana  │        │ Pitch Viz │        │ Score +   │       │
+│  │ + Leitura │        │ + Áudio   │        │ Feedback  │       │
+│  └───────────┘        └───────────┘        └───────────┘       │
+│                                                  │              │
+│                                                  ▼              │
+│                              4. PROGRESSO                       │
+│                              ───────────                        │
+│                              "Estou melhorando!"                │
+│                                                                 │
+│                              ┌───────────┐                      │
+│                              │ Histórico │  ← LOCK-IN          │
+│                              │ + Stats   │  ← RETENÇÃO         │
+│                              └───────────┘  ← MONETIZAÇÃO      │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Plano de Estudo (Produto)
+
+### Estrutura de Aprendizado
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    PITCH ACCENT MASTERY                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  NÍVEL 1: Fundamentos                                          │
+│  ─────────────────────                                          │
+│  □ Entender moras vs sílabas                                   │
+│  □ Reconhecer HIGH vs LOW                                      │
+│  □ Praticar: Cumprimentos (おはよう, こんにちは)                  │
+│                                                                 │
+│  NÍVEL 2: Padrões Básicos                                      │
+│  ────────────────────────                                       │
+│  □ 平板型 (heiban) - Flat pattern                              │
+│  □ 頭高型 (atamadaka) - Head-high                              │
+│  □ Praticar: Números, dias da semana                           │
+│                                                                 │
+│  NÍVEL 3: Padrões Avançados                                    │
+│  ─────────────────────────                                      │
+│  □ 中高型 (nakadaka) - Middle-high                             │
+│  □ 尾高型 (odaka) - Tail-high                                  │
+│  □ Praticar: Verbos, adjetivos                                 │
+│                                                                 │
+│  NÍVEL 4: Pares Mínimos                                        │
+│  ──────────────────────                                         │
+│  □ 箸/橋/端 (hashi variations)                                 │
+│  □ 雨/飴 (ame variations)                                      │
+│  □ Praticar: Context sentences                                 │
+│                                                                 │
+│  NÍVEL 5: Fluência                                             │
+│  ─────────────────                                              │
+│  □ Frases longas com múltiplos padrões                         │
+│  □ Velocidade natural                                          │
+│  □ Praticar: Diálogos, news                                    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Features por Fase
+
+### ✅ Fase 1 - MVP (Completo)
+- [x] Análise de texto → Pitch visualization
+- [x] TTS com Azure Speech
+- [x] Play button nos cards
+
+### ✅ Fase 2 - Record & Compare (Completo)
+- [x] Gravação no browser
+- [x] DTW comparison
+- [x] Score 0-100
+
+### ✅ Fase 3 - Análise Rica (Completo)
+
+**Objetivo:** Transformar análise simples em ferramenta de estudo
+
+| Feature | Descrição | Tech | Status |
+|---------|-----------|------|--------|
+| **Mora Breakdown** | と\|う\|きょ\|う (visual) | fugashi | ✅ Done |
+| **Furigana** | 東京(とうきょう) | fugashi | ✅ Done |
+| **Accent Type** | 平板型, 頭高型, etc. | fugashi + UniDic | ✅ Done |
+| **Word Segmentation** | Colorir por palavra | fugashi | ✅ Done |
+| **Part of Speech** | 名詞, 動詞, etc. | fugashi | ✅ Done |
+| **Phonemes/IPA** | /to.o.kjo.o/ | pyopenjtalk | 📋 Future |
+
+**Endpoint atual:** `POST /api/analyze` já retorna:
+```json
+{
+  "text": "東京",
+  "words": [
+    {
+      "surface": "東京",
+      "reading": "とうきょう",
+      "morae": ["と", "う", "きょ", "う"],
+      "accent_type": 1,
+      "mora_count": 4,
+      "pitch_pattern": ["L", "H", "H", "L"],
+      "part_of_speech": "名詞"
+    }
+  ]
+}
+```
+
+### 📋 Fase 4 - Conteúdo Guiado
+
+**Objetivo:** Usuário não precisa pensar "o que praticar"
+
+- [ ] **Biblioteca de Exemplos**
+  - Cumprimentos (10 frases)
+  - Números (1-100, contadores)
+  - Verbos comuns (50 verbos)
+  - Pares mínimos (20 pares)
+
+- [ ] **Decks Temáticos**
+  - Business Japanese
+  - Travel Japanese
+  - JLPT N5-N1 vocabulary
+
+- [ ] **Daily Challenge**
+  - 5 palavras/dia
+  - Streak counter
+  - Notificação
+
+### 📋 Fase 5 - Progresso & Monetização
+
+**Objetivo:** Criar valor que justifica pagamento
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    FREE vs PRO                                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  FREE                          PRO ($9/mês)                    │
+│  ────                          ────────────                     │
+│  • 5 análises/dia              • Ilimitado                     │
+│  • Sem histórico               • Histórico completo            │
+│  • Score básico                • Feedback detalhado            │
+│  • Exemplos limitados          • Todos os decks                │
+│                                • Export para Anki              │
+│                                • Suporte prioritário           │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- [ ] **Auth** (Clerk/Supabase)
+- [ ] **Histórico de Prática**
+  - Scores por palavra
+  - Gráfico de evolução
+  - Palavras problemáticas
+- [ ] **Stripe Integration**
+- [ ] **Usage Limits**
+
+---
+
+## Stack Técnica
+
+### Backend (Python/FastAPI)
+```
+Libs atuais:
+├── azure-cognitiveservices-speech (TTS)
+├── parselmouth (pitch extraction)
+├── fastdtw (comparison)
+├── fugashi + unidic (mora, reading, accent, POS) ✅
+└── pydantic (validation)
+
+Futuro:
+├── pyopenjtalk (phonemes/IPA)
+└── redis/upstash (cache produção)
+```
+
+### Frontend (Next.js 14)
+```
+Atual:
+├── React + TypeScript
+├── Tailwind CSS
+└── Web Audio API (recording)
+
+Adicionar:
+├── Framer Motion (animações)
+├── Clerk (auth)
+└── PostHog (analytics)
+```
+
+### Infra
+```
+Backend: Railway ou Render
+Frontend: Vercel
+Cache: Upstash Redis
+DB: Supabase (auth + histórico)
+Payments: Stripe
+```
+
+---
+
+## Métricas de Sucesso
+
+| Métrica | Target Fase 3 | Target Fase 5 |
+|---------|---------------|---------------|
+| DAU | 100 | 1,000 |
+| Retention D7 | 20% | 40% |
+| Conversion Free→Pro | - | 5% |
+| MRR | $0 | $2,000 |
+
+---
+
+## Próximo Passo Imediato
+
+**Fase 3 está completa!** O sistema já retorna dados ricos via fugashi.
+
+Próximos passos são **Fase 4 - Conteúdo Guiado**:
+
+1. **Criar biblioteca de exemplos** (JSON estático inicial)
+   - Cumprimentos (10 frases)
+   - Números básicos
+   - Pares mínimos clássicos (箸/橋/端, 雨/飴)
+
+2. **UI para selecionar exemplos**
+   - Cards com categorias
+   - Click para preencher input
+
+3. **Daily Challenge** (opcional)
+   - 5 palavras/dia
+   - Streak counter

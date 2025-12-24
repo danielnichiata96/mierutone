@@ -1,0 +1,26 @@
+{
+  "project": "PitchLab JP",
+  "type": "frontend",
+  "framework": "nextjs",
+  "language": "typescript",
+  "skills": [
+    "frontend-skills"
+  ],
+  "preferences": {
+    "codeStyle": "functional",
+    "componentPattern": "composition",
+    "styling": "tailwind",
+    "stateManagement": "react-hooks",
+    "apiClient": "fetch-native"
+  },
+  "rules": [
+    "Always use TypeScript with proper types",
+    "Follow Next.js 14 App Router conventions",
+    "Use Tailwind CSS for styling",
+    "Maintain accessibility standards",
+    "Handle errors gracefully",
+    "Show loading states",
+    "Optimize for performance"
+  ]
+}
+
