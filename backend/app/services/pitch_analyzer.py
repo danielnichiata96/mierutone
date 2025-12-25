@@ -95,27 +95,43 @@ def get_pitch_pattern(accent_type: int | None, mora_count: int) -> list[str]:
         return pattern
 
 
-def lookup_pitch(surface: str, reading_hira: str) -> int | None:
-    """Look up pitch accent in Kanjium database.
+class PitchLookupResult:
+    """Result of pitch accent lookup."""
+    __slots__ = ("accent_type", "goshu", "goshu_jp")
+
+    def __init__(self, accent_type: int | None, goshu: str | None, goshu_jp: str | None):
+        self.accent_type = accent_type
+        self.goshu = goshu
+        self.goshu_jp = goshu_jp
+
+
+def lookup_pitch(
+    surface: str,
+    reading_hira: str,
+    lemma: str | None = None,
+    normalized: str | None = None,
+) -> PitchLookupResult:
+    """Look up pitch accent and goshu in database.
 
     Args:
         surface: Word surface form (kanji/kana)
         reading_hira: Reading in hiragana
+        lemma: Dictionary form (e.g., 食べる for 食べた)
+        normalized: Normalized form (e.g., 私 for わたし)
 
     Returns:
-        First accent type as int, or None if not found.
-        For entries with multiple patterns (e.g., "0,2"), returns the first.
+        PitchLookupResult with accent_type, goshu, and goshu_jp.
     """
     try:
         conn = get_db_connection()
     except FileNotFoundError:
-        return None
+        return PitchLookupResult(None, None, None)
 
     cursor = conn.cursor()
 
     # Try exact match on surface + reading first
     cursor.execute(
-        "SELECT accent_pattern FROM pitch_accents WHERE surface = ? AND reading = ? LIMIT 1",
+        "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents WHERE surface = ? AND reading = ? LIMIT 1",
         (surface, reading_hira)
     )
     row = cursor.fetchone()
@@ -123,7 +139,7 @@ def lookup_pitch(surface: str, reading_hira: str) -> int | None:
     # Fallback: match by surface only
     if not row:
         cursor.execute(
-            "SELECT accent_pattern FROM pitch_accents WHERE surface = ? LIMIT 1",
+            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents WHERE surface = ? LIMIT 1",
             (surface,)
         )
         row = cursor.fetchone()
@@ -131,22 +147,40 @@ def lookup_pitch(surface: str, reading_hira: str) -> int | None:
     # Fallback: match by reading only
     if not row:
         cursor.execute(
-            "SELECT accent_pattern FROM pitch_accents WHERE reading = ? LIMIT 1",
+            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents WHERE reading = ? LIMIT 1",
             (reading_hira,)
         )
         row = cursor.fetchone()
 
+    # Fallback: match by lemma/dictionary form (食べた → 食べる)
+    if not row and lemma and lemma != surface:
+        cursor.execute(
+            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents WHERE surface = ? LIMIT 1",
+            (lemma,)
+        )
+        row = cursor.fetchone()
+
+    # Fallback: match by normalized form (わたし → 私)
+    if not row and normalized and normalized not in (surface, lemma):
+        cursor.execute(
+            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents WHERE surface = ? LIMIT 1",
+            (normalized,)
+        )
+        row = cursor.fetchone()
+
     if not row:
-        return None
+        return PitchLookupResult(None, None, None)
 
     # Parse accent pattern (may have multiple values like "0,2")
     pattern = row["accent_pattern"]
     first_value = pattern.split(",")[0].strip()
 
     try:
-        return int(first_value)
+        accent_type = int(first_value)
     except ValueError:
-        return None
+        accent_type = None
+
+    return PitchLookupResult(accent_type, row["goshu"], row["goshu_jp"])
 
 
 def get_pos(token) -> str:
@@ -179,23 +213,24 @@ def analyze_text(text: str) -> list[WordPitch]:
         mora_count = count_morae(reading_hira)
         morae = split_into_morae(reading_hira)
 
-        # Look up pitch in Kanjium database
-        accent_type = lookup_pitch(surface, reading_hira)
-        pitch_pattern = get_pitch_pattern(accent_type, mora_count)
-
-        # Get dictionary form (lemma)
+        # Get dictionary form (lemma) and normalized form for fallback lookups
         lemma = token.dictionary_form()
+        normalized = token.normalized_form()
+
+        # Look up pitch and goshu in database (with lemma/normalized fallbacks)
+        lookup_result = lookup_pitch(surface, reading_hira, lemma, normalized)
+        pitch_pattern = get_pitch_pattern(lookup_result.accent_type, mora_count)
 
         words_result.append(WordPitch(
             surface=surface,
             reading=reading_hira,
-            accent_type=accent_type,
+            accent_type=lookup_result.accent_type,
             mora_count=mora_count,
             morae=morae,
             pitch_pattern=pitch_pattern,
             part_of_speech=get_pos(token),
-            origin=None,  # Kanjium doesn't have goshu info
-            origin_jp=None,
+            origin=lookup_result.goshu,
+            origin_jp=lookup_result.goshu_jp,
             lemma=lemma if lemma != surface else None,
         ))
 

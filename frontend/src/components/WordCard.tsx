@@ -9,19 +9,23 @@ interface WordCardProps {
 }
 
 const ORIGIN_COLORS: Record<string, string> = {
-  native: "bg-emerald-100 text-emerald-700",
-  chinese: "bg-amber-100 text-amber-700",
-  foreign: "bg-sky-100 text-sky-700",
+  wago: "bg-emerald-100 text-emerald-700",
+  kango: "bg-amber-100 text-amber-700",
+  gairaigo: "bg-sky-100 text-sky-700",
   proper: "bg-violet-100 text-violet-700",
   mixed: "bg-slate-100 text-slate-600",
+  symbol: "bg-gray-100 text-gray-500",
+  unknown: "bg-gray-100 text-gray-400",
 };
 
 const ORIGIN_LABELS: Record<string, string> = {
-  native: "Native (和語)",
-  chinese: "Chinese (漢語)",
-  foreign: "Loanword (外来語)",
-  proper: "Proper noun (固有)",
-  mixed: "Mixed (混種語)",
+  wago: "和語",
+  kango: "漢語",
+  gairaigo: "外来語",
+  proper: "固有名詞",
+  mixed: "混種語",
+  symbol: "記号",
+  unknown: "不明",
 };
 
 export function WordCard({ word }: WordCardProps) {
@@ -113,7 +117,7 @@ export function WordCard({ word }: WordCardProps) {
       <div className="flex items-center gap-2 mt-2">
         {origin && (
           <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ORIGIN_COLORS[origin] || "bg-gray-100 text-gray-600"}`}>
-            {ORIGIN_LABELS[origin] || origin}
+            {origin_jp || ORIGIN_LABELS[origin] || origin}
           </span>
         )}
         {lemma && (

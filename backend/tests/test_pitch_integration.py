@@ -62,18 +62,29 @@ class TestPitchLookup:
     def test_known_words(self, surface, reading, expected):
         """Test lookup for words with known pitch patterns."""
         result = lookup_pitch(surface, reading)
-        assert result == expected, f"{surface} ({reading}): expected {expected}, got {result}"
+        assert result.accent_type == expected, f"{surface} ({reading}): expected {expected}, got {result.accent_type}"
 
     def test_unknown_word_returns_none(self):
         """Unknown words should return None, not raise error."""
         result = lookup_pitch("xyzabc", "xyzabc")
-        assert result is None
+        assert result.accent_type is None
 
     def test_surface_only_fallback(self):
         """Should find pitch by surface even without exact reading match."""
         # 東京 should be found even with wrong reading
         result = lookup_pitch("東京", "wrongreading")
-        assert result is not None
+        assert result.accent_type is not None
+
+    @pytest.mark.parametrize("surface,expected_goshu", [
+        ("東京", "proper"),       # 固有名詞
+        ("水", "wago"),           # 和語
+        ("電話", "kango"),        # 漢語
+        ("パン", "gairaigo"),     # 外来語
+    ])
+    def test_goshu_lookup(self, surface, expected_goshu):
+        """Test goshu (word origin) lookup."""
+        result = lookup_pitch(surface, "")
+        assert result.goshu == expected_goshu, f"{surface}: expected {expected_goshu}, got {result.goshu}"
 
 
 class TestAnalyzeText:
@@ -146,6 +157,31 @@ class TestAnalyzeText:
         tabe = next((w for w in result if "食" in w.surface), None)
         assert tabe is not None
         assert tabe.lemma is not None
+
+    def test_lemma_fallback_lookup(self):
+        """Conjugated forms should find pitch via dictionary form fallback."""
+        # 食べる (taberu) has pitch in Kanjium, 食べた (tabeta) doesn't
+        result = analyze_text("食べた")
+
+        tabe = next((w for w in result if "食" in w.surface), None)
+        assert tabe is not None
+        # Should find pitch via lemma fallback (食べる)
+        assert tabe.accent_type is not None, (
+            f"Expected pitch accent for conjugated verb via lemma fallback. "
+            f"Surface: {tabe.surface}, Lemma: {tabe.lemma}"
+        )
+
+    def test_normalized_form_fallback(self):
+        """Hiragana forms should find pitch via normalized form fallback."""
+        # わたし should find pitch via normalized form 私
+        result = analyze_text("わたしは")
+
+        watashi = next((w for w in result if w.surface == "わたし"), None)
+        assert watashi is not None
+        # Should find pitch via normalized fallback (私)
+        assert watashi.accent_type is not None, (
+            f"Expected pitch accent for わたし via normalized fallback to 私"
+        )
 
 
 class TestMoraFunctions:
