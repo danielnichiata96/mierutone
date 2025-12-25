@@ -129,42 +129,53 @@ def lookup_pitch(
 
     cursor = conn.cursor()
 
-    # Try exact match on surface + reading first
+    # Fallback chain (most specific → least specific):
+    # 1. surface + reading (exact)
+    # 2. surface only (prefer matching reading)
+    # 3. lemma/dictionary form
+    # 4. normalized form
+    # 5. reading only (prefer shorter surface to avoid compounds)
+
+    # 1. Exact match: surface + reading
     cursor.execute(
         "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents WHERE surface = ? AND reading = ? LIMIT 1",
         (surface, reading_hira)
     )
     row = cursor.fetchone()
 
-    # Fallback: match by surface only
+    # 2. Surface only (prefer entry where reading matches)
     if not row:
         cursor.execute(
-            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents WHERE surface = ? LIMIT 1",
-            (surface,)
+            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents "
+            "WHERE surface = ? ORDER BY (reading = ?) DESC LIMIT 1",
+            (surface, reading_hira)
         )
         row = cursor.fetchone()
 
-    # Fallback: match by reading only
-    if not row:
-        cursor.execute(
-            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents WHERE reading = ? LIMIT 1",
-            (reading_hira,)
-        )
-        row = cursor.fetchone()
-
-    # Fallback: match by lemma/dictionary form (食べた → 食べる)
+    # 3. Lemma/dictionary form (食べた → 食べる)
     if not row and lemma and lemma != surface:
         cursor.execute(
-            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents WHERE surface = ? LIMIT 1",
-            (lemma,)
+            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents "
+            "WHERE surface = ? ORDER BY (reading = ?) DESC LIMIT 1",
+            (lemma, reading_hira)
         )
         row = cursor.fetchone()
 
-    # Fallback: match by normalized form (わたし → 私)
+    # 4. Normalized form (わたし → 私)
     if not row and normalized and normalized not in (surface, lemma):
         cursor.execute(
-            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents WHERE surface = ? LIMIT 1",
-            (normalized,)
+            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents "
+            "WHERE surface = ? ORDER BY (reading = ?) DESC LIMIT 1",
+            (normalized, reading_hira)
+        )
+        row = cursor.fetchone()
+
+    # 5. Reading only (last resort - prefer shorter surface to avoid compounds)
+    if not row and reading_hira:
+        cursor.execute(
+            "SELECT accent_pattern, goshu, goshu_jp FROM pitch_accents "
+            "WHERE reading = ? ORDER BY LENGTH(surface) ASC LIMIT 1",
+            (reading_hira,)
         )
         row = cursor.fetchone()
 
