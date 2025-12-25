@@ -171,16 +171,15 @@ class TestAnalyzeText:
             f"Surface: {tabe.surface}, Lemma: {tabe.lemma}"
         )
 
-    def test_normalized_form_fallback(self):
-        """Hiragana forms should find pitch via normalized form fallback."""
-        # わたし should find pitch via normalized form 私
+    def test_hiragana_lookup_fallback(self):
+        """Hiragana-only input should find pitch via reading or normalized fallback."""
+        # わたし finds pitch via reading fallback (Kanjium has reading='わたし')
         result = analyze_text("わたしは")
 
         watashi = next((w for w in result if w.surface == "わたし"), None)
         assert watashi is not None
-        # Should find pitch via normalized fallback (私)
         assert watashi.accent_type is not None, (
-            f"Expected pitch accent for わたし via normalized fallback to 私"
+            f"Expected pitch accent for hiragana わたし via fallback chain"
         )
 
 

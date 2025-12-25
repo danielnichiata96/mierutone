@@ -115,9 +115,9 @@ export function WordCard({ word }: WordCardProps) {
 
       {/* Origin badge and Jisho link */}
       <div className="flex items-center gap-2 mt-2">
-        {origin && (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ORIGIN_COLORS[origin] || "bg-gray-100 text-gray-600"}`}>
-            {origin_jp || ORIGIN_LABELS[origin] || origin}
+        {(origin || origin_jp) && (
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${origin ? (ORIGIN_COLORS[origin] || "bg-gray-100 text-gray-600") : "bg-gray-100 text-gray-600"}`}>
+            {origin_jp || (origin && ORIGIN_LABELS[origin]) || origin || "Unknown"}
           </span>
         )}
         {lemma && (
