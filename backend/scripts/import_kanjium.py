@@ -9,19 +9,37 @@ Usage:
 
 import sqlite3
 import urllib.request
+import urllib.error
+import time
 from pathlib import Path
 
-KANJIUM_URL = "https://raw.githubusercontent.com/mifunetoshiro/kanjium/master/data/source_files/raw/accents.txt"
+# Pinned to specific commit for reproducible builds (2024-06-16)
+KANJIUM_COMMIT = "685d4d723d6d20bf9beb169103aeac188eb067ad"
+KANJIUM_URL = f"https://raw.githubusercontent.com/mifunetoshiro/kanjium/{KANJIUM_COMMIT}/data/source_files/raw/accents.txt"
 DB_PATH = Path(__file__).parent.parent / "data" / "pitch.db"
+
+# Network settings
+REQUEST_TIMEOUT = 30  # seconds
+MAX_RETRIES = 3
+RETRY_DELAY = 2  # seconds
 
 
 def download_kanjium() -> str:
-    """Download accents.txt from Kanjium repository."""
-    print(f"Downloading from {KANJIUM_URL}...")
-    with urllib.request.urlopen(KANJIUM_URL) as response:
-        content = response.read().decode("utf-8")
-    print(f"Downloaded {len(content):,} bytes")
-    return content
+    """Download accents.txt from Kanjium repository with retry logic."""
+    print(f"Downloading from Kanjium (commit {KANJIUM_COMMIT[:8]})...")
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            with urllib.request.urlopen(KANJIUM_URL, timeout=REQUEST_TIMEOUT) as response:
+                content = response.read().decode("utf-8")
+            print(f"Downloaded {len(content):,} bytes")
+            return content
+        except (urllib.error.URLError, TimeoutError) as e:
+            if attempt < MAX_RETRIES:
+                print(f"Attempt {attempt} failed: {e}. Retrying in {RETRY_DELAY}s...")
+                time.sleep(RETRY_DELAY)
+            else:
+                raise RuntimeError(f"Failed to download after {MAX_RETRIES} attempts: {e}")
 
 
 def create_database(db_path: Path) -> sqlite3.Connection:

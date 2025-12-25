@@ -158,6 +158,13 @@ def main():
         print("Run 'python scripts/import_kanjium.py' first.")
         return
 
+    # Check if UniDic is downloaded
+    if not Path(unidic.DICDIR).exists() or not any(Path(unidic.DICDIR).iterdir()):
+        print("Error: UniDic dictionary not found.")
+        print("Please download it first with:")
+        print("  python -m unidic download")
+        return
+
     # Initialize UniDic tagger
     print("Loading UniDic dictionary...")
     tagger = Tagger(f'-d "{unidic.DICDIR}"')
