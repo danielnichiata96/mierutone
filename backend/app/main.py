@@ -1,4 +1,4 @@
-"""PitchLab JP - FastAPI Backend."""
+"""Mierutone - FastAPI Backend."""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,7 +30,7 @@ app.include_router(compare.router, prefix=settings.api_prefix)
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "service": "pitchlab-jp"}
+    return {"status": "healthy", "service": "mierutone"}
 
 
 @app.get("/")

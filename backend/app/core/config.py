@@ -11,7 +11,7 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
 class Settings(BaseSettings):
     """Application settings."""
 
-    app_name: str = "PitchLab JP API"
+    app_name: str = "Mierutone API"
     app_version: str = "0.1.0"
     debug: bool = False
 
@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     r2_account_id: str = ""
     r2_access_key_id: str = ""
     r2_secret_access_key: str = ""
-    r2_bucket_name: str = "pitchlab-tts-cache"
+    r2_bucket_name: str = "mierutone-tts-cache"
 
     class Config:
         env_file = BACKEND_DIR / ".env"

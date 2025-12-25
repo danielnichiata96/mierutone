@@ -22,7 +22,7 @@ def test_basic():
     ]
 
     print("=" * 60)
-    print("PitchLab JP - SudachiPy Mode C Test")
+    print("Mierutone - SudachiPy Mode C Test")
     print("=" * 60)
 
     for phrase in test_phrases:
