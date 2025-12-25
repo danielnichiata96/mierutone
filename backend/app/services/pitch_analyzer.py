@@ -1,17 +1,39 @@
-"""Pitch accent analysis service using fugashi + unidic."""
+"""Pitch accent analysis service using SudachiPy + Kanjium SQLite.
+
+SudachiPy Mode C keeps compound words together for accurate pitch lookup.
+Kanjium provides 124k+ pitch accent entries (CC BY-SA 4.0).
+"""
 
 import re
+import sqlite3
 from functools import lru_cache
+from pathlib import Path
 
-from fugashi import Tagger
+import jaconv
+from sudachipy import dictionary, tokenizer
 
 from app.models.schemas import WordPitch
 
+DB_PATH = Path(__file__).parent.parent.parent / "data" / "pitch.db"
+
 
 @lru_cache(maxsize=1)
-def get_tagger() -> Tagger:
-    """Get cached MeCab tagger instance."""
-    return Tagger()
+def get_tokenizer():
+    """Get cached SudachiPy tokenizer instance."""
+    return dictionary.Dictionary().create()
+
+
+@lru_cache(maxsize=1)
+def get_db_connection() -> sqlite3.Connection:
+    """Get cached database connection."""
+    if not DB_PATH.exists():
+        raise FileNotFoundError(
+            f"Pitch database not found at {DB_PATH}. "
+            "Run 'python scripts/import_kanjium.py' first."
+        )
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
 def count_morae(reading: str) -> int:
@@ -63,25 +85,63 @@ def get_pitch_pattern(accent_type: int | None, mora_count: int) -> list[str]:
         accent_type = 0
 
     if accent_type == 0:
-        # Heiban: L-H-H-H...
         return ["L"] + ["H"] * (mora_count - 1)
     elif accent_type == 1:
-        # Atamadaka: H-L-L-L...
         return ["H"] + ["L"] * (mora_count - 1)
     else:
-        # Nakadaka/Odaka: L-H-H-...-H-L
         pattern = ["L"]
         for i in range(2, mora_count + 1):
             pattern.append("H" if i <= accent_type else "L")
         return pattern
 
 
-def parse_accent_type(atype_str: str | None) -> int | None:
-    """Parse aType field from UniDic."""
-    if not atype_str:
+def lookup_pitch(surface: str, reading_hira: str) -> int | None:
+    """Look up pitch accent in Kanjium database.
+
+    Args:
+        surface: Word surface form (kanji/kana)
+        reading_hira: Reading in hiragana
+
+    Returns:
+        First accent type as int, or None if not found.
+        For entries with multiple patterns (e.g., "0,2"), returns the first.
+    """
+    try:
+        conn = get_db_connection()
+    except FileNotFoundError:
         return None
 
-    first_value = atype_str.split(",")[0].strip()
+    cursor = conn.cursor()
+
+    # Try exact match on surface + reading first
+    cursor.execute(
+        "SELECT accent_pattern FROM pitch_accents WHERE surface = ? AND reading = ? LIMIT 1",
+        (surface, reading_hira)
+    )
+    row = cursor.fetchone()
+
+    # Fallback: match by surface only
+    if not row:
+        cursor.execute(
+            "SELECT accent_pattern FROM pitch_accents WHERE surface = ? LIMIT 1",
+            (surface,)
+        )
+        row = cursor.fetchone()
+
+    # Fallback: match by reading only
+    if not row:
+        cursor.execute(
+            "SELECT accent_pattern FROM pitch_accents WHERE reading = ? LIMIT 1",
+            (reading_hira,)
+        )
+        row = cursor.fetchone()
+
+    if not row:
+        return None
+
+    # Parse accent pattern (may have multiple values like "0,2")
+    pattern = row["accent_pattern"]
+    first_value = pattern.split(",")[0].strip()
 
     try:
         return int(first_value)
@@ -89,100 +149,54 @@ def parse_accent_type(atype_str: str | None) -> int | None:
         return None
 
 
-def kata_to_hira(text: str) -> str:
-    """Convert katakana to hiragana."""
-    result = []
-    for char in text:
-        code = ord(char)
-        if 0x30A1 <= code <= 0x30F6:
-            result.append(chr(code - 0x60))
-        else:
-            result.append(char)
-    return "".join(result)
-
-
-def extract_reading(word) -> str:
-    """Extract hiragana reading from word features."""
-    if hasattr(word.feature, 'kana') and word.feature.kana:
-        return kata_to_hira(word.feature.kana)
-    if hasattr(word.feature, 'pron') and word.feature.pron:
-        return kata_to_hira(word.feature.pron)
-    if hasattr(word.feature, 'lemma') and word.feature.lemma:
-        return word.feature.lemma
-    return word.surface
-
-
-def get_pos(word) -> str:
-    """Extract part of speech from word features."""
-    if hasattr(word.feature, 'pos1') and word.feature.pos1:
-        return word.feature.pos1
-    return word.pos.split(",")[0] if word.pos else "Unknown"
-
-
-# Mapping from UniDic goshu codes to English/Japanese labels
-GOSHU_MAP = {
-    "和": ("native", "和語"),      # Wago - native Japanese
-    "漢": ("chinese", "漢語"),     # Kango - Chinese origin
-    "外": ("foreign", "外来語"),   # Gairaigo - foreign loanword
-    "固": ("proper", "固有名詞"),  # Koyuu - proper noun
-    "混": ("mixed", "混種語"),     # Konshugo - mixed origin
-    "記号": ("symbol", "記号"),    # Symbol
-    "不明": ("unknown", "不明"),   # Unknown
-}
-
-
-def get_origin(word) -> tuple[str | None, str | None]:
-    """Extract word origin (goshu) from word features.
-
-    Returns:
-        Tuple of (english_label, japanese_label) or (None, None) if not available.
-    """
-    if hasattr(word.feature, 'goshu') and word.feature.goshu:
-        goshu = word.feature.goshu
-        if goshu in GOSHU_MAP:
-            return GOSHU_MAP[goshu]
-        # Return raw value if not in map
-        return (goshu, goshu)
-    return (None, None)
+def get_pos(token) -> str:
+    """Extract part of speech from SudachiPy token."""
+    pos = token.part_of_speech()
+    return pos[0] if pos else "Unknown"
 
 
 def analyze_text(text: str) -> list[WordPitch]:
-    """Analyze Japanese text and return pitch accent information."""
-    tagger = get_tagger()
+    """Analyze Japanese text and return pitch accent information.
+
+    Uses SudachiPy Mode C to keep compound words together,
+    then looks up pitch patterns in Kanjium database.
+    """
+    tok = get_tokenizer()
+    mode = tokenizer.Tokenizer.SplitMode.C  # Keep compounds together
     words_result = []
 
-    for word in tagger(text):
-        surface = word.surface
+    for token in tok.tokenize(text, mode):
+        surface = token.surface()
 
         # Skip punctuation and whitespace
-        if re.match(r'^[\s\u3000.,!?。、！？「」『』（）\(\)]+$', surface):
+        if re.match(r'^[\s\u3000.,!?。、！？「」『』（）\(\)\-ー～]+$', surface):
             continue
 
-        reading = extract_reading(word)
-        mora_count = count_morae(reading)
-        morae = split_into_morae(reading)
+        # SudachiPy returns reading in katakana, convert to hiragana for DB lookup
+        reading_kata = token.reading_form()
+        reading_hira = jaconv.kata2hira(reading_kata) if reading_kata else surface
 
-        atype_raw = None
-        if hasattr(word.feature, 'aType'):
-            atype_raw = word.feature.aType
+        mora_count = count_morae(reading_hira)
+        morae = split_into_morae(reading_hira)
 
-        accent_type = parse_accent_type(atype_raw)
+        # Look up pitch in Kanjium database
+        accent_type = lookup_pitch(surface, reading_hira)
         pitch_pattern = get_pitch_pattern(accent_type, mora_count)
 
-        origin, origin_jp = get_origin(word)
-        lemma = getattr(word.feature, 'lemma', None)
+        # Get dictionary form (lemma)
+        lemma = token.dictionary_form()
 
         words_result.append(WordPitch(
             surface=surface,
-            reading=reading,
+            reading=reading_hira,
             accent_type=accent_type,
             mora_count=mora_count,
             morae=morae,
             pitch_pattern=pitch_pattern,
-            part_of_speech=get_pos(word),
-            origin=origin,
-            origin_jp=origin_jp,
-            lemma=lemma,
+            part_of_speech=get_pos(token),
+            origin=None,  # Kanjium doesn't have goshu info
+            origin_jp=None,
+            lemma=lemma if lemma != surface else None,
         ))
 
     return words_result

@@ -1,52 +1,46 @@
-"""Quick test script for the pitch analyzer."""
+"""Quick test script for the pitch analyzer with SudachiPy."""
 
-from fugashi import Tagger
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
+from sudachipy import dictionary, tokenizer
+import jaconv
 
 
 def test_basic():
-    tagger = Tagger()
+    tok = dictionary.Dictionary().create()
+    mode = tokenizer.Tokenizer.SplitMode.C  # Keep compounds together
 
     test_phrases = [
         "昨日は肉を食べました",  # Yesterday I ate meat
-        "橋を渡る",  # Cross the bridge (hashi = bridge, accent type 2)
-        "箸を使う",  # Use chopsticks (hashi = chopsticks, accent type 1)
+        "橋を渡る",  # Cross the bridge (hashi = bridge)
+        "箸を使う",  # Use chopsticks (hashi = chopsticks)
         "雨が降っています",  # It's raining
         "東京に行きたい",  # I want to go to Tokyo
+        "国立博物館に行く",  # Go to National Museum (compound test)
+        "東京都庁",  # Tokyo Metropolitan Government (compound test)
     ]
 
     print("=" * 60)
-    print("PitchLab JP - Pitch Accent Test")
+    print("PitchLab JP - SudachiPy Mode C Test")
     print("=" * 60)
 
     for phrase in test_phrases:
         print(f"\n>> {phrase}")
         print("-" * 40)
 
-        for word in tagger(phrase):
-            surface = word.surface
+        for token in tok.tokenize(phrase, mode):
+            surface = token.surface()
+            reading_kata = token.reading_form()
+            reading_hira = jaconv.kata2hira(reading_kata) if reading_kata else ""
+            pos = token.part_of_speech()[0] if token.part_of_speech() else "?"
+            lemma = token.dictionary_form()
 
-            # Get reading
-            reading = ""
-            if hasattr(word.feature, 'kana') and word.feature.kana:
-                reading = word.feature.kana
-            elif hasattr(word.feature, 'pron') and word.feature.pron:
-                reading = word.feature.pron
-
-            # Get accent type
-            atype = None
-            if hasattr(word.feature, 'aType') and word.feature.aType:
-                atype = word.feature.aType
-
-            # Get POS
-            pos = word.feature.pos1 if hasattr(word.feature, 'pos1') else "?"
-
-            print(f"  {surface:8} | 読み: {reading:10} | aType: {str(atype):6} | {pos}")
+            print(f"  {surface:12} | 読み: {reading_hira:12} | {pos:6} | lemma: {lemma}")
 
     print("\n" + "=" * 60)
-    print("aType meanings:")
-    print("  0 = Heiban (平板): L-H-H-H... stays high")
-    print("  1 = Atamadaka (頭高): H-L-L-L... drops after 1st")
-    print("  N = Drops after Nth mora")
+    print("Mode C keeps compound words together!")
+    print("Compare: 国立博物館 as one token vs 国立 + 博物館")
     print("=" * 60)
 
 

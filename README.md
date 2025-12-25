@@ -21,7 +21,8 @@
 
 -   **Frontend**: Next.js (App Router), Tailwind CSS, TypeScript
 -   **Backend**: FastAPI, Python
--   **NLP Engine**: `fugashi` (MeCab wrapper) + `unidic` (Accent dictionary)
+-   **NLP Engine**: `SudachiPy` (Mode C for compound words) + `Kanjium` (124k+ pitch accent entries)
+-   **Pitch Data**: [Kanjium](https://github.com/mifunetoshiro/kanjium) (CC BY-SA 4.0)
 
 ## 📦 Getting Started
 
@@ -51,8 +52,8 @@ python -m venv venv
 # source venv/bin/activate
 
 pip install -r requirements.txt
-python -m unidic download
-uvicorn main:app --reload
+python scripts/import_kanjium.py  # Download pitch accent database
+uvicorn app.main:app --reload
 ```
 *Backend runs on http://localhost:8000*
 
@@ -71,6 +72,11 @@ npm run dev
 -   [ ] **Phase 2: Audio (TTS)** - Native-level text-to-speech playback
 -   [ ] **Phase 3: Record & Compare** - Overlay your voice on native pitch
 -   [ ] **Phase 4: Browser Extension** - Pitch accent on any website
+
+### Future (Requires Auth)
+
+-   [ ] **Pydub** - Prepare audio clips for download/Anki export
+-   [ ] **FSRS** - Spaced repetition system for pitch accent review
 
 ## 📄 License
 

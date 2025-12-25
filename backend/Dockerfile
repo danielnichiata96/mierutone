@@ -2,9 +2,8 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies for MeCab
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -12,11 +11,11 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Download UniDic dictionary
-RUN python -m unidic download
-
 # Copy application code
 COPY . .
+
+# Create data directory and import Kanjium pitch database
+RUN mkdir -p data && python scripts/import_kanjium.py
 
 # Expose port
 EXPOSE 8000
