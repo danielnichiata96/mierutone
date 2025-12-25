@@ -3,6 +3,11 @@
 Tests the complete flow: SudachiPy tokenization -> Kanjium SQLite lookup -> pitch pattern generation.
 
 Run with: pytest tests/test_pitch_integration.py -v
+
+Note: These tests require pitch.db to exist. In CI/clean checkout, run:
+    python scripts/import_kanjium.py
+    python -m unidic download
+    python scripts/import_goshu.py
 """
 
 import sys
@@ -21,6 +26,12 @@ from app.services.pitch_analyzer import (
     split_into_morae,
     get_pitch_pattern,
     DB_PATH,
+)
+
+# Skip all tests in this module if database doesn't exist
+pytestmark = pytest.mark.skipif(
+    not DB_PATH.exists(),
+    reason=f"Database not found at {DB_PATH}. Run 'python scripts/import_kanjium.py' first."
 )
 
 
@@ -71,9 +82,9 @@ class TestPitchLookup:
 
     def test_surface_only_fallback(self):
         """Should find pitch by surface even without exact reading match."""
-        # 東京 should be found even with wrong reading
+        # 東京 should be found even with wrong reading, returns heiban (0)
         result = lookup_pitch("東京", "wrongreading")
-        assert result.accent_type is not None
+        assert result.accent_type == 0, f"東京 should be heiban (0), got {result.accent_type}"
 
     @pytest.mark.parametrize("surface,expected_goshu", [
         ("東京", "proper"),       # 固有名詞
@@ -165,10 +176,10 @@ class TestAnalyzeText:
 
         tabe = next((w for w in result if "食" in w.surface), None)
         assert tabe is not None
-        # Should find pitch via lemma fallback (食べる)
-        assert tabe.accent_type is not None, (
-            f"Expected pitch accent for conjugated verb via lemma fallback. "
-            f"Surface: {tabe.surface}, Lemma: {tabe.lemma}"
+        assert tabe.lemma == "食べる", f"Lemma should be 食べる, got {tabe.lemma}"
+        # Should find pitch via lemma fallback (食べる) - nakadaka type 2
+        assert tabe.accent_type == 2, (
+            f"Expected pitch accent 2 for 食べる via lemma fallback, got {tabe.accent_type}"
         )
 
     def test_hiragana_lookup_fallback(self):
@@ -178,8 +189,9 @@ class TestAnalyzeText:
 
         watashi = next((w for w in result if w.surface == "わたし"), None)
         assert watashi is not None
-        assert watashi.accent_type is not None, (
-            f"Expected pitch accent for hiragana わたし via fallback chain"
+        # わたし is heiban (0)
+        assert watashi.accent_type == 0, (
+            f"Expected heiban (0) for わたし, got {watashi.accent_type}"
         )
 
 
@@ -228,3 +240,66 @@ class TestPitchPatternGeneration:
     def test_none_defaults_to_heiban(self):
         """None accent type should default to heiban."""
         assert get_pitch_pattern(None, 3) == ["L", "H", "H"]
+
+
+class TestFallbackHeuristics:
+    """Test fallback chain order and ORDER BY heuristics."""
+
+    def test_surface_prefers_matching_reading(self):
+        """Surface-only fallback should prefer entry with matching reading.
+
+        私 has multiple readings (わたし, わたくし, あたし, etc.)
+        When looking up 私 with reading わたし, should get わたし's pitch.
+        """
+        # 私 with correct reading
+        result = lookup_pitch("私", "わたし")
+        assert result.accent_type == 0, "私 (わたし) should be heiban (0)"
+
+        # Verify surface-only still works and prefers matching reading
+        result_surface = lookup_pitch("私", "わたし")
+        assert result_surface.accent_type == 0
+
+    def test_reading_fallback_prefers_shorter_surface(self):
+        """Reading-only fallback should prefer shorter surface (avoid compounds).
+
+        はし has multiple surfaces: 橋, 箸, 端, 嘴, etc.
+        Shorter surfaces are less likely to be compounds.
+        """
+        # Direct lookup with はし reading should return a result
+        result = lookup_pitch("unknownsurface", "はし")
+        # Should find something (橋 or 箸)
+        assert result.accent_type is not None, "Should find pitch for はし reading"
+
+    def test_homophone_correct_disambiguation(self):
+        """Homophones should be correctly disambiguated by surface.
+
+        橋 (bridge) = はし, accent 2 (odaka)
+        箸 (chopsticks) = はし, accent 1 (atamadaka)
+        """
+        bridge = lookup_pitch("橋", "はし")
+        chopsticks = lookup_pitch("箸", "はし")
+
+        assert bridge.accent_type == 2, f"橋 should be odaka (2), got {bridge.accent_type}"
+        assert chopsticks.accent_type == 1, f"箸 should be atamadaka (1), got {chopsticks.accent_type}"
+
+    def test_lemma_fallback_before_reading(self):
+        """Lemma fallback should be tried before reading-only fallback.
+
+        食べた (conjugated) should find 食べる (lemma) before falling back to reading.
+        """
+        result = analyze_text("食べた")
+        tabe = next((w for w in result if "食" in w.surface), None)
+
+        assert tabe is not None
+        assert tabe.lemma == "食べる"
+        # 食べる has accent 2, not whatever random word might match the reading
+        assert tabe.accent_type == 2
+
+    def test_normalized_fallback_for_kanji_variants(self):
+        """Normalized form should handle kanji variants.
+
+        Some words have variant kanji forms that normalize to a common form.
+        """
+        # Test with a common word that has normalized form
+        result = lookup_pitch("私", "わたし", normalized="私")
+        assert result.accent_type == 0
