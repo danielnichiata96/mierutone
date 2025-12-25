@@ -14,8 +14,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Create data directory and import Kanjium pitch database
-RUN mkdir -p data && python scripts/import_kanjium.py
+# Download UniDic dictionary for goshu classification (~770MB)
+RUN python -m unidic download
+
+# Create data directory and import pitch database with goshu
+RUN mkdir -p data && python scripts/import_kanjium.py && python scripts/import_goshu.py
 
 # Expose port
 EXPOSE 8000
