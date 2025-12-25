@@ -37,7 +37,9 @@ def create_database(db_path: Path) -> sqlite3.Connection:
             id INTEGER PRIMARY KEY,
             surface TEXT NOT NULL,
             reading TEXT NOT NULL,
-            accent_pattern TEXT NOT NULL
+            accent_pattern TEXT NOT NULL,
+            goshu TEXT,
+            goshu_jp TEXT
         )
     """)
     cursor.execute("CREATE INDEX idx_surface ON pitch_accents(surface)")
