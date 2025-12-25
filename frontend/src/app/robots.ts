@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: "/",
             disallow: ["/api/", "/admin/"],
         },
-        sitemap: "https://pitchlab.jp/sitemap.xml",
+        sitemap: "https://mierutone.com/sitemap.xml",
     };
 }

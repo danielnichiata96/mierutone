@@ -4,10 +4,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "PitchLab JP | Japanese Pitch Accent Training",
-    template: "%s | PitchLab JP",
+    default: "MieruTone | Japanese Pitch Accent Training",
+    template: "%s | MieruTone",
   },
-  description: "Master Japanese pitch accent with cozy, gamified ear training. PitchLab JP helps learners see the invisible structure of Japanese Audio.",
+  description: "Master Japanese pitch accent with cozy, gamified ear training. MieruTone helps learners see the invisible structure of Japanese Audio.",
   keywords: [
     "Japanese pitch accent",
     "Japanese ear training",
@@ -17,9 +17,9 @@ export const metadata: Metadata = {
     "Japanese intonation",
     "Pitch pattern practice",
   ],
-  authors: [{ name: "PitchLab Team" }],
-  creator: "PitchLab Team",
-  publisher: "PitchLab JP",
+  authors: [{ name: "MieruTone Team" }],
+  creator: "MieruTone Team",
+  publisher: "MieruTone",
   robots: {
     index: true,
     follow: true,
@@ -27,14 +27,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://pitchlab.jp", // Placeholder domain
-    title: "PitchLab JP | Master Japanese Pitch Accent",
+    url: "https://mierutone.com", // Placeholder domain
+    title: "MieruTone | Master Japanese Pitch Accent",
     description: "Cozy, gamified ear training for Japanese learners. Visualize and practice pitch patterns.",
-    siteName: "PitchLab JP",
+    siteName: "MieruTone",
   },
   twitter: {
     card: "summary_large_image",
-    title: "PitchLab JP",
+    title: "MieruTone",
     description: "Master Japanese pitch accent with cozy ear training.",
   },
 };
@@ -44,7 +44,7 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "name": "PitchLab JP",
+      "name": "MieruTone",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Web",
       "offers": {

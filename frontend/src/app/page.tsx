@@ -120,7 +120,7 @@ export default function Home() {
         <footer className="mt-8 pt-8 border-t-2 border-ink-black/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs text-ink-black/40 font-mono tracking-wide">
-              PitchLab JP — Master the melody of Japanese
+              MieruTone — Master the melody of Japanese
             </p>
             <div className="flex gap-4 text-xs text-ink-black/40">
               <a
@@ -132,7 +132,7 @@ export default function Home() {
                 GitHub
               </a>
               <a
-                href="mailto:feedback@pitchlab.jp"
+                href="mailto:feedback@mierutone.com"
                 className="hover:text-ink-black transition-colors"
               >
                 Contact

@@ -29,7 +29,7 @@ export function SocialProof() {
         {/* CTA for feedback */}
         <div className="mt-8 p-6 bg-primary-300/20 rounded-riso-lg border-2 border-primary-500/30 max-w-md mx-auto">
           <p className="font-medium text-ink-black/80 mb-2">
-            Help shape PitchLab JP
+            Help shape MieruTone
           </p>
           <p className="text-sm text-ink-black/60 mb-4">
             We're building this for you. Tell us what features you need most.

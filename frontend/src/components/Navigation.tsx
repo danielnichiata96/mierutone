@@ -24,7 +24,7 @@ export function Navigation() {
               <span className="absolute w-3.5 h-3.5 rounded-full bg-energy-500 riso-multiply left-3 top-0.5" />
             </div>
             <span className="font-display font-bold text-lg text-ink-black group-hover:text-primary-500 transition-colors">
-              PitchLab JP
+              MieruTone
             </span>
           </Link>
 
