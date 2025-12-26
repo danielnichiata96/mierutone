@@ -1,6 +1,7 @@
 """Text-to-Speech service using Azure Speech AI."""
 
 import html
+import re
 import azure.cognitiveservices.speech as speechsdk
 
 from app.core.config import settings
@@ -125,7 +126,10 @@ def add_emphasis(text: str, words: list[str]) -> str:
 
 
 def add_breaks_between_words(text: str, break_ms: int = 200, escape: bool = True) -> str:
-    """Add pauses between characters/words for didactic mode.
+    """Add pauses after grammatical particles for didactic mode.
+
+    Uses heuristics to avoid breaking inside words (e.g., はな, おはよう).
+    Only adds breaks when particle is followed by kanji, katakana, or punctuation.
 
     Args:
         text: Original text.
@@ -138,12 +142,26 @@ def add_breaks_between_words(text: str, break_ms: int = 200, escape: bool = True
     # Escape text first to prevent SSML injection (unless already escaped)
     result = _escape_ssml(text) if escape else text
 
-    # Add breaks after particles and punctuation
-    particles = ["は", "が", "を", "に", "で", "と", "も", "の", "へ", "から", "まで", "より"]
+    # Particles to add breaks after
+    # Note: Single-char particles can appear inside words, so we use regex
+    particles_single = ["は", "が", "を", "に", "で", "と", "も", "の", "へ"]
+    particles_multi = ["から", "まで", "より"]  # Multi-char are less ambiguous
 
-    for particle in particles:
-        # Only add break after particle if it's likely a grammatical particle
-        result = result.replace(particle, f'{particle}<break time="{break_ms}ms"/>')
+    # Pattern: particle followed by kanji, katakana, punctuation, or end of string
+    # This avoids breaking inside words like はな, おはよう, ともだち
+    word_boundary = r"(?=[\u4e00-\u9faf\u30a0-\u30ff、。！？\s]|$)"
+
+    break_tag = f'<break time="{break_ms}ms"/>'
+
+    # Multi-char particles first (less ambiguous)
+    for particle in particles_multi:
+        pattern = re.escape(particle) + word_boundary
+        result = re.sub(pattern, particle + break_tag, result)
+
+    # Single-char particles (more careful matching)
+    for particle in particles_single:
+        pattern = re.escape(particle) + word_boundary
+        result = re.sub(pattern, particle + break_tag, result)
 
     return result
 
@@ -195,7 +213,7 @@ def synthesize_speech(
         # Build SSML with all prosody controls (escape unless pre-processed)
         ssml = _build_ssml(text, voice_name, rate, pitch, volume, escape_text=not is_ssml)
 
-        result = synthesizer.speak_ssml_async(ssml).get()
+        result = synthesizer.speak_ssml_async(ssml).get(timeout=AZURE_TIMEOUT_SECONDS)
 
         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
             audio_data = result.audio_data
@@ -257,7 +275,7 @@ async def check_azure_health() -> bool:
 
         # Synthesize a minimal test (single character)
         ssml = _build_ssml("あ", speech_config.speech_synthesis_voice_name)
-        result = synthesizer.speak_ssml_async(ssml).get()
+        result = synthesizer.speak_ssml_async(ssml).get(timeout=10)
 
         return result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted
     except Exception:
@@ -335,7 +353,7 @@ def synthesize_speech_with_timings(
         # Build SSML (escape text for safety)
         ssml = _build_ssml(text, voice_name, rate)
 
-        result = synthesizer.speak_ssml_async(ssml).get()
+        result = synthesizer.speak_ssml_async(ssml).get(timeout=AZURE_TIMEOUT_SECONDS)
 
         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
             audio_data = result.audio_data
