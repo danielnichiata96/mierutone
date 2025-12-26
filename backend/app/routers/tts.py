@@ -1,11 +1,15 @@
 """TTS router - text-to-speech endpoint using Azure Speech AI."""
 
+import asyncio
 import base64
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
+
+# Timeout for Azure TTS synthesis (seconds)
+TTS_TIMEOUT_SECONDS = 30
 
 from app.services.tts import (
     synthesize_speech,
@@ -47,13 +51,16 @@ async def text_to_speech(request: TTSRequest) -> Response:
         WAV audio file.
     """
     try:
-        audio_data, from_cache = await run_in_threadpool(
-            synthesize_speech,
-            text=request.text,
-            voice=request.voice,
-            rate=request.rate,
-            pitch=request.pitch,
-            volume=request.volume,
+        audio_data, from_cache = await asyncio.wait_for(
+            run_in_threadpool(
+                synthesize_speech,
+                text=request.text,
+                voice=request.voice,
+                rate=request.rate,
+                pitch=request.pitch,
+                volume=request.volume,
+            ),
+            timeout=TTS_TIMEOUT_SECONDS,
         )
 
         return Response(
@@ -65,6 +72,8 @@ async def text_to_speech(request: TTSRequest) -> Response:
                 "X-Cache": "HIT" if from_cache else "MISS",
             },
         )
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail=f"TTS timed out after {TTS_TIMEOUT_SECONDS}s")
     except TTSError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
@@ -169,14 +178,17 @@ async def didactic_speech(request: DidacticRequest) -> Response:
             processed_text = add_breaks_between_words(processed_text, request.break_ms, escape=not has_ssml)
             has_ssml = True
 
-        audio_data, from_cache = await run_in_threadpool(
-            synthesize_speech,
-            text=processed_text,
-            voice=request.voice,
-            rate=request.rate,
-            pitch=0.0,
-            volume=0.0,
-            is_ssml=has_ssml,
+        audio_data, from_cache = await asyncio.wait_for(
+            run_in_threadpool(
+                synthesize_speech,
+                text=processed_text,
+                voice=request.voice,
+                rate=request.rate,
+                pitch=0.0,
+                volume=0.0,
+                is_ssml=has_ssml,
+            ),
+            timeout=TTS_TIMEOUT_SECONDS,
         )
 
         return Response(
@@ -189,6 +201,8 @@ async def didactic_speech(request: DidacticRequest) -> Response:
                 "X-Mode": "didactic",
             },
         )
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail=f"TTS timed out after {TTS_TIMEOUT_SECONDS}s")
     except TTSError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
@@ -228,9 +242,12 @@ async def tts_with_pitch(
     """
     # 1. Generate TTS audio
     try:
-        audio_bytes, from_cache = await run_in_threadpool(
-            synthesize_speech, text, voice, rate
+        audio_bytes, from_cache = await asyncio.wait_for(
+            run_in_threadpool(synthesize_speech, text, voice, rate),
+            timeout=TTS_TIMEOUT_SECONDS,
         )
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail=f"TTS timed out after {TTS_TIMEOUT_SECONDS}s")
     except TTSError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
@@ -287,9 +304,12 @@ async def tts_with_timings(
         Audio as base64 + word timings array.
     """
     try:
-        audio_bytes, timings = await run_in_threadpool(
-            synthesize_speech_with_timings, text, voice, rate
+        audio_bytes, timings = await asyncio.wait_for(
+            run_in_threadpool(synthesize_speech_with_timings, text, voice, rate),
+            timeout=TTS_TIMEOUT_SECONDS,
         )
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail=f"TTS timed out after {TTS_TIMEOUT_SECONDS}s")
     except TTSError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:

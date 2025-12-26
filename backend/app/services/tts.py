@@ -213,7 +213,7 @@ def synthesize_speech(
         # Build SSML with all prosody controls (escape unless pre-processed)
         ssml = _build_ssml(text, voice_name, rate, pitch, volume, escape_text=not is_ssml)
 
-        result = synthesizer.speak_ssml_async(ssml).get(timeout=AZURE_TIMEOUT_SECONDS)
+        result = synthesizer.speak_ssml_async(ssml).get()
 
         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
             audio_data = result.audio_data
@@ -275,7 +275,7 @@ async def check_azure_health() -> bool:
 
         # Synthesize a minimal test (single character)
         ssml = _build_ssml("あ", speech_config.speech_synthesis_voice_name)
-        result = synthesizer.speak_ssml_async(ssml).get(timeout=10)
+        result = synthesizer.speak_ssml_async(ssml).get()
 
         return result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted
     except Exception:
@@ -353,7 +353,7 @@ def synthesize_speech_with_timings(
         # Build SSML (escape text for safety)
         ssml = _build_ssml(text, voice_name, rate)
 
-        result = synthesizer.speak_ssml_async(ssml).get(timeout=AZURE_TIMEOUT_SECONDS)
+        result = synthesizer.speak_ssml_async(ssml).get()
 
         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
             audio_data = result.audio_data
