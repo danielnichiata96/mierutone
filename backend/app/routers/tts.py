@@ -2,7 +2,7 @@
 
 import base64
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
@@ -156,14 +156,18 @@ async def didactic_speech(request: DidacticRequest) -> Response:
     try:
         # Process text with SSML enhancements
         processed_text = request.text
+        has_ssml = False
 
-        # Add emphasis to specified words
+        # Add emphasis to specified words (escapes text internally)
         if request.emphasis_words:
             processed_text = add_emphasis(processed_text, request.emphasis_words)
+            has_ssml = True
 
         # Add breaks after particles
         if request.add_breaks:
-            processed_text = add_breaks_between_words(processed_text, request.break_ms)
+            # Don't escape again if emphasis already escaped
+            processed_text = add_breaks_between_words(processed_text, request.break_ms, escape=not has_ssml)
+            has_ssml = True
 
         audio_data, from_cache = await run_in_threadpool(
             synthesize_speech,
@@ -172,6 +176,7 @@ async def didactic_speech(request: DidacticRequest) -> Response:
             rate=request.rate,
             pitch=0.0,
             volume=0.0,
+            is_ssml=has_ssml,
         )
 
         return Response(
@@ -199,11 +204,14 @@ class TTSWithPitchResponse(BaseModel):
     time_step_ms: int = 10  # Time between pitch frames
 
 
+MAX_TEXT_LENGTH = 500
+
+
 @router.get("/with-pitch", response_model=TTSWithPitchResponse)
 async def tts_with_pitch(
-    text: str,
+    text: str = Query(..., min_length=1, max_length=MAX_TEXT_LENGTH),
     voice: str = DEFAULT_FEMALE,
-    rate: float = 1.0,
+    rate: float = Query(default=1.0, ge=0.5, le=2.0),
 ) -> TTSWithPitchResponse:
     """Generate TTS audio with pitch curve for visualization.
 
@@ -218,10 +226,6 @@ async def tts_with_pitch(
     Returns:
         Audio as base64 + pitch curves + actual duration.
     """
-    # Validate rate
-    if not 0.5 <= rate <= 2.0:
-        raise HTTPException(status_code=400, detail="Rate must be between 0.5 and 2.0")
-
     # 1. Generate TTS audio
     try:
         audio_bytes, from_cache = await run_in_threadpool(
@@ -265,9 +269,9 @@ class TTSWithTimingsResponse(BaseModel):
 
 @router.get("/with-timings", response_model=TTSWithTimingsResponse)
 async def tts_with_timings(
-    text: str,
+    text: str = Query(..., min_length=1, max_length=MAX_TEXT_LENGTH),
     voice: str = DEFAULT_FEMALE,
-    rate: float = 1.0,
+    rate: float = Query(default=1.0, ge=0.5, le=2.0),
 ) -> TTSWithTimingsResponse:
     """Generate TTS audio with word boundary timings for cursor sync.
 
@@ -282,10 +286,6 @@ async def tts_with_timings(
     Returns:
         Audio as base64 + word timings array.
     """
-    # Validate rate
-    if not 0.5 <= rate <= 2.0:
-        raise HTTPException(status_code=400, detail="Rate must be between 0.5 and 2.0")
-
     try:
         audio_bytes, timings = await run_in_threadpool(
             synthesize_speech_with_timings, text, voice, rate

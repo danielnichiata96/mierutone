@@ -67,9 +67,9 @@ def _get_redis_client() -> Optional[redis.Redis]:
         return None
 
 
-def _get_cache_key(text: str, voice: str, rate: float) -> str:
+def _get_cache_key(text: str, voice: str, params: str) -> str:
     """Generate cache key from TTS parameters."""
-    content = f"{text}|{voice}|{rate}"
+    content = f"{text}|{voice}|{params}"
     return hashlib.sha256(content.encode()).hexdigest()[:16]
 
 
@@ -83,19 +83,19 @@ def _r2_key(cache_key: str) -> str:
     return f"tts/{cache_key}.wav"
 
 
-def get_cached_audio(text: str, voice: str, rate: float) -> Optional[bytes]:
+def get_cached_audio(text: str, voice: str, params: str) -> Optional[bytes]:
     """Get audio from cache (Redis → R2 → None).
 
     Args:
         text: The text that was synthesized.
         voice: Voice name used.
-        rate: Speech rate used.
+        params: TTS parameters string (e.g., "1.00_0.0_0.0" for rate_pitch_volume).
 
     Returns:
         Audio bytes if cached, None otherwise.
     """
     global _stats
-    cache_key = _get_cache_key(text, voice, rate)
+    cache_key = _get_cache_key(text, voice, params)
 
     # 1. Try Redis (hot cache)
     redis_client = _get_redis_client()
@@ -134,16 +134,16 @@ def get_cached_audio(text: str, voice: str, rate: float) -> Optional[bytes]:
     return None
 
 
-def save_to_cache(text: str, voice: str, rate: float, audio_data: bytes) -> None:
+def save_to_cache(text: str, voice: str, params: str, audio_data: bytes) -> None:
     """Save audio to cache (Redis + R2).
 
     Args:
         text: The text that was synthesized.
         voice: Voice name used.
-        rate: Speech rate used.
+        params: TTS parameters string (e.g., "1.00_0.0_0.0" for rate_pitch_volume).
         audio_data: WAV audio bytes to cache.
     """
-    cache_key = _get_cache_key(text, voice, rate)
+    cache_key = _get_cache_key(text, voice, params)
 
     # Save to Redis (hot)
     redis_client = _get_redis_client()

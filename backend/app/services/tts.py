@@ -1,5 +1,7 @@
 """Text-to-Speech service using Azure Speech AI."""
 
+import html
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 import azure.cognitiveservices.speech as speechsdk
 
 from app.core.config import settings
@@ -29,6 +31,9 @@ AZURE_VOICES = {
 DEFAULT_FEMALE = "female1"
 DEFAULT_MALE = "male1"
 
+# Timeout for Azure SDK calls (seconds)
+AZURE_TIMEOUT_SECONDS = 30
+
 
 def _get_speech_config() -> speechsdk.SpeechConfig:
     """Create Azure Speech config."""
@@ -45,25 +50,38 @@ def _get_speech_config() -> speechsdk.SpeechConfig:
     return speech_config
 
 
+def _escape_ssml(text: str) -> str:
+    """Escape text for safe SSML insertion.
+
+    Prevents SSML injection by escaping XML special characters.
+    """
+    return html.escape(text, quote=True)
+
+
 def _build_ssml(
     text: str,
     voice_name: str,
     rate: float = 1.0,
     pitch: float = 0.0,
     volume: float = 0.0,
+    escape_text: bool = True,
 ) -> str:
     """Build SSML string with prosody controls.
 
     Args:
-        text: Text content (can include SSML tags like <emphasis>).
+        text: Text content to synthesize.
         voice_name: Azure voice name.
         rate: Speech rate multiplier (0.5 to 2.0).
         pitch: Pitch adjustment in percent (-50 to +50).
         volume: Volume adjustment in percent (-50 to +50).
+        escape_text: If True, escape XML special chars (default). Set False for pre-processed SSML.
 
     Returns:
         Complete SSML string.
     """
+    # Escape text to prevent SSML injection
+    safe_text = _escape_ssml(text) if escape_text else text
+
     # Azure expects a relative percentage where 0% is normal speed.
     rate_percent = int(round((rate - 1.0) * 100))
     rate_sign = "+" if rate_percent > 0 else ""
@@ -84,7 +102,7 @@ def _build_ssml(
     return f"""<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="ja-JP">
     <voice name="{voice_name}">
         <prosody {prosody_str}>
-            {text}
+            {safe_text}
         </prosody>
     </voice>
 </speak>"""
@@ -94,32 +112,38 @@ def add_emphasis(text: str, words: list[str]) -> str:
     """Add SSML emphasis tags to specific words.
 
     Args:
-        text: Original text.
+        text: Original text (should be pre-escaped if from user input).
         words: List of words to emphasize.
 
     Returns:
         Text with <emphasis> tags around specified words.
     """
-    result = text
+    # Escape the base text first
+    result = _escape_ssml(text)
     for word in words:
-        if word in result:
-            result = result.replace(word, f'<emphasis level="strong">{word}</emphasis>')
+        # Escape the word too for matching
+        escaped_word = _escape_ssml(word)
+        if escaped_word in result:
+            result = result.replace(escaped_word, f'<emphasis level="strong">{escaped_word}</emphasis>')
     return result
 
 
-def add_breaks_between_words(text: str, break_ms: int = 200) -> str:
+def add_breaks_between_words(text: str, break_ms: int = 200, escape: bool = True) -> str:
     """Add pauses between characters/words for didactic mode.
 
     Args:
         text: Original text.
         break_ms: Pause duration in milliseconds.
+        escape: If True, escape text for SSML safety. Set False if already escaped.
 
     Returns:
         Text with <break> tags inserted.
     """
+    # Escape text first to prevent SSML injection (unless already escaped)
+    result = _escape_ssml(text) if escape else text
+
     # Add breaks after particles and punctuation
     particles = ["は", "が", "を", "に", "で", "と", "も", "の", "へ", "から", "まで", "より"]
-    result = text
 
     for particle in particles:
         # Only add break after particle if it's likely a grammatical particle
@@ -134,6 +158,7 @@ def synthesize_speech(
     rate: float = 1.0,
     pitch: float = 0.0,
     volume: float = 0.0,
+    is_ssml: bool = False,
 ) -> tuple[bytes, bool]:
     """Synthesize speech from Japanese text using Azure Speech AI.
 
@@ -143,6 +168,7 @@ def synthesize_speech(
         rate: Speech rate (0.5 to 2.0, default 1.0).
         pitch: Pitch adjustment in percent (-50 to +50, default 0).
         volume: Volume adjustment in percent (-50 to +50, default 0).
+        is_ssml: If True, text contains pre-escaped SSML tags (skip escaping).
 
     Returns:
         Tuple of (WAV audio data, from_cache boolean).
@@ -150,9 +176,9 @@ def synthesize_speech(
     Raises:
         TTSError: If synthesis fails.
     """
-    # Check cache first (include pitch and volume in cache key)
-    cache_key_rate = rate + (pitch / 1000) + (volume / 100000)  # Encode all params
-    cached = get_cached_audio(text, voice, cache_key_rate)
+    # Check cache first (use string key to avoid float collision)
+    cache_key_params = f"{rate:.2f}_{pitch:.1f}_{volume:.1f}"
+    cached = get_cached_audio(text, voice, cache_key_params)
     if cached:
         return cached, True
 
@@ -170,15 +196,18 @@ def synthesize_speech(
             audio_config=None  # No audio output, we get the data directly
         )
 
-        # Build SSML with all prosody controls
-        ssml = _build_ssml(text, voice_name, rate, pitch, volume)
+        # Build SSML with all prosody controls (escape unless pre-processed)
+        ssml = _build_ssml(text, voice_name, rate, pitch, volume, escape_text=not is_ssml)
 
-        result = synthesizer.speak_ssml_async(ssml).get()
+        try:
+            result = synthesizer.speak_ssml_async(ssml).get(timeout=AZURE_TIMEOUT_SECONDS)
+        except FuturesTimeoutError:
+            raise TTSError(f"Azure Speech timed out after {AZURE_TIMEOUT_SECONDS}s")
 
         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
             audio_data = result.audio_data
             # Save to cache
-            save_to_cache(text, voice, cache_key_rate, audio_data)
+            save_to_cache(text, voice, cache_key_params, audio_data)
             return audio_data, False
 
         elif result.reason == speechsdk.ResultReason.Canceled:
@@ -217,14 +246,27 @@ def get_available_voices() -> dict[str, dict]:
 
 
 async def check_azure_health() -> bool:
-    """Check if Azure Speech is configured and accessible."""
+    """Check if Azure Speech is configured and accessible.
+
+    Performs a minimal synthesis to verify real connectivity.
+    """
     if not settings.azure_speech_key:
         return False
 
     try:
         speech_config = _get_speech_config()
-        # Simple validation - config creation succeeds
-        return True
+        speech_config.speech_synthesis_voice_name = AZURE_VOICES[DEFAULT_FEMALE]["name"]
+
+        synthesizer = speechsdk.SpeechSynthesizer(
+            speech_config=speech_config,
+            audio_config=None
+        )
+
+        # Synthesize a minimal test (single character)
+        ssml = _build_ssml("あ", speech_config.speech_synthesis_voice_name)
+        result = synthesizer.speak_ssml_async(ssml).get(timeout=10)
+
+        return result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted
     except Exception:
         return False
 
@@ -297,10 +339,13 @@ def synthesize_speech_with_timings(
         # Connect word boundary event handler
         synthesizer.synthesis_word_boundary.connect(on_word_boundary)
 
-        # Build SSML
+        # Build SSML (escape text for safety)
         ssml = _build_ssml(text, voice_name, rate)
 
-        result = synthesizer.speak_ssml_async(ssml).get()
+        try:
+            result = synthesizer.speak_ssml_async(ssml).get(timeout=AZURE_TIMEOUT_SECONDS)
+        except FuturesTimeoutError:
+            raise TTSError(f"Azure Speech timed out after {AZURE_TIMEOUT_SECONDS}s")
 
         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
             audio_data = result.audio_data
