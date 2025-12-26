@@ -89,10 +89,20 @@ async def list_voices() -> dict[str, dict]:
     return get_available_voices()
 
 
+HEALTH_TIMEOUT_SECONDS = 10
+
+
 @router.get("/health")
 async def tts_health() -> dict:
-    """Check if Azure Speech is configured."""
-    is_healthy = await check_azure_health()
+    """Check if Azure Speech is configured and accessible."""
+    try:
+        is_healthy = await asyncio.wait_for(
+            run_in_threadpool(check_azure_health),
+            timeout=HEALTH_TIMEOUT_SECONDS,
+        )
+    except asyncio.TimeoutError:
+        is_healthy = False
+
     return {
         "status": "healthy" if is_healthy else "unavailable",
         "engine": "Azure Speech AI",

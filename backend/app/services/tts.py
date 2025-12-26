@@ -256,10 +256,11 @@ def get_available_voices() -> dict[str, dict]:
     }
 
 
-async def check_azure_health() -> bool:
+def check_azure_health() -> bool:
     """Check if Azure Speech is configured and accessible.
 
     Performs a minimal synthesis to verify real connectivity.
+    Note: This is synchronous - call via run_in_threadpool.
     """
     if not settings.azure_speech_key:
         return False
