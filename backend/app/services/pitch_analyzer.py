@@ -343,8 +343,11 @@ def analyze_text(text: str) -> list[WordPitch]:
             elif source == "rule":
                 warning = "No dictionary entry - using standard pitch rules"
 
-        # Generate pitch pattern - but not for proper nouns without dictionary entry
-        if source == "proper_noun":
+        # Generate pitch pattern - but not for particles or uncertain proper nouns
+        if source == "particle":
+            # Particles inherit pitch from context - don't show standalone pattern
+            pitch_pattern = []
+        elif source == "proper_noun":
             # No pitch pattern for uncertain proper nouns
             pitch_pattern = []
         else:

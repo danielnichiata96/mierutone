@@ -35,6 +35,20 @@ function isParticle(word: WordPitch): boolean {
   return word.part_of_speech === "助詞" || word.part_of_speech === "助動詞";
 }
 
+/**
+ * Find the last non-particle word before the given index.
+ * This is needed for particle sequences like には, では where the second
+ * particle should inherit from the original content word, not the first particle.
+ */
+function findLastContentWord(words: WordPitch[], beforeIndex: number): WordPitch | null {
+  for (let i = beforeIndex - 1; i >= 0; i--) {
+    if (!isParticle(words[i])) {
+      return words[i];
+    }
+  }
+  return null;
+}
+
 function buildPhrasePoints(words: WordPitch[]): MoraPoint[] {
   const points: MoraPoint[] = [];
 
@@ -42,8 +56,9 @@ function buildPhrasePoints(words: WordPitch[]): MoraPoint[] {
     const particle = isParticle(word);
 
     if (particle && wordIndex > 0) {
-      const prevWord = words[wordIndex - 1];
-      const pitch = getParticlePitch(prevWord);
+      // Find the last CONTENT word (not particle) to inherit pitch from
+      const contentWord = findLastContentWord(words, wordIndex);
+      const pitch = getParticlePitch(contentWord);
 
       word.morae.forEach((mora) => {
         points.push({

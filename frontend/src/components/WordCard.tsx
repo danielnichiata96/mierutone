@@ -40,8 +40,9 @@ export function WordCard({ word }: WordCardProps) {
   // Skip words with no morae (shouldn't happen normally)
   if (!morae.length) return null;
 
-  // Check if we have pitch data or if this is a proper noun without dictionary entry
+  // Check if we have pitch data
   const hasPitchData = pitch_pattern.length > 0;
+  const isParticle = source === "particle";
   const isUnknownProperNoun = source === "proper_noun" && !hasPitchData;
 
   const svgWidth = morae.length * 30;
@@ -98,6 +99,30 @@ export function WordCard({ word }: WordCardProps) {
               );
             })}
           </>
+        ) : isParticle ? (
+          /* Particle - show "~" to indicate follows context */
+          <>
+            <line
+              x1={10}
+              y1={22}
+              x2={svgWidth - 10}
+              y2={22}
+              stroke="#9333ea"
+              strokeWidth="2"
+              strokeDasharray="4,4"
+              opacity={0.5}
+            />
+            <text
+              x={svgWidth / 2}
+              y={28}
+              textAnchor="middle"
+              fontSize="12"
+              fill="#9333ea"
+              className="font-sans"
+            >
+              ~
+            </text>
+          </>
         ) : (
           /* Unknown pitch - show "?" for each mora */
           morae.map((_, i) => (
@@ -137,10 +162,18 @@ export function WordCard({ word }: WordCardProps) {
       <div className="text-lg font-bold text-ink-black font-sans">{surface}</div>
       <div className="text-sm text-ink-black/60 font-sans font-medium">{reading}</div>
       <div className="font-mono text-xs tracking-wider text-ink-black/60 mt-1">
-        {hasPitchData ? pitch_pattern.join(" ") : <span className="text-amber-600">Pitch unknown</span>}
+        {hasPitchData
+          ? pitch_pattern.join(" ")
+          : isParticle
+            ? <span className="text-violet-600">Follows context</span>
+            : <span className="text-amber-600">Pitch unknown</span>}
       </div>
       <div className="text-xs text-ink-black/50 mt-1.5 text-center font-medium">
-        {hasPitchData ? getAccentLabel(accent_type, mora_count, word.part_of_speech) : "Unknown"}
+        {hasPitchData
+          ? getAccentLabel(accent_type, mora_count, word.part_of_speech)
+          : isParticle
+            ? "See Phrase Flow"
+            : "Unknown"}
       </div>
       <div className="text-[10px] text-ink-black/40 mt-0.5 font-mono tracking-wide">
         {word.part_of_speech}
