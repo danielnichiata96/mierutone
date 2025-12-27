@@ -1,6 +1,8 @@
 """Cloudflare R2 storage service for permanent TTS cache."""
 
 import logging
+import time
+import threading
 from typing import Optional
 from io import BytesIO
 
@@ -14,6 +16,11 @@ logger = logging.getLogger(__name__)
 
 # Lazy-initialized S3 client
 _s3_client = None
+
+# Cached R2 stats (expensive to compute - lists entire bucket)
+_r2_stats_cache: dict = {}
+_r2_stats_lock = threading.Lock()
+R2_STATS_TTL_SECONDS = 300  # 5 minutes
 
 
 def _get_s3_client():
@@ -63,7 +70,11 @@ def r2_get(key: str) -> Optional[bytes]:
 
     try:
         response = client.get_object(Bucket=settings.r2_bucket_name, Key=key)
-        return response["Body"].read()
+        body = response["Body"]
+        try:
+            return body.read()
+        finally:
+            body.close()
     except ClientError as e:
         error_code = e.response.get("Error", {}).get("Code", "")
         if error_code == "NoSuchKey":
@@ -154,12 +165,8 @@ def r2_list_keys(prefix: str = "tts/") -> list[str]:
         return []
 
 
-def r2_get_stats() -> dict:
-    """Get R2 bucket statistics.
-
-    Returns:
-        Dict with object count and total size.
-    """
+def _compute_r2_stats() -> dict:
+    """Actually compute R2 stats by listing bucket (expensive)."""
     client = _get_s3_client()
     if not client:
         return {"connected": False, "objects": 0, "size_mb": 0}
@@ -182,6 +189,30 @@ def r2_get_stats() -> dict:
     except Exception as e:
         logger.warning(f"R2 stats error: {e}")
         return {"connected": False, "objects": 0, "size_mb": 0, "error": str(e)}
+
+
+def r2_get_stats() -> dict:
+    """Get R2 bucket statistics with TTL caching.
+
+    Caches results for 5 minutes to avoid expensive bucket listing on every call.
+
+    Returns:
+        Dict with object count and total size.
+    """
+    global _r2_stats_cache
+
+    with _r2_stats_lock:
+        cached_at = _r2_stats_cache.get("timestamp", 0)
+        if time.time() - cached_at < R2_STATS_TTL_SECONDS:
+            return _r2_stats_cache.get("stats", {"connected": False, "objects": 0, "size_mb": 0})
+
+    # Compute outside lock to avoid blocking other threads
+    stats = _compute_r2_stats()
+
+    with _r2_stats_lock:
+        _r2_stats_cache = {"stats": stats, "timestamp": time.time()}
+
+    return stats
 
 
 def r2_health_check() -> bool:

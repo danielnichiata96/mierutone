@@ -10,6 +10,7 @@ R2: Permanent, cheap, unlimited scale
 
 import hashlib
 import logging
+import threading
 from dataclasses import dataclass
 from typing import Optional
 
@@ -34,8 +35,9 @@ class CacheStats:
     r2_size_mb: float = 0.0
 
 
-# Global stats
+# Global stats (thread-safe access via lock)
 _stats = CacheStats()
+_stats_lock = threading.Lock()
 
 # Redis client (lazy initialization)
 _redis_client: Optional[redis.Redis] = None
@@ -94,7 +96,6 @@ def get_cached_audio(text: str, voice: str, params: str) -> Optional[bytes]:
     Returns:
         Audio bytes if cached, None otherwise.
     """
-    global _stats
     cache_key = _get_cache_key(text, voice, params)
 
     # 1. Try Redis (hot cache)
@@ -103,8 +104,9 @@ def get_cached_audio(text: str, voice: str, params: str) -> Optional[bytes]:
         try:
             data = redis_client.get(_redis_key(cache_key))
             if data:
-                _stats.hits += 1
-                _stats.redis_hits += 1
+                with _stats_lock:
+                    _stats.hits += 1
+                    _stats.redis_hits += 1
                 return data
         except redis.RedisError as e:
             logger.warning(f"Redis get failed: {e}")
@@ -113,8 +115,9 @@ def get_cached_audio(text: str, voice: str, params: str) -> Optional[bytes]:
     if settings.r2_enabled:
         data = r2_get(_r2_key(cache_key))
         if data:
-            _stats.hits += 1
-            _stats.r2_hits += 1
+            with _stats_lock:
+                _stats.hits += 1
+                _stats.r2_hits += 1
 
             # Promote to Redis for faster future access
             if redis_client:
@@ -130,7 +133,8 @@ def get_cached_audio(text: str, voice: str, params: str) -> Optional[bytes]:
             return data
 
     # 3. Cache miss
-    _stats.misses += 1
+    with _stats_lock:
+        _stats.misses += 1
     return None
 
 
@@ -164,26 +168,43 @@ def save_to_cache(text: str, voice: str, params: str, audio_data: bytes) -> None
 
 def get_cache_stats() -> CacheStats:
     """Get cache statistics."""
-    global _stats
-
     # Redis status
     redis_client = _get_redis_client()
-    _stats.redis_connected = redis_client is not None
+    redis_connected = redis_client is not None
 
-    # R2 status
+    # R2 status (uses TTL cache internally)
     if settings.r2_enabled:
         r2_stats = r2_get_stats()
-        _stats.r2_connected = r2_stats.get("connected", False)
-        _stats.r2_objects = r2_stats.get("objects", 0)
-        _stats.r2_size_mb = r2_stats.get("size_mb", 0.0)
+        r2_connected = r2_stats.get("connected", False)
+        r2_objects = r2_stats.get("objects", 0)
+        r2_size_mb = r2_stats.get("size_mb", 0.0)
     else:
-        _stats.r2_connected = False
+        r2_connected = False
+        r2_objects = 0
+        r2_size_mb = 0.0
 
-    return _stats
+    with _stats_lock:
+        _stats.redis_connected = redis_connected
+        _stats.r2_connected = r2_connected
+        _stats.r2_objects = r2_objects
+        _stats.r2_size_mb = r2_size_mb
+        # Return a copy to avoid race conditions
+        return CacheStats(
+            hits=_stats.hits,
+            misses=_stats.misses,
+            redis_hits=_stats.redis_hits,
+            r2_hits=_stats.r2_hits,
+            redis_connected=_stats.redis_connected,
+            r2_connected=_stats.r2_connected,
+            r2_objects=_stats.r2_objects,
+            r2_size_mb=_stats.r2_size_mb,
+        )
 
 
 def clear_cache() -> dict:
     """Clear Redis cache only (R2 is permanent storage).
+
+    Uses SCAN instead of KEYS to avoid blocking Redis.
 
     Returns:
         Dict with counts of deleted items.
@@ -194,14 +215,25 @@ def clear_cache() -> dict:
     redis_client = _get_redis_client()
     if redis_client:
         try:
-            keys = redis_client.keys("tts:*")
-            if keys:
-                result["redis_keys"] = redis_client.delete(*keys)
+            # Use SCAN iterator to avoid blocking Redis
+            deleted = 0
+            cursor = 0
+            while True:
+                cursor, keys = redis_client.scan(cursor, match="tts:*", count=100)
+                if keys:
+                    deleted += redis_client.delete(*keys)
+                if cursor == 0:
+                    break
+            result["redis_keys"] = deleted
         except redis.RedisError as e:
             logger.warning(f"Redis clear failed: {e}")
 
-    # Reset stats
-    _stats = CacheStats()
+    # Reset stats (thread-safe)
+    with _stats_lock:
+        _stats.hits = 0
+        _stats.misses = 0
+        _stats.redis_hits = 0
+        _stats.r2_hits = 0
     return result
 
 
