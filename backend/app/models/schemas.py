@@ -21,6 +21,16 @@ class WordPitch(BaseModel):
     origin_jp: str | None = None  # Japanese label: 和語, 漢語, 外来語, 固有名詞
     lemma: str | None = None  # Dictionary form (e.g., 食べる for 食べ)
 
+    # Transparency fields
+    source: str = "unknown"  # Where pitch data came from:
+    # - "dictionary" = exact match in Kanjium database
+    # - "dictionary_lemma" = matched via dictionary form (食べた→食べる)
+    # - "dictionary_reading" = matched by reading only (less reliable)
+    # - "rule" = no dictionary match, using standard pitch rules
+    # - "unknown" = no data available
+    confidence: str = "low"  # Confidence level: "high", "medium", "low"
+    warning: str | None = None  # Warning message for ambiguous cases
+
 
 class AnalyzeResponse(BaseModel):
     """Response body for /analyze endpoint."""

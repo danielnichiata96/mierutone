@@ -9,6 +9,28 @@ export interface WordPitch {
   origin: string | null;
   origin_jp: string | null;
   lemma: string | null;
+  // Transparency fields
+  source: "dictionary" | "dictionary_lemma" | "dictionary_reading" | "rule" | "unknown";
+  confidence: "high" | "medium" | "low";
+  warning: string | null;
+}
+
+export function getSourceLabel(source: WordPitch["source"]): string {
+  switch (source) {
+    case "dictionary": return "Dictionary";
+    case "dictionary_lemma": return "Dictionary (via lemma)";
+    case "dictionary_reading": return "Dictionary (reading only)";
+    case "rule": return "Rule-based";
+    case "unknown": return "Unknown";
+  }
+}
+
+export function getConfidenceColor(confidence: WordPitch["confidence"]): string {
+  switch (confidence) {
+    case "high": return "text-green-600";
+    case "medium": return "text-yellow-600";
+    case "low": return "text-red-500";
+  }
 }
 
 export interface AnalyzeResponse {

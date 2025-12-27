@@ -97,12 +97,21 @@ def get_pitch_pattern(accent_type: int | None, mora_count: int) -> list[str]:
 
 class PitchLookupResult:
     """Result of pitch accent lookup."""
-    __slots__ = ("accent_type", "goshu", "goshu_jp")
+    __slots__ = ("accent_type", "goshu", "goshu_jp", "source", "has_multiple_patterns")
 
-    def __init__(self, accent_type: int | None, goshu: str | None, goshu_jp: str | None):
+    def __init__(
+        self,
+        accent_type: int | None,
+        goshu: str | None,
+        goshu_jp: str | None,
+        source: str = "unknown",
+        has_multiple_patterns: bool = False,
+    ):
         self.accent_type = accent_type
         self.goshu = goshu
         self.goshu_jp = goshu_jp
+        self.source = source  # "dictionary", "dictionary_lemma", "dictionary_reading", "unknown"
+        self.has_multiple_patterns = has_multiple_patterns  # True if pattern has multiple values (e.g., "0,2")
 
 
 def lookup_pitch(
@@ -120,21 +129,23 @@ def lookup_pitch(
         normalized: Normalized form (e.g., 私 for わたし)
 
     Returns:
-        PitchLookupResult with accent_type, goshu, and goshu_jp.
+        PitchLookupResult with accent_type, goshu, goshu_jp, and source.
     """
     try:
         conn = get_db_connection()
     except FileNotFoundError:
-        return PitchLookupResult(None, None, None)
+        return PitchLookupResult(None, None, None, source="unknown")
 
     cursor = conn.cursor()
+    row = None
+    source = "unknown"
 
     # Fallback chain (most specific → least specific):
-    # 1. surface + reading (exact)
-    # 2. surface only (prefer matching reading)
-    # 3. lemma/dictionary form
-    # 4. normalized form
-    # 5. reading only (prefer shorter surface to avoid compounds)
+    # 1. surface + reading (exact) → "dictionary"
+    # 2. surface only → "dictionary"
+    # 3. lemma/dictionary form → "dictionary_lemma"
+    # 4. normalized form → "dictionary_lemma"
+    # 5. reading only → "dictionary_reading"
 
     # 1. Exact match: surface + reading
     cursor.execute(
@@ -142,6 +153,8 @@ def lookup_pitch(
         (surface, reading_hira)
     )
     row = cursor.fetchone()
+    if row:
+        source = "dictionary"
 
     # 2. Surface only (prefer entry where reading matches)
     if not row:
@@ -151,6 +164,8 @@ def lookup_pitch(
             (surface, reading_hira)
         )
         row = cursor.fetchone()
+        if row:
+            source = "dictionary"
 
     # 3. Lemma/dictionary form (食べた → 食べる)
     if not row and lemma and lemma != surface:
@@ -160,6 +175,8 @@ def lookup_pitch(
             (lemma, reading_hira)
         )
         row = cursor.fetchone()
+        if row:
+            source = "dictionary_lemma"
 
     # 4. Normalized form (わたし → 私)
     if not row and normalized and normalized not in (surface, lemma):
@@ -169,6 +186,8 @@ def lookup_pitch(
             (normalized, reading_hira)
         )
         row = cursor.fetchone()
+        if row:
+            source = "dictionary_lemma"
 
     # 5. Reading only (last resort - prefer shorter surface to avoid compounds)
     if not row and reading_hira:
@@ -178,12 +197,15 @@ def lookup_pitch(
             (reading_hira,)
         )
         row = cursor.fetchone()
+        if row:
+            source = "dictionary_reading"
 
     if not row:
-        return PitchLookupResult(None, None, None)
+        return PitchLookupResult(None, None, None, source="unknown")
 
     # Parse accent pattern (may have multiple values like "0,2")
     pattern = row["accent_pattern"]
+    has_multiple = "," in pattern
     first_value = pattern.split(",")[0].strip()
 
     try:
@@ -191,7 +213,13 @@ def lookup_pitch(
     except ValueError:
         accent_type = None
 
-    return PitchLookupResult(accent_type, row["goshu"], row["goshu_jp"])
+    return PitchLookupResult(
+        accent_type,
+        row["goshu"],
+        row["goshu_jp"],
+        source=source,
+        has_multiple_patterns=has_multiple,
+    )
 
 
 def get_pos(token) -> str:
@@ -230,6 +258,32 @@ def analyze_text(text: str) -> list[WordPitch]:
 
         # Look up pitch and goshu in database (with lemma/normalized fallbacks)
         lookup_result = lookup_pitch(surface, reading_hira, lemma, normalized)
+
+        # Determine source and confidence
+        source = lookup_result.source
+        if lookup_result.accent_type is None and source == "unknown":
+            # No dictionary match - we're using rule-based pattern
+            source = "rule"
+
+        # Confidence based on source
+        if source == "dictionary":
+            confidence = "high"
+        elif source == "dictionary_lemma":
+            confidence = "medium"
+        elif source in ("dictionary_reading", "rule"):
+            confidence = "low"
+        else:
+            confidence = "low"
+
+        # Generate warning for ambiguous cases
+        warning = None
+        if lookup_result.has_multiple_patterns:
+            warning = "Multiple accent patterns exist for this word"
+        elif source == "dictionary_reading":
+            warning = "Matched by reading only - verify with native speaker"
+        elif source == "rule":
+            warning = "No dictionary entry - using standard pitch rules"
+
         pitch_pattern = get_pitch_pattern(lookup_result.accent_type, mora_count)
 
         words_result.append(WordPitch(
@@ -243,6 +297,9 @@ def analyze_text(text: str) -> list[WordPitch]:
             origin=lookup_result.goshu,
             origin_jp=lookup_result.goshu_jp,
             lemma=lemma if lemma != surface else None,
+            source=source,
+            confidence=confidence,
+            warning=warning,
         ))
 
     return words_result

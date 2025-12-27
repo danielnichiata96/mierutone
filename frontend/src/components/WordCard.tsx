@@ -1,7 +1,7 @@
 "use client";
 
 import type { WordPitch } from "@/types/pitch";
-import { getAccentLabel } from "@/types/pitch";
+import { getAccentLabel, getSourceLabel, getConfidenceColor } from "@/types/pitch";
 import { PlayButton } from "./PlayButton";
 
 interface WordCardProps {
@@ -28,8 +28,14 @@ const ORIGIN_LABELS: Record<string, string> = {
   unknown: "不明",
 };
 
+const CONFIDENCE_ICONS: Record<string, string> = {
+  high: "●",
+  medium: "◐",
+  low: "○",
+};
+
 export function WordCard({ word }: WordCardProps) {
-  const { morae, pitch_pattern, surface, reading, accent_type, mora_count, origin, origin_jp, lemma } = word;
+  const { morae, pitch_pattern, surface, reading, accent_type, mora_count, origin, origin_jp, lemma, source, confidence, warning } = word;
 
   if (!morae.length || !pitch_pattern.length) return null;
 
@@ -132,6 +138,24 @@ export function WordCard({ word }: WordCardProps) {
           </a>
         )}
       </div>
+
+      {/* Confidence indicator */}
+      <div className="flex items-center gap-1.5 mt-2" title={`Source: ${getSourceLabel(source)}`}>
+        <span className={`text-xs ${getConfidenceColor(confidence)}`}>
+          {CONFIDENCE_ICONS[confidence] || "○"}
+        </span>
+        <span className="text-[10px] text-ink-black/40 font-medium">
+          {getSourceLabel(source)}
+        </span>
+      </div>
+
+      {/* Warning indicator */}
+      {warning && (
+        <div className="flex items-center gap-1 mt-1 text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded" title={warning}>
+          <span>⚠</span>
+          <span className="truncate max-w-[100px]">{warning}</span>
+        </div>
+      )}
     </div>
   );
 }
