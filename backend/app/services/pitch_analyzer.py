@@ -233,6 +233,20 @@ def is_particle(pos: str) -> bool:
     return pos in ("助詞", "助動詞")
 
 
+def is_proper_noun(token) -> bool:
+    """Check if token is a proper noun (固有名詞)."""
+    pos = token.part_of_speech()
+    return len(pos) > 1 and pos[1] == "固有名詞"
+
+
+def get_proper_noun_type(token) -> str | None:
+    """Get the type of proper noun (人名, 地名, etc.)."""
+    pos = token.part_of_speech()
+    if len(pos) > 2 and pos[1] == "固有名詞":
+        return pos[2]  # 人名, 地名, 一般, etc.
+    return None
+
+
 def analyze_text(text: str) -> list[WordPitch]:
     """Analyze Japanese text and return pitch accent information.
 
@@ -272,6 +286,35 @@ def analyze_text(text: str) -> list[WordPitch]:
             warning = None
             # Don't look up in dictionary - particles don't have independent pitch
             lookup_result = PitchLookupResult(None, None, None, source="particle")
+
+        # Handle proper nouns specially - pitch varies by region/speaker
+        elif is_proper_noun(token):
+            # Try to look up in dictionary first (some proper nouns are in Kanjium)
+            lookup_result = lookup_pitch(surface, reading_hira, lemma, normalized)
+
+            if lookup_result.source != "unknown" and lookup_result.accent_type is not None:
+                # Found in dictionary - use it but note it's a proper noun
+                source = lookup_result.source
+                confidence = "medium"  # Lower confidence for proper nouns
+                noun_type = get_proper_noun_type(token)
+                if noun_type == "人名":
+                    warning = "Name pitch may vary by region/family"
+                elif noun_type == "地名":
+                    warning = "Place name - pitch from dictionary"
+                else:
+                    warning = "Proper noun - verify pronunciation"
+            else:
+                # Not in dictionary - mark as proper noun without pitch
+                source = "proper_noun"
+                confidence = "low"
+                noun_type = get_proper_noun_type(token)
+                if noun_type == "人名":
+                    warning = "Name not in dictionary - pitch varies"
+                elif noun_type == "地名":
+                    warning = "Place not in dictionary - ask native speaker"
+                else:
+                    warning = "Proper noun - pronunciation uncertain"
+                lookup_result = PitchLookupResult(None, None, None, source="proper_noun")
         else:
             # Look up pitch and goshu in database (with lemma/normalized fallbacks)
             lookup_result = lookup_pitch(surface, reading_hira, lemma, normalized)
