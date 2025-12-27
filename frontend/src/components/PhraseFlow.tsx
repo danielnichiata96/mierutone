@@ -230,14 +230,6 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
   const svgWidth = points.length * moraWidth + 20;
   const svgHeight = 80;
 
-  const linePoints = points
-    .map((point, i) => {
-      const x = i * moraWidth + moraWidth / 2 + 10;
-      const y = point.pitch === "H" ? 20 : 50;
-      return `${x},${y}`;
-    })
-    .join(" ");
-
   return (
     <div className="riso-card p-4 overflow-x-auto custom-scrollbar">
       <div className="flex items-center justify-between mb-2">
@@ -288,15 +280,33 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
           {/* Background */}
           <rect x="0" y="0" width={svgWidth} height={svgHeight} fill="white" rx="8" />
 
-          {/* Pitch line */}
-        <polyline
-          points={linePoints}
-          fill="none"
-          stroke="#2A2A2A"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+          {/* Pitch line segments - dashed for particles */}
+          {points.map((point, i) => {
+            if (i === 0) return null;
+            const prevPoint = points[i - 1];
+            const x1 = (i - 1) * moraWidth + moraWidth / 2 + 10;
+            const y1 = prevPoint.pitch === "H" ? 20 : 50;
+            const x2 = i * moraWidth + moraWidth / 2 + 10;
+            const y2 = point.pitch === "H" ? 20 : 50;
+
+            // Use dashed line when connecting to a particle
+            const isDashed = point.isParticle;
+
+            return (
+              <line
+                key={`line-${i}`}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke="#2A2A2A"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeDasharray={isDashed ? "4,3" : "none"}
+                opacity={isDashed ? 0.6 : 1}
+              />
+            );
+          })}
 
         {/* Pitch dots and mora labels */}
         {points.map((point, i) => {

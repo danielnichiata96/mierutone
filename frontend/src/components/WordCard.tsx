@@ -141,10 +141,10 @@ export function WordCard({ word }: WordCardProps) {
 
       {/* Confidence indicator */}
       <div className="flex items-center gap-1.5 mt-2" title={`Source: ${getSourceLabel(source)}`}>
-        <span className={`text-xs ${getConfidenceColor(confidence)}`}>
-          {CONFIDENCE_ICONS[confidence] || "○"}
+        <span className={`text-xs ${getConfidenceColor(confidence, source)}`}>
+          {source === "particle" ? "◆" : (CONFIDENCE_ICONS[confidence] || "○")}
         </span>
-        <span className="text-[10px] text-ink-black/40 font-medium">
+        <span className={`text-[10px] font-medium ${source === "particle" ? "text-violet-600" : "text-ink-black/40"}`}>
           {getSourceLabel(source)}
         </span>
       </div>

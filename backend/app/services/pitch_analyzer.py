@@ -228,6 +228,11 @@ def get_pos(token) -> str:
     return pos[0] if pos else "Unknown"
 
 
+def is_particle(pos: str) -> bool:
+    """Check if part of speech is a particle or auxiliary verb."""
+    return pos in ("助詞", "助動詞")
+
+
 def analyze_text(text: str) -> list[WordPitch]:
     """Analyze Japanese text and return pitch accent information.
 
@@ -256,33 +261,45 @@ def analyze_text(text: str) -> list[WordPitch]:
         lemma = token.dictionary_form()
         normalized = token.normalized_form()
 
-        # Look up pitch and goshu in database (with lemma/normalized fallbacks)
-        lookup_result = lookup_pitch(surface, reading_hira, lemma, normalized)
+        pos = get_pos(token)
 
-        # Determine source and confidence
-        source = lookup_result.source
-        if lookup_result.accent_type is None and source == "unknown":
-            # No dictionary match - we're using rule-based pattern
-            source = "rule"
-
-        # Confidence based on source
-        if source == "dictionary":
-            confidence = "high"
-        elif source == "dictionary_lemma":
-            confidence = "medium"
-        elif source in ("dictionary_reading", "rule"):
-            confidence = "low"
+        # Handle particles specially - they don't have their own pitch
+        if is_particle(pos):
+            # Particles inherit pitch from the preceding word
+            # We mark them specially so the frontend can handle the visualization
+            source = "particle"
+            confidence = "high"  # We're confident this IS a particle
+            warning = None
+            # Don't look up in dictionary - particles don't have independent pitch
+            lookup_result = PitchLookupResult(None, None, None, source="particle")
         else:
-            confidence = "low"
+            # Look up pitch and goshu in database (with lemma/normalized fallbacks)
+            lookup_result = lookup_pitch(surface, reading_hira, lemma, normalized)
 
-        # Generate warning for ambiguous cases
-        warning = None
-        if lookup_result.has_multiple_patterns:
-            warning = "Multiple accent patterns exist for this word"
-        elif source == "dictionary_reading":
-            warning = "Matched by reading only - verify with native speaker"
-        elif source == "rule":
-            warning = "No dictionary entry - using standard pitch rules"
+            # Determine source and confidence
+            source = lookup_result.source
+            if lookup_result.accent_type is None and source == "unknown":
+                # No dictionary match - we're using rule-based pattern
+                source = "rule"
+
+            # Confidence based on source
+            if source == "dictionary":
+                confidence = "high"
+            elif source == "dictionary_lemma":
+                confidence = "medium"
+            elif source in ("dictionary_reading", "rule"):
+                confidence = "low"
+            else:
+                confidence = "low"
+
+            # Generate warning for ambiguous cases
+            warning = None
+            if lookup_result.has_multiple_patterns:
+                warning = "Multiple accent patterns exist for this word"
+            elif source == "dictionary_reading":
+                warning = "Matched by reading only - verify with native speaker"
+            elif source == "rule":
+                warning = "No dictionary entry - using standard pitch rules"
 
         pitch_pattern = get_pitch_pattern(lookup_result.accent_type, mora_count)
 
@@ -293,7 +310,7 @@ def analyze_text(text: str) -> list[WordPitch]:
             mora_count=mora_count,
             morae=morae,
             pitch_pattern=pitch_pattern,
-            part_of_speech=get_pos(token),
+            part_of_speech=pos,
             origin=lookup_result.goshu,
             origin_jp=lookup_result.goshu_jp,
             lemma=lemma if lemma != surface else None,

@@ -10,7 +10,7 @@ export interface WordPitch {
   origin_jp: string | null;
   lemma: string | null;
   // Transparency fields
-  source: "dictionary" | "dictionary_lemma" | "dictionary_reading" | "rule" | "unknown";
+  source: "dictionary" | "dictionary_lemma" | "dictionary_reading" | "rule" | "particle" | "unknown";
   confidence: "high" | "medium" | "low";
   warning: string | null;
 }
@@ -21,11 +21,14 @@ export function getSourceLabel(source: WordPitch["source"]): string {
     case "dictionary_lemma": return "Dictionary (via lemma)";
     case "dictionary_reading": return "Dictionary (reading only)";
     case "rule": return "Rule-based";
+    case "particle": return "Particle (助詞)";
     case "unknown": return "Unknown";
   }
 }
 
-export function getConfidenceColor(confidence: WordPitch["confidence"]): string {
+export function getConfidenceColor(confidence: WordPitch["confidence"], source?: WordPitch["source"]): string {
+  // Particles get purple color
+  if (source === "particle") return "text-violet-600";
   switch (confidence) {
     case "high": return "text-green-600";
     case "medium": return "text-yellow-600";
