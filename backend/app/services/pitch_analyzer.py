@@ -29,7 +29,7 @@ def get_db_connection() -> sqlite3.Connection:
     if not DB_PATH.exists():
         raise FileNotFoundError(
             f"Pitch database not found at {DB_PATH}. "
-            "Run 'python scripts/import_kanjium.py' first."
+            "Run 'python scripts/download_dictionary.py' to download it."
         )
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row

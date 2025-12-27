@@ -17,7 +17,7 @@ cd backend
 python -m venv venv
 .\venv\Scripts\activate  # Windows
 pip install -r requirements.txt
-python scripts/import_kanjium.py  # Downloads pitch accent database
+python scripts/download_dictionary.py  # Downloads pitch accent database from GitHub
 
 # Run dev server
 uvicorn app.main:app --reload  # http://localhost:8000
@@ -86,7 +86,9 @@ docker-compose up --build
 
 ### Pitch Database
 
-SQLite database at `backend/data/pitch.db` created by `scripts/import_kanjium.py`. Contains 124k+ entries from Kanjium with surface, reading, and accent pattern.
+SQLite database at `backend/data/pitch.db` downloaded from [mierutone-dictionary](https://github.com/danielnichiata96/mierutone-dictionary) releases. Contains 124k+ entries from Kanjium with surface, reading, accent pattern, and word origin (goshu).
+
+Run `python scripts/download_dictionary.py` to fetch the latest version.
 
 ### Environment Variables
 
