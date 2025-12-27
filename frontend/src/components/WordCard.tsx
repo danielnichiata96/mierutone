@@ -37,19 +37,26 @@ const CONFIDENCE_ICONS: Record<string, string> = {
 export function WordCard({ word }: WordCardProps) {
   const { morae, pitch_pattern, surface, reading, accent_type, mora_count, origin, origin_jp, lemma, source, confidence, warning } = word;
 
-  if (!morae.length || !pitch_pattern.length) return null;
+  // Skip words with no morae (shouldn't happen normally)
+  if (!morae.length) return null;
+
+  // Check if we have pitch data or if this is a proper noun without dictionary entry
+  const hasPitchData = pitch_pattern.length > 0;
+  const isUnknownProperNoun = source === "proper_noun" && !hasPitchData;
 
   const svgWidth = morae.length * 30;
   const svgHeight = 45;
 
-  // Build points for polyline
-  const points = pitch_pattern
-    .map((pitch, i) => {
-      const x = i * 30 + 15;
-      const y = pitch === "H" ? 10 : 35;
-      return `${x},${y}`;
-    })
-    .join(" ");
+  // Build points for polyline (only if we have pitch data)
+  const points = hasPitchData
+    ? pitch_pattern
+        .map((pitch, i) => {
+          const x = i * 30 + 15;
+          const y = pitch === "H" ? 10 : 35;
+          return `${x},${y}`;
+        })
+        .join(" ")
+    : "";
 
   return (
     <div className="riso-card-interactive flex flex-col items-center min-w-[120px] relative group p-4">
@@ -60,34 +67,54 @@ export function WordCard({ word }: WordCardProps) {
 
       {/* SVG Pitch Visualization */}
       <svg width={svgWidth} height={svgHeight + 25} className="mb-2">
-        {/* Pitch line */}
-        <polyline
-          points={points}
-          fill="none"
-          stroke="#2A2A2A"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Pitch dots */}
-        {pitch_pattern.map((pitch, i) => {
-          const x = i * 30 + 15;
-          const y = pitch === "H" ? 10 : 35;
-          const fillColor = pitch === "H" ? "#FF99A0" : "#82A8E5";
-
-          return (
-            <circle
-              key={i}
-              cx={x}
-              cy={y}
-              r={5}
-              fill={fillColor}
+        {hasPitchData ? (
+          <>
+            {/* Pitch line */}
+            <polyline
+              points={points}
+              fill="none"
               stroke="#2A2A2A"
-              strokeWidth="1.5"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
-          );
-        })}
+
+            {/* Pitch dots */}
+            {pitch_pattern.map((pitch, i) => {
+              const x = i * 30 + 15;
+              const y = pitch === "H" ? 10 : 35;
+              const fillColor = pitch === "H" ? "#FF99A0" : "#82A8E5";
+
+              return (
+                <circle
+                  key={i}
+                  cx={x}
+                  cy={y}
+                  r={5}
+                  fill={fillColor}
+                  stroke="#2A2A2A"
+                  strokeWidth="1.5"
+                />
+              );
+            })}
+          </>
+        ) : (
+          /* Unknown pitch - show "?" for each mora */
+          morae.map((_, i) => (
+            <text
+              key={i}
+              x={i * 30 + 15}
+              y={28}
+              textAnchor="middle"
+              fontSize="20"
+              fontWeight="600"
+              fill="#d97706"
+              className="font-sans"
+            >
+              ?
+            </text>
+          ))
+        )}
 
         {/* Mora text */}
         {morae.map((mora, i) => (
@@ -110,10 +137,10 @@ export function WordCard({ word }: WordCardProps) {
       <div className="text-lg font-bold text-ink-black font-sans">{surface}</div>
       <div className="text-sm text-ink-black/60 font-sans font-medium">{reading}</div>
       <div className="font-mono text-xs tracking-wider text-ink-black/60 mt-1">
-        {pitch_pattern.join(" ")}
+        {hasPitchData ? pitch_pattern.join(" ") : <span className="text-amber-600">Pitch unknown</span>}
       </div>
       <div className="text-xs text-ink-black/50 mt-1.5 text-center font-medium">
-        {getAccentLabel(accent_type, mora_count, word.part_of_speech)}
+        {hasPitchData ? getAccentLabel(accent_type, mora_count, word.part_of_speech) : "Unknown"}
       </div>
       <div className="text-[10px] text-ink-black/40 mt-0.5 font-mono tracking-wide">
         {word.part_of_speech}
@@ -142,11 +169,13 @@ export function WordCard({ word }: WordCardProps) {
       {/* Confidence indicator */}
       <div className="flex items-center gap-1.5 mt-2" title={`Source: ${getSourceLabel(source)}`}>
         <span className={`text-xs ${getConfidenceColor(confidence, source)}`}>
-          {source === "particle" ? "◆" : source === "proper_noun" ? "★" : (CONFIDENCE_ICONS[confidence] || "○")}
+          {source === "particle" ? "◆" :
+           (source === "proper_noun" || source === "dictionary_proper") ? "★" :
+           (CONFIDENCE_ICONS[confidence] || "○")}
         </span>
         <span className={`text-[10px] font-medium ${
           source === "particle" ? "text-violet-600" :
-          source === "proper_noun" ? "text-amber-600" :
+          (source === "proper_noun" || source === "dictionary_proper") ? "text-amber-600" :
           "text-ink-black/40"
         }`}>
           {getSourceLabel(source)}

@@ -291,12 +291,12 @@ def analyze_text(text: str) -> list[WordPitch]:
         elif is_proper_noun(token):
             # Try to look up in dictionary first (some proper nouns are in Kanjium)
             lookup_result = lookup_pitch(surface, reading_hira, lemma, normalized)
+            noun_type = get_proper_noun_type(token)
 
             if lookup_result.source != "unknown" and lookup_result.accent_type is not None:
-                # Found in dictionary - use it but note it's a proper noun
-                source = lookup_result.source
+                # Found in dictionary - use it but clearly mark as proper noun
+                source = "dictionary_proper"  # Distinct from regular dictionary
                 confidence = "medium"  # Lower confidence for proper nouns
-                noun_type = get_proper_noun_type(token)
                 if noun_type == "人名":
                     warning = "Name pitch may vary by region/family"
                 elif noun_type == "地名":
@@ -307,7 +307,6 @@ def analyze_text(text: str) -> list[WordPitch]:
                 # Not in dictionary - mark as proper noun without pitch
                 source = "proper_noun"
                 confidence = "low"
-                noun_type = get_proper_noun_type(token)
                 if noun_type == "人名":
                     warning = "Name not in dictionary - pitch varies"
                 elif noun_type == "地名":
@@ -344,7 +343,12 @@ def analyze_text(text: str) -> list[WordPitch]:
             elif source == "rule":
                 warning = "No dictionary entry - using standard pitch rules"
 
-        pitch_pattern = get_pitch_pattern(lookup_result.accent_type, mora_count)
+        # Generate pitch pattern - but not for proper nouns without dictionary entry
+        if source == "proper_noun":
+            # No pitch pattern for uncertain proper nouns
+            pitch_pattern = []
+        else:
+            pitch_pattern = get_pitch_pattern(lookup_result.accent_type, mora_count)
 
         words_result.append(WordPitch(
             surface=surface,

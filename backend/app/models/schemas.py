@@ -21,15 +21,20 @@ class WordPitch(BaseModel):
     origin_jp: str | None = None  # Japanese label: 和語, 漢語, 外来語, 固有名詞
     lemma: str | None = None  # Dictionary form (e.g., 食べる for 食べ)
 
-    # Transparency fields
-    source: str = "unknown"  # Where pitch data came from:
-    # - "dictionary" = exact match in Kanjium database
-    # - "dictionary_lemma" = matched via dictionary form (食べた→食べる)
-    # - "dictionary_reading" = matched by reading only (less reliable)
-    # - "rule" = no dictionary match, using standard pitch rules
-    # - "unknown" = no data available
-    confidence: str = "low"  # Confidence level: "high", "medium", "low"
-    warning: str | None = None  # Warning message for ambiguous cases
+    # Transparency fields - indicate data source and reliability
+    source: str = "unknown"
+    # Possible values for source:
+    # - "dictionary"         = exact match in Kanjium database (high confidence)
+    # - "dictionary_lemma"   = matched via dictionary form, e.g. 食べた→食べる (medium)
+    # - "dictionary_reading" = matched by reading only, less reliable (low)
+    # - "dictionary_proper"  = proper noun found in dictionary (medium, with warning)
+    # - "proper_noun"        = proper noun NOT in dictionary (low, pitch uncertain)
+    # - "particle"           = particle/auxiliary verb, inherits pitch from prev word
+    # - "rule"               = no dictionary match, using standard pitch rules (low)
+    # - "unknown"            = no data available
+
+    confidence: str = "low"  # "high", "medium", or "low"
+    warning: str | None = None  # Contextual warning for ambiguous/uncertain cases
 
 
 class AnalyzeResponse(BaseModel):

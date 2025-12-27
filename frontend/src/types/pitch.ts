@@ -10,7 +10,7 @@ export interface WordPitch {
   origin_jp: string | null;
   lemma: string | null;
   // Transparency fields
-  source: "dictionary" | "dictionary_lemma" | "dictionary_reading" | "rule" | "particle" | "proper_noun" | "unknown";
+  source: "dictionary" | "dictionary_lemma" | "dictionary_reading" | "dictionary_proper" | "rule" | "particle" | "proper_noun" | "unknown";
   confidence: "high" | "medium" | "low";
   warning: string | null;
 }
@@ -20,6 +20,7 @@ export function getSourceLabel(source: WordPitch["source"]): string {
     case "dictionary": return "Dictionary";
     case "dictionary_lemma": return "Dictionary (via lemma)";
     case "dictionary_reading": return "Dictionary (reading only)";
+    case "dictionary_proper": return "Proper Noun (in dict)";
     case "rule": return "Rule-based";
     case "particle": return "Particle (助詞)";
     case "proper_noun": return "Proper Noun (固有名詞)";
@@ -30,8 +31,8 @@ export function getSourceLabel(source: WordPitch["source"]): string {
 export function getConfidenceColor(confidence: WordPitch["confidence"], source?: WordPitch["source"]): string {
   // Particles get purple color
   if (source === "particle") return "text-violet-600";
-  // Proper nouns get amber color
-  if (source === "proper_noun") return "text-amber-600";
+  // Proper nouns get amber color (both dictionary_proper and proper_noun)
+  if (source === "proper_noun" || source === "dictionary_proper") return "text-amber-600";
   switch (confidence) {
     case "high": return "text-green-600";
     case "medium": return "text-yellow-600";
