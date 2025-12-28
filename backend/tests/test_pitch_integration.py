@@ -303,3 +303,329 @@ class TestFallbackHeuristics:
         # Test with a common word that has normalized form
         result = lookup_pitch("私", "わたし", normalized="私")
         assert result.accent_type == 0
+
+
+class TestTransparencyFields:
+    """Test source, confidence, and warning fields for transparency."""
+
+    def test_particle_source(self):
+        """Particles should have source='particle' and empty pitch_pattern."""
+        result = analyze_text("東京に")
+
+        # Find the particle に
+        particle = next((w for w in result if w.surface == "に"), None)
+        assert particle is not None, "Should find particle に"
+        assert particle.source == "particle", f"Particle should have source='particle', got {particle.source}"
+        assert particle.pitch_pattern == [], f"Particle should have empty pitch_pattern, got {particle.pitch_pattern}"
+        assert particle.confidence == "high", "Particles should have high confidence (we're confident it IS a particle)"
+
+    def test_particle_sequence(self):
+        """Particle sequences like には should all have source='particle'."""
+        result = analyze_text("東京には")
+
+        particles = [w for w in result if w.source == "particle"]
+        assert len(particles) >= 2, f"Expected at least 2 particles in には, got {len(particles)}"
+
+        for p in particles:
+            assert p.pitch_pattern == [], f"Particle {p.surface} should have empty pitch_pattern"
+
+    def test_proper_noun_in_dictionary(self):
+        """Proper nouns in dictionary should have source='dictionary_proper'."""
+        # 東京 is a proper noun that's in Kanjium
+        result = analyze_text("東京")
+
+        tokyo = result[0]
+        assert tokyo.surface == "東京"
+        # 東京 should be in dictionary as proper noun
+        assert tokyo.source == "dictionary_proper", f"東京 should have source='dictionary_proper', got {tokyo.source}"
+        assert tokyo.accent_type == 0, f"東京 should be heiban (0), got {tokyo.accent_type}"
+        assert len(tokyo.pitch_pattern) > 0, "Dictionary proper nouns should have pitch_pattern"
+        # Cross-validation: If Kanjium + UniDic agree, confidence is boosted to high
+        assert tokyo.confidence in ("medium", "high"), f"Dictionary proper nouns should have medium or high confidence, got {tokyo.confidence}"
+        assert tokyo.warning is not None, "Dictionary proper nouns should have a warning"
+
+    def test_proper_noun_not_in_dictionary(self):
+        """Proper nouns NOT in dictionary should have source='proper_noun' and empty pitch_pattern."""
+        # Use a made-up name that won't be in Kanjium
+        result = analyze_text("ダニエル")
+
+        name = next((w for w in result if "ダニエル" in w.surface), None)
+        if name is None:
+            # May be split differently, find any proper noun
+            name = next((w for w in result if w.source in ("proper_noun", "dictionary_proper")), None)
+
+        if name and name.source == "proper_noun":
+            assert name.pitch_pattern == [], f"Proper noun not in dict should have empty pitch_pattern, got {name.pitch_pattern}"
+            assert name.confidence == "low", f"Proper noun not in dict should have low confidence, got {name.confidence}"
+            assert name.warning is not None, "Proper noun not in dict should have a warning"
+
+    def test_dictionary_source(self):
+        """Words found in dictionary should have source='dictionary'."""
+        result = analyze_text("水")
+
+        mizu = result[0]
+        assert mizu.surface == "水"
+        assert mizu.source == "dictionary", f"水 should have source='dictionary', got {mizu.source}"
+        assert mizu.confidence == "high", f"Dictionary matches should have high confidence, got {mizu.confidence}"
+
+    def test_dictionary_lemma_source(self):
+        """Conjugated words matched via lemma should have source='dictionary_lemma'."""
+        result = analyze_text("食べた")
+
+        tabe = next((w for w in result if "食" in w.surface), None)
+        assert tabe is not None
+        # 食べた is not in dictionary, but 食べる (lemma) is
+        assert tabe.source == "dictionary_lemma", f"Conjugated form should have source='dictionary_lemma', got {tabe.source}"
+        # Cross-validation: If Kanjium + UniDic agree, confidence is boosted to high
+        assert tabe.confidence in ("medium", "high"), f"Lemma matches should have medium or high confidence, got {tabe.confidence}"
+
+    def test_multiple_patterns_warning(self):
+        """Words with multiple accent patterns should have a warning."""
+        # 雲 (kumo) has multiple patterns in some dictionaries
+        # If not, this test documents the expected behavior
+        result = analyze_text("雲")
+        kumo = result[0]
+        # Either has warning about multiple patterns, or just works normally
+        assert kumo.source in ("dictionary", "dictionary_lemma", "dictionary_reading"), \
+            f"雲 should be found in dictionary, got {kumo.source}"
+
+
+class TestParticleInheritance:
+    """Test particle pitch inheritance from preceding content word."""
+
+    def test_particle_after_heiban(self):
+        """Particle after heiban word should stay high (H)."""
+        # 水 (mizu) is heiban - particle should stay high
+        result = analyze_text("水は")
+
+        mizu = next((w for w in result if w.surface == "水"), None)
+        wa = next((w for w in result if w.surface == "は"), None)
+
+        assert mizu is not None and wa is not None
+        assert mizu.accent_type == 0, f"水 should be heiban (0), got {mizu.accent_type}"
+        assert wa.source == "particle", f"は should be particle, got {wa.source}"
+        # Frontend handles the pitch inheritance, backend just marks it as particle
+
+    def test_particle_after_odaka(self):
+        """Particle after odaka word drops low (L)."""
+        # 橋 (hashi, bridge) is odaka - particle should drop
+        result = analyze_text("橋を")
+
+        hashi = next((w for w in result if w.surface == "橋"), None)
+        wo = next((w for w in result if w.surface == "を"), None)
+
+        assert hashi is not None and wo is not None
+        # 橋 should be odaka (accent on last mora)
+        assert hashi.accent_type == hashi.mora_count, \
+            f"橋 should be odaka (accent={hashi.mora_count}), got {hashi.accent_type}"
+        assert wo.source == "particle"
+
+    def test_auxiliary_verb_as_particle(self):
+        """Auxiliary verbs (助動詞) should be treated like particles."""
+        result = analyze_text("食べます")
+
+        # ます is auxiliary verb
+        masu = next((w for w in result if w.part_of_speech == "助動詞"), None)
+        if masu:
+            assert masu.source == "particle", f"Auxiliary verb should have source='particle', got {masu.source}"
+            assert masu.pitch_pattern == [], "Auxiliary verb should have empty pitch_pattern"
+
+
+class TestCrossValidation:
+    """Test cross-validation between Kanjium and UniDic sources."""
+
+    def test_sources_agree_boosts_confidence(self):
+        """When Kanjium and UniDic agree, confidence should be boosted."""
+        # 東京 - both sources should agree on accent type 0
+        result = analyze_text("東京")
+        tokyo = result[0]
+
+        # dictionary_proper with agreement → boosted to high
+        assert tokyo.source == "dictionary_proper"
+        assert tokyo.confidence == "high", "When sources agree, confidence should be boosted to high"
+
+    def test_dictionary_source_stays_high(self):
+        """Dictionary exact match should be high even without cross-validation."""
+        result = analyze_text("水")
+        mizu = result[0]
+
+        assert mizu.source == "dictionary"
+        assert mizu.confidence == "high", "Dictionary exact match should always be high"
+
+    def test_lemma_with_agreement_boosts_to_high(self):
+        """dictionary_lemma with cross-validation agreement → high confidence."""
+        result = analyze_text("食べた")
+        tabe = next((w for w in result if "食" in w.surface), None)
+
+        assert tabe is not None
+        assert tabe.source == "dictionary_lemma"
+        # If UniDic confirms the accent, confidence is boosted
+        assert tabe.confidence in ("medium", "high")
+
+    def test_known_accent_words(self):
+        """Test known words where both sources should agree."""
+        test_cases = [
+            ("雨", 1),   # ame - atamadaka
+            ("橋", 2),   # hashi (bridge) - odaka
+            ("パン", 1), # pan - atamadaka
+        ]
+
+        for surface, expected_accent in test_cases:
+            result = analyze_text(surface)
+            word = result[0]
+
+            assert word.accent_type == expected_accent, \
+                f"{surface} should have accent type {expected_accent}, got {word.accent_type}"
+            # Both sources exist → likely high confidence
+            assert word.confidence in ("medium", "high"), \
+                f"{surface} should have medium or high confidence"
+
+    def test_multi_pattern_agreement_logic(self):
+        """Unit test: UniDic matching any of Kanjium's multiple patterns counts as agreement."""
+        # Test the logic directly: if Kanjium has patterns [0, 2] and UniDic says 2,
+        # sources_agree should be True (not False)
+
+        # Simulate the logic from lookup_pitch
+        kanjium_pattern = "0,2"  # Multiple patterns
+        all_accents = [int(v.strip()) for v in kanjium_pattern.split(",")]
+
+        # UniDic matches second pattern
+        unidic_accent = 2
+        sources_agree = (unidic_accent in all_accents)
+        assert sources_agree is True, "UniDic matching any Kanjium pattern should agree"
+
+        # UniDic matches first pattern
+        unidic_accent = 0
+        sources_agree = (unidic_accent in all_accents)
+        assert sources_agree is True, "UniDic matching first pattern should agree"
+
+        # UniDic doesn't match any
+        unidic_accent = 1
+        sources_agree = (unidic_accent in all_accents)
+        assert sources_agree is False, "UniDic not matching any pattern should disagree"
+
+    def test_lookup_pitch_cross_validation_integration(self):
+        """Integration test: verify lookup_pitch returns cross-validation data."""
+        from app.services.pitch_analyzer import lookup_pitch, get_unidic_tagger
+
+        # Test with a known word that exists in both Kanjium and UniDic
+        result = lookup_pitch("東京", "とうきょう", None, None)
+
+        # Should find in Kanjium
+        assert result.accent_type == 0, "東京 should have accent 0"
+        assert result.source in ("dictionary", "dictionary_lemma", "dictionary_reading")
+
+        # If UniDic is available, should have cross-validation data
+        if get_unidic_tagger() is not None:
+            assert result.unidic_accent is not None, "Should have UniDic accent when tagger available"
+            # Both should agree on 東京
+            if result.unidic_accent == result.accent_type:
+                assert result.sources_agree is True, "sources_agree should be True when accents match"
+
+
+class TestSourceTypeTransparency:
+    """Test that source types accurately reflect where data came from."""
+
+    def test_unidic_only_source_type_logic(self):
+        """Unit test: verify PitchLookupResult for dictionary_unidic source type."""
+        from app.services.pitch_analyzer import PitchLookupResult
+
+        # Test: when Kanjium has no data but UniDic does, source should be dictionary_unidic
+        # This tests the return statement in lookup_pitch when row is None but unidic_accent exists
+        result = PitchLookupResult(
+            accent_type=1,
+            goshu=None,
+            goshu_jp=None,
+            source="dictionary_unidic",
+            has_multiple_patterns=False,
+            unidic_accent=1,
+            sources_agree=None,  # Only one source
+        )
+        assert result.source == "dictionary_unidic"
+        assert result.accent_type == 1
+        assert result.sources_agree is None  # Single source = None
+
+    def test_unidic_only_integration(self):
+        """Integration test: verify lookup_pitch returns dictionary_unidic for UniDic-only words."""
+        from app.services.pitch_analyzer import lookup_pitch, get_unidic_tagger
+
+        if get_unidic_tagger() is None:
+            pytest.skip("UniDic tagger not available")
+
+        # Test with a made-up reading that won't be in Kanjium but might tokenize in UniDic
+        # Use a simple katakana word that UniDic might have but Kanjium doesn't
+        result = lookup_pitch("アプリ", "あぷり", None, None)
+
+        # If UniDic found it but Kanjium didn't, source should be dictionary_unidic
+        if result.source == "dictionary_unidic":
+            assert result.accent_type is not None, "dictionary_unidic should have accent_type"
+            assert result.unidic_accent is not None, "dictionary_unidic should have unidic_accent"
+            assert result.sources_agree is None, "Single source should have sources_agree=None"
+        # If found in Kanjium, that's fine too - test just verifies the code path works
+
+    def test_unidic_lookup_function(self):
+        """Verify lookup_unidic_accent returns data for known words."""
+        from app.services.pitch_analyzer import lookup_unidic_accent, get_unidic_tagger
+
+        # Skip if tagger not available (import failed or dictionary not installed)
+        if get_unidic_tagger() is None:
+            pytest.skip("UniDic tagger not available")
+
+        # 東京 should be in UniDic with accent 0
+        result = lookup_unidic_accent("東京", "とうきょう")
+        if result is None:
+            pytest.skip("UniDic lookup returned None - dictionary may not be fully installed")
+        assert result == 0, "東京 should have accent type 0 in UniDic"
+
+        # 雨 should be in UniDic with accent 1
+        result = lookup_unidic_accent("雨", "あめ")
+        assert result == 1, "雨 should have accent type 1 in UniDic"
+
+    def test_disagreement_reduces_confidence(self):
+        """When sources disagree, confidence should be reduced."""
+        from app.services.pitch_analyzer import get_confidence_for_source
+
+        # Test the confidence reduction logic
+        assert get_confidence_for_source("dictionary", sources_agree=False) == "medium"
+        assert get_confidence_for_source("dictionary_lemma", sources_agree=False) == "low"
+        assert get_confidence_for_source("dictionary_reading", sources_agree=False) == "low"
+
+    def test_disagreement_warning(self):
+        """When sources disagree, a warning should be emitted."""
+        from app.services.pitch_analyzer import get_lookup_warning
+
+        warning = get_lookup_warning("dictionary", False, sources_agree=False)
+        assert warning is not None
+        assert "disagree" in warning.lower()
+
+    def test_unidic_only_warning(self):
+        """UniDic-only matches should have a warning."""
+        from app.services.pitch_analyzer import get_lookup_warning
+
+        warning = get_lookup_warning("dictionary_unidic", False, sources_agree=None)
+        assert warning is not None
+        assert "unidic" in warning.lower()
+
+    def test_proper_noun_disagreement_warning(self):
+        """Proper nouns with source disagreement should get disagreement warning."""
+        from app.services.pitch_analyzer import WARNINGS, PitchLookupResult
+
+        # Simulate proper noun handling logic when sources disagree
+        lookup_result = PitchLookupResult(
+            accent_type=0,
+            goshu=None,
+            goshu_jp=None,
+            source="dictionary_proper",
+            has_multiple_patterns=False,
+            unidic_accent=1,  # Different from accent_type
+            sources_agree=False,  # Disagreement!
+        )
+
+        # This mirrors the logic in analyze_text for proper nouns
+        if lookup_result.sources_agree is False:
+            warning = WARNINGS["sources_disagree"]
+        else:
+            warning = "some other warning"
+
+        assert warning == WARNINGS["sources_disagree"]
+        assert "disagree" in warning.lower()

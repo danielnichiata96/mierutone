@@ -10,7 +10,17 @@ export interface WordPitch {
   origin_jp: string | null;
   lemma: string | null;
   // Transparency fields
-  source: "dictionary" | "dictionary_lemma" | "dictionary_reading" | "dictionary_proper" | "rule" | "particle" | "proper_noun" | "unknown";
+  source:
+    | "dictionary"          // Exact match in Kanjium
+    | "dictionary_lemma"    // Matched via lemma in Kanjium
+    | "dictionary_reading"  // Matched by reading only in Kanjium
+    | "dictionary_unidic"   // Matched via UniDic only (Kanjium had no entry)
+    | "dictionary_proper"   // Proper noun in Kanjium
+    | "unidic_proper"       // Proper noun in UniDic only
+    | "rule"                // Rule-based fallback
+    | "particle"            // Particle (助詞/助動詞)
+    | "proper_noun"         // Proper noun not in any dictionary
+    | "unknown";
   confidence: "high" | "medium" | "low";
   warning: string | null;
 }
@@ -20,7 +30,9 @@ export function getSourceLabel(source: WordPitch["source"]): string {
     case "dictionary": return "Dictionary";
     case "dictionary_lemma": return "Dictionary (via lemma)";
     case "dictionary_reading": return "Dictionary (reading only)";
-    case "dictionary_proper": return "Proper Noun (in dict)";
+    case "dictionary_unidic": return "UniDic only";
+    case "dictionary_proper": return "Proper Noun (Kanjium)";
+    case "unidic_proper": return "Proper Noun (UniDic)";
     case "rule": return "Rule-based";
     case "particle": return "Particle (助詞)";
     case "proper_noun": return "Proper Noun (固有名詞)";
@@ -28,15 +40,15 @@ export function getSourceLabel(source: WordPitch["source"]): string {
   }
 }
 
-export function getConfidenceColor(confidence: WordPitch["confidence"], source?: WordPitch["source"]): string {
-  // Particles get purple color
-  if (source === "particle") return "text-violet-600";
-  // Proper nouns get amber color (both dictionary_proper and proper_noun)
-  if (source === "proper_noun" || source === "dictionary_proper") return "text-amber-600";
+/**
+ * Get CSS border class for confidence level (for non-SVG elements).
+ * See lib/colors.ts for SVG stroke styles.
+ */
+export function getConfidenceBorderClass(confidence: WordPitch["confidence"]): string {
   switch (confidence) {
-    case "high": return "text-green-600";
-    case "medium": return "text-yellow-600";
-    case "low": return "text-red-500";
+    case "high": return "border-solid";
+    case "medium": return "border-dashed";
+    case "low": return "border-dotted";
   }
 }
 

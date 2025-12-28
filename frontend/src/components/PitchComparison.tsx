@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { CompareResponse } from "@/lib/api";
+import { RISO } from "@/lib/colors";
 
 interface PitchComparisonProps {
   result: CompareResponse;
@@ -72,7 +73,7 @@ export function PitchComparison({ result }: PitchComparisonProps) {
               x2={width - 20}
               y1={height * ratio}
               y2={height * ratio}
-              stroke="#2A2A2A"
+              stroke={RISO.black}
               strokeOpacity={0.1}
               strokeDasharray="4 4"
             />
@@ -82,7 +83,7 @@ export function PitchComparison({ result }: PitchComparisonProps) {
           <path
             d={nativePath}
             fill="none"
-            stroke="#FF99A0"
+            stroke={RISO.coral}
             strokeWidth={8}
             strokeOpacity={0.4}
             strokeLinecap="round"
@@ -93,7 +94,7 @@ export function PitchComparison({ result }: PitchComparisonProps) {
           <path
             d={userPath}
             fill="none"
-            stroke="#82A8E5"
+            stroke={RISO.cornflower}
             strokeWidth={3}
             strokeLinecap="round"
             strokeLinejoin="round"

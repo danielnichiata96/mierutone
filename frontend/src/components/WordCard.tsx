@@ -1,22 +1,16 @@
 "use client";
 
 import type { WordPitch } from "@/types/pitch";
-import { getAccentLabel, getSourceLabel, getConfidenceColor } from "@/types/pitch";
+import { getAccentLabel, getSourceLabel, getConfidenceBorderClass } from "@/types/pitch";
+import { PitchDot, RISO, getConfidenceStroke, PITCH_Y_HIGH, PITCH_Y_LOW, PITCH_Y_UNCERTAIN } from "./pitch";
 import { PlayButton } from "./PlayButton";
 
 interface WordCardProps {
   word: WordPitch;
 }
 
-const ORIGIN_COLORS: Record<string, string> = {
-  wago: "bg-emerald-100 text-emerald-700",
-  kango: "bg-amber-100 text-amber-700",
-  gairaigo: "bg-sky-100 text-sky-700",
-  proper: "bg-violet-100 text-violet-700",
-  mixed: "bg-slate-100 text-slate-600",
-  symbol: "bg-gray-100 text-gray-500",
-  unknown: "bg-gray-100 text-gray-400",
-};
+// Riso palette only - origin shown via text, not background color
+const ORIGIN_STYLE = "text-ink-black/60";
 
 const ORIGIN_LABELS: Record<string, string> = {
   wago: "和語",
@@ -28,11 +22,8 @@ const ORIGIN_LABELS: Record<string, string> = {
   unknown: "不明",
 };
 
-const CONFIDENCE_ICONS: Record<string, string> = {
-  high: "●",
-  medium: "◐",
-  low: "○",
-};
+// Confidence shown via border style, not color/icon
+// high = solid, medium = dashed, low = dotted
 
 export function WordCard({ word }: WordCardProps) {
   const { morae, pitch_pattern, surface, reading, accent_type, mora_count, origin, origin_jp, lemma, source, confidence, warning } = word;
@@ -69,74 +60,63 @@ export function WordCard({ word }: WordCardProps) {
       <svg width={svgWidth} height={svgHeight + 25} className="mb-2">
         {hasPitchData ? (
           <>
-            {/* Pitch line */}
+            {/* Pitch line - styled by confidence */}
             <polyline
               points={points}
               fill="none"
-              stroke="#2A2A2A"
+              stroke={RISO.black}
               strokeWidth="2.4"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeDasharray={getConfidenceStroke(confidence).strokeDasharray}
+              opacity={getConfidenceStroke(confidence).opacity}
             />
 
-            {/* Pitch dots */}
-            {pitch_pattern.map((pitch, i) => {
-              const x = i * 30 + 15;
-              const y = pitch === "H" ? 10 : 35;
-              const fillColor = pitch === "H" ? "#FF99A0" : "#82A8E5";
-
-              return (
-                <circle
-                  key={i}
-                  cx={x}
-                  cy={y}
-                  r={5}
-                  fill={fillColor}
-                  stroke="#2A2A2A"
-                  strokeWidth="1.5"
-                />
-              );
-            })}
+            {/* Pitch dots - using shared PitchDot component */}
+            {pitch_pattern.map((pitch, i) => (
+              <PitchDot
+                key={i}
+                x={i * 30 + 15}
+                y={pitch === "H" ? PITCH_Y_HIGH : PITCH_Y_LOW}
+                pitch={pitch as "H" | "L"}
+              />
+            ))}
           </>
         ) : isParticle ? (
-          /* Particle - show "~" to indicate follows context */
+          /* Particle - dashed line to indicate follows context */
           <>
             <line
               x1={10}
-              y1={22}
+              y1={PITCH_Y_UNCERTAIN}
               x2={svgWidth - 10}
-              y2={22}
-              stroke="#9333ea"
+              y2={PITCH_Y_UNCERTAIN}
+              stroke={RISO.black}
               strokeWidth="2"
               strokeDasharray="4,4"
-              opacity={0.5}
+              opacity={0.4}
             />
             <text
               x={svgWidth / 2}
-              y={28}
+              y={PITCH_Y_UNCERTAIN + 6}
               textAnchor="middle"
               fontSize="12"
-              fill="#9333ea"
+              fill={RISO.black}
+              opacity={0.6}
               className="font-sans"
             >
               ~
             </text>
           </>
         ) : (
-          /* Unknown pitch - show "?" for each mora */
+          /* Unknown pitch - using shared PitchDot with isUncertain */
           morae.map((_, i) => (
-            <text
+            <PitchDot
               key={i}
               x={i * 30 + 15}
-              y={28}
-              textAnchor="middle"
-              fontSize="20"
-              fontWeight="600"
-              fill="#d97706"
-              className="font-sans"
-            >
-              ?
-            </text>
+              y={PITCH_Y_UNCERTAIN}
+              pitch="?"
+              isUncertain
+            />
           ))
         )}
 
@@ -149,7 +129,7 @@ export function WordCard({ word }: WordCardProps) {
             textAnchor="middle"
             fontSize="16"
             fontWeight="500"
-            fill="#2A2A2A"
+            fill={RISO.black}
             className="font-sans"
           >
             {mora}
@@ -164,8 +144,8 @@ export function WordCard({ word }: WordCardProps) {
         {hasPitchData
           ? pitch_pattern.join(" ")
           : isParticle
-            ? <span className="text-violet-600">Follows context</span>
-            : <span className="text-amber-600">Pitch unknown</span>}
+            ? <span className="text-ink-black/50 italic">Follows context</span>
+            : <span className="text-ink-black/50 italic">Pitch unknown</span>}
       </div>
       <div className="text-xs text-ink-black/50 mt-1.5 text-center font-medium">
         {hasPitchData
@@ -178,10 +158,10 @@ export function WordCard({ word }: WordCardProps) {
         {word.part_of_speech}
       </div>
 
-      {/* Origin badge and Jisho link */}
+      {/* Origin label and Jisho link - Riso colors only */}
       <div className="flex items-center gap-2 mt-2">
         {(origin || origin_jp) && (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${origin ? (ORIGIN_COLORS[origin] || "bg-gray-100 text-gray-600") : "bg-gray-100 text-gray-600"}`}>
+          <span className={`text-[10px] px-1.5 py-0.5 border border-ink-black/20 rounded font-medium ${ORIGIN_STYLE}`}>
             {origin_jp || (origin && ORIGIN_LABELS[origin]) || origin || "Unknown"}
           </span>
         )}
@@ -190,7 +170,7 @@ export function WordCard({ word }: WordCardProps) {
             href={`https://jisho.org/search/${encodeURIComponent(lemma)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[10px] text-ink-cornflower hover:text-ink-cornflower/80 hover:underline font-medium"
+            className="text-[10px] text-ink-black/60 hover:text-ink-black hover:underline font-medium"
             title={`Look up ${lemma} on Jisho`}
           >
             {lemma}
@@ -198,26 +178,23 @@ export function WordCard({ word }: WordCardProps) {
         )}
       </div>
 
-      {/* Confidence indicator */}
-      <div className="flex items-center gap-1.5 mt-2" title={`Source: ${getSourceLabel(source)}`}>
-        <span className={`text-xs ${getConfidenceColor(confidence, source)}`}>
-          {source === "particle" ? "◆" :
-           (source === "proper_noun" || source === "dictionary_proper") ? "★" :
-           (CONFIDENCE_ICONS[confidence] || "○")}
-        </span>
-        <span className={`text-[10px] font-medium ${
-          source === "particle" ? "text-violet-600" :
-          (source === "proper_noun" || source === "dictionary_proper") ? "text-amber-600" :
-          "text-ink-black/40"
-        }`}>
+      {/* Source indicator - Riso style with border for confidence */}
+      <div
+        className={`flex items-center gap-1.5 mt-2 px-2 py-0.5 border border-ink-black/30 rounded text-ink-black/60 ${getConfidenceBorderClass(confidence)}`}
+        title={`Source: ${getSourceLabel(source)} | Confidence: ${confidence}`}
+      >
+        <span className="text-[10px] font-medium">
           {getSourceLabel(source)}
         </span>
       </div>
 
-      {/* Warning indicator */}
+      {/* Warning indicator - ink-black with dotted border */}
       {warning && (
-        <div className="flex items-center gap-1 mt-1 text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded" title={warning}>
-          <span>⚠</span>
+        <div
+          className="flex items-center gap-1 mt-1 text-[10px] text-ink-black/60 border border-ink-black/30 border-dotted px-2 py-0.5 rounded"
+          title={warning}
+        >
+          <span className="text-ink-black/40">!</span>
           <span className="truncate max-w-[100px]">{warning}</span>
         </div>
       )}

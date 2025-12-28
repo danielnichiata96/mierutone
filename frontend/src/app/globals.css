@@ -206,8 +206,8 @@
   .riso-badge {
     @apply font-mono text-xs font-bold uppercase tracking-widest
            px-3 py-1.5 rounded-full
-           bg-energy-500/30 border-2 border-energy-500/70
-           text-amber-700 shadow-riso-sm;
+           bg-ink-sunflower/30 border-2 border-ink-sunflower/70
+           text-ink-black shadow-riso-sm;
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════

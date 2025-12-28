@@ -176,7 +176,7 @@ export function QuizCard({
           >
             {selectedPattern === word.pattern ? (
               <p className="font-bold text-ink-black flex items-center justify-center gap-2">
-                <SparkleIcon size={24} className="text-amber-500" /> That's right!
+                <SparkleIcon size={24} className="text-ink-coral" /> That's right!
               </p>
             ) : (
               <p className="font-bold text-ink-black flex items-center justify-center gap-2">

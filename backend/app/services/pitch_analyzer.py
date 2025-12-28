@@ -12,15 +12,61 @@ from pathlib import Path
 import jaconv
 from sudachipy import dictionary, tokenizer
 
-from app.models.schemas import WordPitch
+# Optional UniDic support for cross-validation
+try:
+    import fugashi
+    import unidic
+    UNIDIC_AVAILABLE = True
+except ImportError:
+    UNIDIC_AVAILABLE = False
+
+from app.models.schemas import WordPitch, SourceType, ConfidenceType
 
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "pitch.db"
+
+
+# =============================================================================
+# Warning Messages (centralized for consistency and future i18n)
+# =============================================================================
+
+WARNINGS = {
+    # Proper nouns - in Kanjium dictionary
+    "proper_name_dict": "Name pitch may vary by region/family",
+    "proper_place_dict": "Place name - pitch from dictionary",
+    "proper_other_dict": "Proper noun - verify pronunciation",
+    # Proper nouns - in UniDic only
+    "proper_name_unidic": "Name from UniDic - pitch may vary",
+    "proper_place_unidic": "Place from UniDic - verify locally",
+    "proper_other_unidic": "Proper noun from UniDic only",
+    # Proper nouns - not in any dictionary
+    "proper_name_unknown": "Name not in dictionary - pitch varies",
+    "proper_place_unknown": "Place not in dictionary - ask native speaker",
+    "proper_other_unknown": "Proper noun - pronunciation uncertain",
+    # Lookup quality
+    "multiple_patterns": "Multiple accent patterns exist for this word",
+    "reading_only": "Matched by reading only - verify with native speaker",
+    "unidic_only": "From UniDic only - Kanjium had no entry",
+    "rule_based": "No dictionary entry - using standard pitch rules",
+    # Cross-validation
+    "sources_disagree": "Kanjium and UniDic disagree - verify pronunciation",
+}
 
 
 @lru_cache(maxsize=1)
 def get_tokenizer():
     """Get cached SudachiPy tokenizer instance."""
     return dictionary.Dictionary().create()
+
+
+@lru_cache(maxsize=1)
+def get_unidic_tagger():
+    """Get cached UniDic/fugashi tagger instance for cross-validation."""
+    if not UNIDIC_AVAILABLE:
+        return None
+    try:
+        return fugashi.Tagger(f'-d "{unidic.DICDIR}"')
+    except Exception:
+        return None
 
 
 @lru_cache(maxsize=1)
@@ -97,21 +143,187 @@ def get_pitch_pattern(accent_type: int | None, mora_count: int) -> list[str]:
 
 class PitchLookupResult:
     """Result of pitch accent lookup."""
-    __slots__ = ("accent_type", "goshu", "goshu_jp", "source", "has_multiple_patterns")
+    __slots__ = (
+        "accent_type", "goshu", "goshu_jp", "source",
+        "has_multiple_patterns", "unidic_accent", "sources_agree"
+    )
 
     def __init__(
         self,
         accent_type: int | None,
         goshu: str | None,
         goshu_jp: str | None,
-        source: str = "unknown",
+        source: SourceType = "unknown",
         has_multiple_patterns: bool = False,
+        unidic_accent: int | None = None,
+        sources_agree: bool | None = None,
     ):
         self.accent_type = accent_type
         self.goshu = goshu
         self.goshu_jp = goshu_jp
-        self.source = source  # "dictionary", "dictionary_lemma", "dictionary_reading", "unknown"
-        self.has_multiple_patterns = has_multiple_patterns  # True if pattern has multiple values (e.g., "0,2")
+        self.source: SourceType = source
+        self.has_multiple_patterns = has_multiple_patterns
+        self.unidic_accent = unidic_accent
+        # True if both sources have data and agree, False if disagree, None if only one source
+        self.sources_agree = sources_agree
+
+
+def lookup_unidic_accent(surface: str, reading_hira: str) -> int | None:
+    """Look up pitch accent from UniDic via fugashi.
+
+    UniDic provides aType (accent type) for words. This serves as a
+    secondary source for cross-validation with Kanjium.
+
+    Returns:
+        Accent type (int) or None if not found/unavailable.
+    """
+    tagger = get_unidic_tagger()
+    if not tagger:
+        return None
+
+    try:
+        # Tokenize the surface form
+        tokens = list(tagger(surface))
+        if not tokens:
+            return None
+
+        # For single-token words, get the accent directly
+        if len(tokens) == 1:
+            token = tokens[0]
+            # aType is the accent type field in UniDic
+            atype = getattr(token.feature, 'aType', None)
+            if atype is not None and atype != '*':
+                # aType can be comma-separated for multiple patterns
+                first_value = str(atype).split(',')[0].strip()
+                try:
+                    return int(first_value)
+                except ValueError:
+                    return None
+
+        # For multi-token results, try to find a match by reading
+        for token in tokens:
+            token_reading = getattr(token.feature, 'kana', None)
+            if token_reading:
+                token_reading_hira = jaconv.kata2hira(token_reading)
+                if token_reading_hira == reading_hira:
+                    atype = getattr(token.feature, 'aType', None)
+                    if atype is not None and atype != '*':
+                        first_value = str(atype).split(',')[0].strip()
+                        try:
+                            return int(first_value)
+                        except ValueError:
+                            continue
+    except Exception:
+        # Don't let UniDic errors break the main flow
+        pass
+
+    return None
+
+
+# =============================================================================
+# Decision Rules (pure functions for testability)
+# =============================================================================
+
+def get_confidence_for_source(
+    source: SourceType,
+    sources_agree: bool | None = None,
+) -> ConfidenceType:
+    """Determine confidence level based on source type and cross-validation.
+
+    Cross-validation rules:
+    - If Kanjium and UniDic agree → boost confidence
+    - If they disagree → reduce confidence (can't trust either fully)
+    - If only one source → use base confidence
+
+    Args:
+        source: The primary data source
+        sources_agree: True if Kanjium and UniDic agree, False if disagree, None if single source
+    """
+    # Base confidence by source type
+    if source == "dictionary":
+        base = "high"
+    elif source in ("dictionary_lemma", "dictionary_proper"):
+        base = "medium"
+    elif source == "particle":
+        return "high"  # Particles don't need cross-validation
+    else:  # dictionary_reading, dictionary_unidic, unidic_proper, rule, proper_noun, unknown
+        base = "low"
+
+    # Cross-validation: adjust confidence based on agreement
+    if sources_agree is True:
+        # Sources agree → boost confidence
+        if base == "low":
+            return "medium"
+        elif base == "medium":
+            return "high"
+        # high stays high
+    elif sources_agree is False:
+        # Sources disagree → reduce confidence (conflicting data)
+        if base == "high":
+            return "medium"
+        elif base == "medium":
+            return "low"
+        # low stays low
+
+    return base
+
+
+def get_proper_noun_warning(
+    noun_type: str | None,
+    source: SourceType,
+) -> str:
+    """Get appropriate warning for a proper noun based on its source."""
+    # In Kanjium dictionary
+    if source == "dictionary_proper":
+        if noun_type == "人名":
+            return WARNINGS["proper_name_dict"]
+        elif noun_type == "地名":
+            return WARNINGS["proper_place_dict"]
+        else:
+            return WARNINGS["proper_other_dict"]
+    # In UniDic only (not in Kanjium)
+    elif source == "unidic_proper":
+        if noun_type == "人名":
+            return WARNINGS["proper_name_unidic"]
+        elif noun_type == "地名":
+            return WARNINGS["proper_place_unidic"]
+        else:
+            return WARNINGS["proper_other_unidic"]
+    # Not in any dictionary
+    else:
+        if noun_type == "人名":
+            return WARNINGS["proper_name_unknown"]
+        elif noun_type == "地名":
+            return WARNINGS["proper_place_unknown"]
+        else:
+            return WARNINGS["proper_other_unknown"]
+
+
+def get_lookup_warning(
+    source: SourceType,
+    has_multiple_patterns: bool,
+    sources_agree: bool | None = None,
+) -> str | None:
+    """Get warning for lookup quality issues."""
+    # Cross-validation disagreement is highest priority warning
+    if sources_agree is False:
+        return WARNINGS["sources_disagree"]
+    # Then check other quality issues
+    if has_multiple_patterns:
+        return WARNINGS["multiple_patterns"]
+    elif source == "dictionary_unidic":
+        return WARNINGS["unidic_only"]
+    elif source == "dictionary_reading":
+        return WARNINGS["reading_only"]
+    elif source == "rule":
+        return WARNINGS["rule_based"]
+    return None
+
+
+def should_generate_pitch_pattern(source: SourceType) -> bool:
+    """Determine if we should generate a pitch pattern for this source type."""
+    # Particles and uncertain proper nouns don't get pitch patterns
+    return source not in ("particle", "proper_noun")
 
 
 def lookup_pitch(
@@ -200,18 +412,42 @@ def lookup_pitch(
         if row:
             source = "dictionary_reading"
 
+    # Get UniDic accent for cross-validation
+    unidic_accent = lookup_unidic_accent(surface, reading_hira)
+
     if not row:
+        # No Kanjium match - check if UniDic has data
+        if unidic_accent is not None:
+            return PitchLookupResult(
+                unidic_accent,
+                None,
+                None,
+                source="dictionary_unidic",  # UniDic-only source (transparent)
+                has_multiple_patterns=False,
+                unidic_accent=unidic_accent,
+                sources_agree=None,  # Only one source
+            )
         return PitchLookupResult(None, None, None, source="unknown")
 
     # Parse accent pattern (may have multiple values like "0,2")
     pattern = row["accent_pattern"]
     has_multiple = "," in pattern
-    first_value = pattern.split(",")[0].strip()
 
-    try:
-        accent_type = int(first_value)
-    except ValueError:
-        accent_type = None
+    # Parse ALL accent patterns for cross-validation
+    all_accents: list[int] = []
+    for val in pattern.split(","):
+        try:
+            all_accents.append(int(val.strip()))
+        except ValueError:
+            pass
+
+    # Use first valid accent as the primary
+    accent_type = all_accents[0] if all_accents else None
+
+    # Determine if sources agree - check if UniDic matches ANY Kanjium pattern
+    sources_agree: bool | None = None
+    if all_accents and unidic_accent is not None:
+        sources_agree = (unidic_accent in all_accents)
 
     return PitchLookupResult(
         accent_type,
@@ -219,6 +455,8 @@ def lookup_pitch(
         row["goshu_jp"],
         source=source,
         has_multiple_patterns=has_multiple,
+        unidic_accent=unidic_accent,
+        sources_agree=sources_agree,
     )
 
 
@@ -277,81 +515,65 @@ def analyze_text(text: str) -> list[WordPitch]:
 
         pos = get_pos(token)
 
-        # Handle particles specially - they don't have their own pitch
+        # Determine source, confidence, warning using decision rules
+        source: SourceType
+        confidence: ConfidenceType
+        warning: str | None
+
         if is_particle(pos):
-            # Particles inherit pitch from the preceding word
-            # We mark them specially so the frontend can handle the visualization
+            # Particles inherit pitch from context - don't look up
             source = "particle"
-            confidence = "high"  # We're confident this IS a particle
+            confidence = "high"  # Confident it IS a particle
             warning = None
-            # Don't look up in dictionary - particles don't have independent pitch
             lookup_result = PitchLookupResult(None, None, None, source="particle")
 
-        # Handle proper nouns specially - pitch varies by region/speaker
         elif is_proper_noun(token):
-            # Try to look up in dictionary first (some proper nouns are in Kanjium)
+            # Try dictionary first, then decide based on result
             lookup_result = lookup_pitch(surface, reading_hira, lemma, normalized)
             noun_type = get_proper_noun_type(token)
 
-            if lookup_result.source != "unknown" and lookup_result.accent_type is not None:
-                # Found in dictionary - use it but clearly mark as proper noun
-                source = "dictionary_proper"  # Distinct from regular dictionary
-                confidence = "medium"  # Lower confidence for proper nouns
-                if noun_type == "人名":
-                    warning = "Name pitch may vary by region/family"
-                elif noun_type == "地名":
-                    warning = "Place name - pitch from dictionary"
-                else:
-                    warning = "Proper noun - verify pronunciation"
+            # Determine source based on where the data came from
+            if lookup_result.source == "dictionary_unidic":
+                # Found in UniDic only, not in Kanjium
+                source = "unidic_proper"
+                confidence = get_confidence_for_source(source, lookup_result.sources_agree)
+            elif lookup_result.source != "unknown" and lookup_result.accent_type is not None:
+                # Found in Kanjium
+                source = "dictionary_proper"
+                confidence = get_confidence_for_source(source, lookup_result.sources_agree)
             else:
-                # Not in dictionary - mark as proper noun without pitch
+                # Not in any dictionary
                 source = "proper_noun"
                 confidence = "low"
-                if noun_type == "人名":
-                    warning = "Name not in dictionary - pitch varies"
-                elif noun_type == "地名":
-                    warning = "Place not in dictionary - ask native speaker"
-                else:
-                    warning = "Proper noun - pronunciation uncertain"
                 lookup_result = PitchLookupResult(None, None, None, source="proper_noun")
-        else:
-            # Look up pitch and goshu in database (with lemma/normalized fallbacks)
-            lookup_result = lookup_pitch(surface, reading_hira, lemma, normalized)
 
-            # Determine source and confidence
+            # Proper nouns get their own warning, but disagreement takes priority
+            if lookup_result.sources_agree is False:
+                warning = WARNINGS["sources_disagree"]
+            else:
+                warning = get_proper_noun_warning(noun_type, source)
+
+        else:
+            # Regular word - look up in database
+            lookup_result = lookup_pitch(surface, reading_hira, lemma, normalized)
             source = lookup_result.source
+
+            # No match → use rule-based
             if lookup_result.accent_type is None and source == "unknown":
-                # No dictionary match - we're using rule-based pattern
                 source = "rule"
 
-            # Confidence based on source
-            if source == "dictionary":
-                confidence = "high"
-            elif source == "dictionary_lemma":
-                confidence = "medium"
-            elif source in ("dictionary_reading", "rule"):
-                confidence = "low"
-            else:
-                confidence = "low"
+            # Pass cross-validation result for confidence and warning
+            confidence = get_confidence_for_source(source, lookup_result.sources_agree)
+            warning = get_lookup_warning(
+                source, lookup_result.has_multiple_patterns, lookup_result.sources_agree
+            )
 
-            # Generate warning for ambiguous cases
-            warning = None
-            if lookup_result.has_multiple_patterns:
-                warning = "Multiple accent patterns exist for this word"
-            elif source == "dictionary_reading":
-                warning = "Matched by reading only - verify with native speaker"
-            elif source == "rule":
-                warning = "No dictionary entry - using standard pitch rules"
-
-        # Generate pitch pattern - but not for particles or uncertain proper nouns
-        if source == "particle":
-            # Particles inherit pitch from context - don't show standalone pattern
-            pitch_pattern = []
-        elif source == "proper_noun":
-            # No pitch pattern for uncertain proper nouns
-            pitch_pattern = []
-        else:
-            pitch_pattern = get_pitch_pattern(lookup_result.accent_type, mora_count)
+        # Generate pitch pattern only for appropriate sources
+        pitch_pattern = (
+            get_pitch_pattern(lookup_result.accent_type, mora_count)
+            if should_generate_pitch_pattern(source)
+            else []
+        )
 
         words_result.append(WordPitch(
             surface=surface,

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import type { WordPitch } from "@/types/pitch";
 import { getAccentTypeName } from "@/types/pitch";
 import { getTTSWithTimings, type WordTiming } from "@/lib/api";
+import { PitchDot, PitchGlow, RISO, getPitchY } from "./pitch";
 
 interface PhraseFlowProps {
   words: WordPitch[];
@@ -14,15 +15,27 @@ interface MoraPoint {
   pitch: "H" | "L" | "?";  // "?" for uncertain (proper nouns without dictionary)
   wordIndex: number;
   isParticle: boolean;
-  isUncertain: boolean;  // true for proper nouns without dictionary entry
+  isUncertain: boolean;  // true for proper nouns without dictionary entry OR particles following uncertain words
+  isDictionaryProper: boolean;  // true for proper nouns that ARE in dictionary (pitch may vary)
   surface: string;
 }
 
 /**
- * Determines the pitch of a particle based on the preceding word's accent type.
+ * Check if a word has uncertain pitch (proper noun without dictionary entry).
  */
-function getParticlePitch(prevWord: WordPitch | null): "H" | "L" {
+function isWordUncertain(word: WordPitch): boolean {
+  return word.source === "proper_noun" && word.pitch_pattern.length === 0;
+}
+
+/**
+ * Determines the pitch of a particle based on the preceding word's accent type.
+ * Returns "?" if the preceding word is uncertain.
+ */
+function getParticlePitch(prevWord: WordPitch | null): "H" | "L" | "?" {
   if (!prevWord) return "L";
+
+  // If preceding word is uncertain, particle is also uncertain
+  if (isWordUncertain(prevWord)) return "?";
 
   const accentType = getAccentTypeName(prevWord.accent_type, prevWord.mora_count);
 
@@ -60,6 +73,8 @@ function buildPhrasePoints(words: WordPitch[]): MoraPoint[] {
       // Find the last CONTENT word (not particle) to inherit pitch from
       const contentWord = findLastContentWord(words, wordIndex);
       const pitch = getParticlePitch(contentWord);
+      // Particle is uncertain if it follows an uncertain word
+      const particleUncertain = contentWord ? isWordUncertain(contentWord) : false;
 
       word.morae.forEach((mora) => {
         points.push({
@@ -67,13 +82,17 @@ function buildPhrasePoints(words: WordPitch[]): MoraPoint[] {
           pitch,
           wordIndex,
           isParticle: true,
-          isUncertain: false,
+          isUncertain: particleUncertain,
+          isDictionaryProper: false,
           surface: word.surface,
         });
       });
     } else {
       // Check if this is an uncertain word (proper noun without dictionary entry)
-      const isUncertain = word.source === "proper_noun" && word.pitch_pattern.length === 0;
+      const isUncertain = isWordUncertain(word);
+      // Check if this is a proper noun from dictionary (pitch may vary by region)
+      // Proper nouns from any dictionary (Kanjium or UniDic)
+      const isDictionaryProper = word.source === "dictionary_proper" || word.source === "unidic_proper";
 
       word.morae.forEach((mora, moraIndex) => {
         const pitch = isUncertain
@@ -85,6 +104,7 @@ function buildPhrasePoints(words: WordPitch[]): MoraPoint[] {
           wordIndex,
           isParticle: false,
           isUncertain,
+          isDictionaryProper,
           surface: word.surface,
         });
       });
@@ -295,7 +315,7 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
       </div>
 
       {error && (
-        <div className="text-xs text-red-500 mb-2">{error}</div>
+        <div className="text-xs text-ink-black/70 border border-ink-black/30 border-dotted px-2 py-1 rounded mb-2">{error}</div>
       )}
 
       <div className="inline-block min-w-full bg-white rounded-lg" style={{ minWidth: svgWidth }}>
@@ -326,7 +346,7 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
                 y1={y1}
                 x2={x2}
                 y2={y2}
-                stroke="#2A2A2A"
+                stroke={RISO.black}
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeDasharray={isDashed ? "4,3" : "none"}
@@ -335,65 +355,28 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
             );
           })}
 
-        {/* Pitch dots and mora labels */}
+        {/* Pitch dots and mora labels - using shared components */}
         {points.map((point, i) => {
           const x = i * moraWidth + moraWidth / 2 + 10;
-          // Uncertain points go in the middle
+          // Use shared Y position function (adjusted for PhraseFlow's different scale)
           const y = point.isUncertain ? 35 : (point.pitch === "H" ? 20 : 50);
-          const fillColor = point.isUncertain
-            ? "#fbbf24"  // amber for uncertain
-            : point.pitch === "H" ? "#FF99A0" : "#82A8E5";
-
           const isActive = currentMoraIndex === i;
-          const strokeColor = isActive
-            ? "#f59e0b"
-            : point.isUncertain
-            ? "#d97706"
-            : point.isParticle
-            ? "#9333ea"
-            : "#2A2A2A";
-          const strokeWidth = isActive ? 4 : point.isParticle ? 2.5 : 1.5;
-          const radius = isActive ? 9 : 6;
 
           return (
             <g key={i}>
-              {/* Active glow effect */}
-              {isActive && (
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={14}
-                  fill="none"
-                  stroke="#f59e0b"
-                  strokeWidth="2"
-                  opacity="0.4"
-                  className="animate-pulse"
-                />
-              )}
+              {/* Active glow effect - using shared PitchGlow */}
+              {isActive && <PitchGlow x={x} y={y} />}
 
-              {/* Dot or "?" for uncertain */}
-              {point.isUncertain ? (
-                <text
-                  x={x}
-                  y={y + 5}
-                  textAnchor="middle"
-                  fontSize="16"
-                  fontWeight="600"
-                  fill="#d97706"
-                >
-                  ?
-                </text>
-              ) : (
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={radius}
-                  fill={fillColor}
-                  stroke={strokeColor}
-                  strokeWidth={strokeWidth}
-                  className={isActive ? "transition-all duration-75" : ""}
-                />
-              )}
+              {/* Pitch dot - using shared PitchDot */}
+              <PitchDot
+                x={x}
+                y={y}
+                pitch={point.pitch}
+                isUncertain={point.isUncertain}
+                isParticle={point.isParticle}
+                isDictionaryProper={point.isDictionaryProper}
+                isActive={isActive}
+              />
 
               {/* Mora label */}
               <text
@@ -401,8 +384,9 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
                 y={72}
                 textAnchor="middle"
                 fontSize={isActive ? "16" : "14"}
-                fontWeight={isActive ? "700" : point.isParticle ? "600" : "500"}
-                fill={isActive ? "#f59e0b" : point.isParticle ? "#9333ea" : "#2A2A2A"}
+                fontWeight={isActive ? "700" : "500"}
+                fill={RISO.black}
+                opacity={isActive ? 1 : point.isParticle ? 0.6 : 0.9}
                 className="font-sans transition-all"
               >
                 {point.mora}
@@ -424,7 +408,7 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
                 y1={12}
                 x2={x}
                 y2={58}
-                stroke="#2A2A2A"
+                stroke={RISO.black}
                 strokeWidth="1"
                 strokeDasharray="3,3"
                 opacity={0.3}
@@ -436,27 +420,42 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
         </svg>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 mt-3 text-[10px] text-ink-black/60">
+      {/* Legend - Riso palette only */}
+      <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 text-[10px] text-ink-black/60">
+        {/* Pitch colors */}
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-[#FF99A0] border border-ink-black/30"></span>
+          <span className="w-2 h-2 rounded-full bg-ink-coral border border-ink-black/30"></span>
           <span>High</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-[#82A8E5] border border-ink-black/30"></span>
+          <span className="w-2 h-2 rounded-full bg-ink-cornflower border border-ink-black/30"></span>
           <span>Low</span>
         </div>
+        {/* Special markers - neutral color */}
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-gray-200 border-2 border-violet-600"></span>
+          <span className="w-2 h-2 rounded-full bg-ink-black/20 border border-dashed border-ink-black/50"></span>
           <span>Particle</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-amber-600 font-bold text-xs">?</span>
-          <span>Uncertain</span>
+          <span className="w-2 h-2 rounded-full bg-ink-black/20 border-2 border-dotted border-ink-black/50"></span>
+          <span>Proper (dict)</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-amber-400 border-2 border-amber-500"></span>
-          <span>Playing</span>
+          <span className="text-ink-black/50 font-bold text-xs">?</span>
+          <span>Uncertain</span>
+        </div>
+        {/* Confidence - stroke styles */}
+        <div className="flex items-center gap-1 border-l border-ink-black/20 pl-3 ml-1">
+          <span className="w-3 h-0 border-t-2 border-ink-black/60"></span>
+          <span>High conf.</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-3 h-0 border-t-2 border-dashed border-ink-black/60"></span>
+          <span>Medium</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-3 h-0 border-t-2 border-dotted border-ink-black/60"></span>
+          <span>Low</span>
         </div>
       </div>
     </div>

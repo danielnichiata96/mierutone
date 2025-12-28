@@ -1,6 +1,28 @@
 """Pydantic schemas for API requests and responses."""
 
+from typing import Literal
+
 from pydantic import BaseModel
+
+
+# =============================================================================
+# Literal types for source and confidence (shared with frontend via API)
+# =============================================================================
+
+SourceType = Literal[
+    "dictionary",          # Exact match in Kanjium database (high confidence)
+    "dictionary_lemma",    # Matched via dictionary form, e.g. 食べた→食べる (medium)
+    "dictionary_reading",  # Matched by reading only, less reliable (low)
+    "dictionary_unidic",   # Matched via UniDic only (Kanjium had no entry) (low)
+    "dictionary_proper",   # Proper noun found in Kanjium dictionary (medium, with warning)
+    "unidic_proper",       # Proper noun found in UniDic only (low, with warning)
+    "proper_noun",         # Proper noun NOT in any dictionary (low, pitch uncertain)
+    "particle",            # Particle/auxiliary verb, inherits pitch from prev word
+    "rule",                # No dictionary match, using standard pitch rules (low)
+    "unknown",             # No data available
+]
+
+ConfidenceType = Literal["high", "medium", "low"]
 
 
 class AnalyzeRequest(BaseModel):
@@ -22,18 +44,8 @@ class WordPitch(BaseModel):
     lemma: str | None = None  # Dictionary form (e.g., 食べる for 食べ)
 
     # Transparency fields - indicate data source and reliability
-    source: str = "unknown"
-    # Possible values for source:
-    # - "dictionary"         = exact match in Kanjium database (high confidence)
-    # - "dictionary_lemma"   = matched via dictionary form, e.g. 食べた→食べる (medium)
-    # - "dictionary_reading" = matched by reading only, less reliable (low)
-    # - "dictionary_proper"  = proper noun found in dictionary (medium, with warning)
-    # - "proper_noun"        = proper noun NOT in dictionary (low, pitch uncertain)
-    # - "particle"           = particle/auxiliary verb, inherits pitch from prev word
-    # - "rule"               = no dictionary match, using standard pitch rules (low)
-    # - "unknown"            = no data available
-
-    confidence: str = "low"  # "high", "medium", or "low"
+    source: SourceType = "unknown"
+    confidence: ConfidenceType = "low"
     warning: str | None = None  # Contextual warning for ambiguous/uncertain cases
 
 
