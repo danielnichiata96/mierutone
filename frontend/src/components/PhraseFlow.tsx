@@ -11,9 +11,10 @@ interface PhraseFlowProps {
 
 interface MoraPoint {
   mora: string;
-  pitch: "H" | "L";
+  pitch: "H" | "L" | "?";  // "?" for uncertain (proper nouns without dictionary)
   wordIndex: number;
   isParticle: boolean;
+  isUncertain: boolean;  // true for proper nouns without dictionary entry
   surface: string;
 }
 
@@ -66,17 +67,24 @@ function buildPhrasePoints(words: WordPitch[]): MoraPoint[] {
           pitch,
           wordIndex,
           isParticle: true,
+          isUncertain: false,
           surface: word.surface,
         });
       });
     } else {
+      // Check if this is an uncertain word (proper noun without dictionary entry)
+      const isUncertain = word.source === "proper_noun" && word.pitch_pattern.length === 0;
+
       word.morae.forEach((mora, moraIndex) => {
-        const pitch = (word.pitch_pattern[moraIndex] as "H" | "L") || "L";
+        const pitch = isUncertain
+          ? "?"
+          : (word.pitch_pattern[moraIndex] as "H" | "L") || "L";
         points.push({
           mora,
           pitch,
           wordIndex,
           isParticle: false,
+          isUncertain,
           surface: word.surface,
         });
       });
@@ -295,10 +303,14 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
           {/* Background */}
           <rect x="0" y="0" width={svgWidth} height={svgHeight} fill="white" rx="8" />
 
-          {/* Pitch line segments - dashed for particles */}
+          {/* Pitch line segments - dashed for particles, skip uncertain */}
           {points.map((point, i) => {
             if (i === 0) return null;
             const prevPoint = points[i - 1];
+
+            // Skip line if either point is uncertain
+            if (point.isUncertain || prevPoint.isUncertain) return null;
+
             const x1 = (i - 1) * moraWidth + moraWidth / 2 + 10;
             const y1 = prevPoint.pitch === "H" ? 20 : 50;
             const x2 = i * moraWidth + moraWidth / 2 + 10;
@@ -326,12 +338,17 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
         {/* Pitch dots and mora labels */}
         {points.map((point, i) => {
           const x = i * moraWidth + moraWidth / 2 + 10;
-          const y = point.pitch === "H" ? 20 : 50;
-          const fillColor = point.pitch === "H" ? "#FF99A0" : "#82A8E5";
+          // Uncertain points go in the middle
+          const y = point.isUncertain ? 35 : (point.pitch === "H" ? 20 : 50);
+          const fillColor = point.isUncertain
+            ? "#fbbf24"  // amber for uncertain
+            : point.pitch === "H" ? "#FF99A0" : "#82A8E5";
 
           const isActive = currentMoraIndex === i;
           const strokeColor = isActive
             ? "#f59e0b"
+            : point.isUncertain
+            ? "#d97706"
             : point.isParticle
             ? "#9333ea"
             : "#2A2A2A";
@@ -354,16 +371,29 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
                 />
               )}
 
-              {/* Dot */}
-              <circle
-                cx={x}
-                cy={y}
-                r={radius}
-                fill={fillColor}
-                stroke={strokeColor}
-                strokeWidth={strokeWidth}
-                className={isActive ? "transition-all duration-75" : ""}
-              />
+              {/* Dot or "?" for uncertain */}
+              {point.isUncertain ? (
+                <text
+                  x={x}
+                  y={y + 5}
+                  textAnchor="middle"
+                  fontSize="16"
+                  fontWeight="600"
+                  fill="#d97706"
+                >
+                  ?
+                </text>
+              ) : (
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={radius}
+                  fill={fillColor}
+                  stroke={strokeColor}
+                  strokeWidth={strokeWidth}
+                  className={isActive ? "transition-all duration-75" : ""}
+                />
+              )}
 
               {/* Mora label */}
               <text
@@ -407,7 +437,7 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex gap-4 mt-3 text-[10px] text-ink-black/60">
+      <div className="flex flex-wrap gap-4 mt-3 text-[10px] text-ink-black/60">
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-[#FF99A0] border border-ink-black/30"></span>
           <span>High</span>
@@ -419,6 +449,10 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-gray-200 border-2 border-violet-600"></span>
           <span>Particle</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-amber-600 font-bold text-xs">?</span>
+          <span>Uncertain</span>
         </div>
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-amber-400 border-2 border-amber-500"></span>

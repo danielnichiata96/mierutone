@@ -43,7 +43,6 @@ export function WordCard({ word }: WordCardProps) {
   // Check if we have pitch data
   const hasPitchData = pitch_pattern.length > 0;
   const isParticle = source === "particle";
-  const isUnknownProperNoun = source === "proper_noun" && !hasPitchData;
 
   const svgWidth = morae.length * 30;
   const svgHeight = 45;
