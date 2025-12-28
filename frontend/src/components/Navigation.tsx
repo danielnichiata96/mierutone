@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnalyticsIcon, HeadphoneIcon } from "./icons/DoodleIcons";
+import { AnalyticsIcon } from "./icons/DoodleIcons";
 
 const tools = [
   { href: "/", label: "Analyzer", icon: AnalyticsIcon },
-  { href: "/ear-training", label: "Ear Training", icon: HeadphoneIcon },
 ];
 
 export function Navigation() {
