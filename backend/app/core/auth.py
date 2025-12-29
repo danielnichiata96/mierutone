@@ -32,11 +32,21 @@ async def get_current_user(
     jwt_secret = settings.supabase_jwt_secret
     logger.info(f"JWT secret configured: {bool(jwt_secret)}, length: {len(jwt_secret) if jwt_secret else 0}")
 
+    # Peek at the token header to see which algorithm is used
     try:
+        unverified_header = jwt.get_unverified_header(credentials.credentials)
+        token_alg = unverified_header.get('alg', 'HS256')
+        logger.info(f"JWT header: alg={token_alg}, typ={unverified_header.get('typ')}")
+    except Exception as e:
+        logger.error(f"Could not read JWT header: {e}")
+        token_alg = 'HS256'
+
+    try:
+        # Use the algorithm from the token header
         payload = jwt.decode(
             credentials.credentials,
             jwt_secret,
-            algorithms=["HS256"],
+            algorithms=[token_alg],  # Use the algorithm specified in the token
             audience="authenticated",
         )
         user_id = payload.get("sub")
