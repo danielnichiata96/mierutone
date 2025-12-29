@@ -97,7 +97,7 @@ export default function MorasPage() {
                     <td className="py-3 px-3 font-bold">ちょっと</td>
                     <td className="py-3 px-3">ちょっと</td>
                     <td className="py-3 px-3 text-center">2</td>
-                    <td className="py-3 px-3 text-center font-bold text-primary-500">4</td>
+                    <td className="py-3 px-3 text-center font-bold text-primary-500">3</td>
                     <td className="py-3 px-3 font-mono text-xs">ちょ・っ・と</td>
                   </tr>
                 </tbody>
