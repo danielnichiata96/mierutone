@@ -73,28 +73,36 @@ export default function MorasPage() {
                 </thead>
                 <tbody className="text-ink-black/80">
                   <tr className="border-b border-ink-black/5">
-                    <td className="py-3 px-3 font-bold">東京</td>
+                    <td className="py-3 px-3 font-bold">
+                      <Link href="/?text=東京" className="text-primary-500 hover:underline">東京</Link>
+                    </td>
                     <td className="py-3 px-3">とうきょう</td>
                     <td className="py-3 px-3 text-center">2</td>
                     <td className="py-3 px-3 text-center font-bold text-primary-500">4</td>
                     <td className="py-3 px-3 font-mono text-xs">と・う・きょ・う</td>
                   </tr>
                   <tr className="border-b border-ink-black/5">
-                    <td className="py-3 px-3 font-bold">学校</td>
+                    <td className="py-3 px-3 font-bold">
+                      <Link href="/?text=学校" className="text-primary-500 hover:underline">学校</Link>
+                    </td>
                     <td className="py-3 px-3">がっこう</td>
                     <td className="py-3 px-3 text-center">2</td>
                     <td className="py-3 px-3 text-center font-bold text-primary-500">4</td>
                     <td className="py-3 px-3 font-mono text-xs">が・っ・こ・う</td>
                   </tr>
                   <tr className="border-b border-ink-black/5">
-                    <td className="py-3 px-3 font-bold">新聞</td>
+                    <td className="py-3 px-3 font-bold">
+                      <Link href="/?text=新聞" className="text-primary-500 hover:underline">新聞</Link>
+                    </td>
                     <td className="py-3 px-3">しんぶん</td>
                     <td className="py-3 px-3 text-center">2</td>
                     <td className="py-3 px-3 text-center font-bold text-primary-500">4</td>
                     <td className="py-3 px-3 font-mono text-xs">し・ん・ぶ・ん</td>
                   </tr>
                   <tr>
-                    <td className="py-3 px-3 font-bold">ちょっと</td>
+                    <td className="py-3 px-3 font-bold">
+                      <Link href="/?text=ちょっと" className="text-primary-500 hover:underline">ちょっと</Link>
+                    </td>
                     <td className="py-3 px-3">ちょっと</td>
                     <td className="py-3 px-3 text-center">2</td>
                     <td className="py-3 px-3 text-center font-bold text-primary-500">3</td>
@@ -122,7 +130,7 @@ export default function MorasPage() {
                 <p className="text-sm text-ink-black/70">
                   おう, えい, ああ... The extended sound counts as an extra mora.
                   <br />
-                  Example: おかあさん = お・か・あ・さ・ん (5 moras)
+                  Example: <Link href="/?text=お母さん" className="text-primary-500 hover:underline">お母さん</Link> = お・か・あ・さ・ん (5 moras)
                 </p>
               </div>
 
@@ -131,7 +139,7 @@ export default function MorasPage() {
                 <p className="text-sm text-ink-black/70">
                   The small tsu creates a pause that counts as a full mora.
                   <br />
-                  Example: きっと = き・っ・と (3 moras)
+                  Example: <Link href="/?text=きっと" className="text-primary-500 hover:underline">きっと</Link> = き・っ・と (3 moras)
                 </p>
               </div>
 
@@ -140,7 +148,7 @@ export default function MorasPage() {
                 <p className="text-sm text-ink-black/70">
                   The nasal sound counts as its own mora.
                   <br />
-                  Example: にほん = に・ほ・ん (3 moras)
+                  Example: <Link href="/?text=日本" className="text-primary-500 hover:underline">日本</Link> = に・ほ・ん (3 moras)
                 </p>
               </div>
 
@@ -149,7 +157,7 @@ export default function MorasPage() {
                 <p className="text-sm text-ink-black/70">
                   きょ, しゃ, ちゅ... Small kana combinations count as one mora.
                   <br />
-                  Example: きょう = きょ・う (2 moras, not 3)
+                  Example: <Link href="/?text=今日" className="text-primary-500 hover:underline">今日</Link> = きょ・う (2 moras, not 3)
                 </p>
               </div>
             </div>

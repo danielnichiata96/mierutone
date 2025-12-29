@@ -163,16 +163,26 @@ export const exampleCategories: ExampleCategory[] = [
     name: "Sentences",
     nameJp: "文",
     iconName: "chat",
-    description: "Complete sentences to practice phrase-level pitch",
+    description: "Various sentence types to practice phrase-level pitch",
     items: [
+      // Statements
       { text: "日本語を勉強しています", translation: "I am studying Japanese" },
       { text: "東京に住んでいます", translation: "I live in Tokyo" },
-      { text: "今日は天気がいいですね", translation: "The weather is nice today" },
+      // Questions
       { text: "何を食べたいですか", translation: "What do you want to eat?" },
-      { text: "どこに行きますか", translation: "Where are you going?" },
-      { text: "日本に来たことがありますか", translation: "Have you been to Japan?" },
-      { text: "明日会議があります", translation: "There's a meeting tomorrow" },
+      { text: "これはいくらですか", translation: "How much is this?" },
+      // Requests
       { text: "ちょっと待ってください", translation: "Please wait a moment" },
+      { text: "もう一度言ってください", translation: "Please say it again" },
+      // Exclamations
+      { text: "すごいですね", translation: "That's amazing!" },
+      { text: "おいしそう", translation: "Looks delicious!" },
+      // With minimal pair words
+      { text: "箸で食べます", translation: "I eat with chopsticks (はし¹)" },
+      { text: "橋を渡ります", translation: "I cross the bridge (はし²)" },
+      // Casual
+      { text: "ちょっと聞いてもいい", translation: "Can I ask you something?" },
+      { text: "また明日ね", translation: "See you tomorrow!" },
     ],
   },
 ];
