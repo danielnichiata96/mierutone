@@ -1,3 +1,15 @@
+/**
+ * Pitch info for a compound word component.
+ */
+export interface ComponentPitch {
+  surface: string;
+  reading: string;
+  accent_type: number | null;
+  mora_count: number;
+  part_of_speech: string;  // For display (名詞, 動詞, etc.)
+  reliable: boolean;       // True if source is trustworthy for prediction
+}
+
 export interface WordPitch {
   surface: string;
   reading: string;
@@ -20,9 +32,13 @@ export interface WordPitch {
     | "rule"                // Rule-based fallback
     | "particle"            // Particle (助詞/助動詞)
     | "proper_noun"         // Proper noun not in any dictionary
+    | "compound_rule"       // Compound accent predicted using McCawley rules
     | "unknown";
   confidence: "high" | "medium" | "low";
   warning: string | null;
+  // Compound word fields
+  is_compound: boolean;
+  components: ComponentPitch[] | null;
 }
 
 export function getSourceLabel(source: WordPitch["source"]): string {
@@ -36,6 +52,7 @@ export function getSourceLabel(source: WordPitch["source"]): string {
     case "rule": return "Rule-based";
     case "particle": return "Particle (助詞)";
     case "proper_noun": return "Proper Noun (固有名詞)";
+    case "compound_rule": return "Compound (predicted)";
     case "unknown": return "Unknown";
   }
 }

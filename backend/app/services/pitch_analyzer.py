@@ -4,6 +4,7 @@ SudachiPy Mode C keeps compound words together for accurate pitch lookup.
 Kanjium provides 124k+ pitch accent entries (CC BY-SA 4.0).
 """
 
+import logging
 import re
 import sqlite3
 from functools import lru_cache
@@ -11,6 +12,8 @@ from pathlib import Path
 
 import jaconv
 from sudachipy import dictionary, tokenizer
+
+logger = logging.getLogger(__name__)
 
 # Optional UniDic support for cross-validation
 try:
@@ -20,7 +23,7 @@ try:
 except ImportError:
     UNIDIC_AVAILABLE = False
 
-from app.models.schemas import WordPitch, SourceType, ConfidenceType
+from app.models.schemas import WordPitch, ComponentPitch, SourceType, ConfidenceType
 
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "pitch.db"
 
@@ -49,6 +52,33 @@ WARNINGS = {
     "rule_based": "No dictionary entry - using standard pitch rules",
     # Cross-validation
     "sources_disagree": "Kanjium and UniDic disagree - verify pronunciation",
+    # Compound prediction
+    "compound_rule": "Compound accent predicted - verify with native speaker",
+    "compound_unpredictable": "Compound accent unpredictable - verify with native speaker",
+}
+
+
+# =============================================================================
+# Compound Word Analysis Constants
+# =============================================================================
+
+# Valid POS for compound components
+# 名詞: Required - 90% of McCawley compounds are noun-based
+# 動詞/形容詞: Keep - appear as stems in compounds (出口, 早起き)
+# Exclude: 副詞 (noise), 連体詞 (maintain tonal independence)
+COMPOUND_VALID_POS = {"名詞", "動詞", "形容詞"}
+
+# Sources reliable enough for compound prediction
+# Excludes dictionary_reading to avoid propagating low-confidence
+RELIABLE_SOURCES = {
+    "dictionary", "dictionary_lemma",
+    "dictionary_unidic", "dictionary_proper", "unidic_proper"
+}
+
+# High confidence sources - compound is "in dictionary" if source is one of these
+HIGH_CONFIDENCE_SOURCES = {
+    "dictionary", "dictionary_lemma", "dictionary_unidic",
+    "dictionary_proper", "unidic_proper"
 }
 
 
@@ -326,6 +356,234 @@ def should_generate_pitch_pattern(source: SourceType) -> bool:
     return source not in ("particle", "proper_noun")
 
 
+# =============================================================================
+# Compound Word Analysis Functions
+# =============================================================================
+
+def is_component_reliable(pitch_result: PitchLookupResult, pos: str) -> bool:
+    """Check if a component is reliable enough for compound prediction.
+
+    Args:
+        pitch_result: Lookup result for the component
+        pos: Part of speech of the component
+
+    Returns:
+        True if the component can be used for compound accent prediction
+    """
+    if pos not in COMPOUND_VALID_POS:
+        return False  # Filter particles, suffixes, etc.
+    if pitch_result.source not in RELIABLE_SOURCES:
+        return False  # Unreliable sources (proper_noun, unknown, rule, dictionary_reading)
+    if pitch_result.accent_type is None:
+        return False  # No accent data
+    return True
+
+
+def predict_compound_accent(
+    n1_morae: int,
+    n2_morae: int,
+    n2_accent: int | None
+) -> int | None:
+    """Apply McCawley rules to predict compound accent.
+
+    McCawley Compound Accent Rules (Tokyo Dialect):
+    - N2 ≤ 2 morae: accent on last mora of N1
+    - N2 3-4 morae: accent on first mora of N2
+    - N2 ≥ 5 morae: follow N2's original accent (offset by N1)
+
+    Args:
+        n1_morae: Mora count of the first component
+        n2_morae: Mora count of the second component
+        n2_accent: Accent type of the second component
+
+    Returns:
+        Predicted accent position, or None if unpredictable
+    """
+    if n2_morae <= 2:
+        # N2 short → accent on last mora of N1
+        return n1_morae
+    elif n2_morae in (3, 4):
+        # N2 medium → accent on first mora of N2
+        return n1_morae + 1
+    else:  # n2_morae >= 5
+        # N2 long → follow N2's original accent, offset by N1
+        if n2_accent is None or n2_accent == 0:
+            return None  # Can't predict heiban compounds reliably
+        return n1_morae + n2_accent  # Offset N2's accent by N1 length
+
+
+def predict_compound_iterative(components: list[ComponentPitch]) -> int | None:
+    """Apply McCawley rules iteratively for multi-part compounds.
+
+    For compounds with >2 components, apply rules pairwise:
+    (N1 + N2) → N12, then (N12 + N3) → N123, etc.
+
+    Args:
+        components: List of compound components with accent info
+
+    Returns:
+        Predicted accent position, or None if unpredictable
+    """
+    if len(components) < 2:
+        return None
+
+    # Start with first component
+    accumulated_morae = components[0].mora_count
+    # Note: accumulated_accent not used in current rules, but kept for logging
+
+    logger.debug(
+        f"Compound prediction start: {components[0].surface} "
+        f"({accumulated_morae} mora, accent={components[0].accent_type})"
+    )
+
+    # Apply rules pairwise: (N1+N2)→N12, (N12+N3)→N123, etc.
+    for i in range(1, len(components)):
+        n2 = components[i]
+        new_accent = predict_compound_accent(
+            accumulated_morae, n2.mora_count, n2.accent_type
+        )
+
+        logger.debug(
+            f"Compound step {i}: {accumulated_morae} mora + "
+            f"{n2.surface}({n2.mora_count} mora, accent={n2.accent_type}) "
+            f"→ predicted accent={new_accent}"
+        )
+
+        if new_accent is None:
+            return None  # Can't predict if any step fails
+
+        accumulated_morae += n2.mora_count
+
+    return new_accent
+
+
+class CompoundAnalysis:
+    """Result of compound word analysis."""
+    __slots__ = ("components", "predicted_accent", "used_prediction", "all_reliable")
+
+    def __init__(
+        self,
+        components: list[ComponentPitch],
+        predicted_accent: int | None,
+        used_prediction: bool,
+        all_reliable: bool,
+    ):
+        self.components = components
+        self.predicted_accent = predicted_accent
+        self.used_prediction = used_prediction
+        self.all_reliable = all_reliable
+
+
+def resolve_compound_pitch(
+    compound_analysis: CompoundAnalysis,
+    compound_in_dict: bool,
+    original_accent: int | None,
+    original_source: SourceType,
+    original_confidence: ConfidenceType,
+    original_warning: str | None,
+) -> tuple[int | None, SourceType, ConfidenceType, str | None]:
+    """Resolve final pitch info for a compound word.
+
+    Decision logic:
+    1. If compound is in high-confidence dict → use original (dict wins)
+    2. If prediction succeeded → use predicted accent
+    3. If prediction failed (None) but was attempted → show as unpredictable
+    4. Otherwise → use original
+
+    Returns:
+        (accent_type, source, confidence, warning)
+    """
+    if compound_analysis.used_prediction:
+        # Prediction succeeded
+        return (
+            compound_analysis.predicted_accent,
+            "compound_rule",
+            "low",
+            WARNINGS["compound_rule"],
+        )
+    elif not compound_in_dict and compound_analysis.all_reliable:
+        # Prediction was attempted but failed (e.g., N2≥5 heiban)
+        return (
+            None,
+            "compound_rule",
+            "low",
+            WARNINGS["compound_unpredictable"],
+        )
+    else:
+        # Use original (dict value or couldn't attempt prediction)
+        return (original_accent, original_source, original_confidence, original_warning)
+
+
+def analyze_compound(token, compound_in_dict: bool) -> CompoundAnalysis | None:
+    """Split a compound word and analyze each component.
+
+    Always shows components for educational value.
+    Only predicts accent if:
+    1. Compound NOT in dictionary (high confidence source)
+    2. ALL components are reliable (known accent, valid POS)
+
+    Args:
+        token: SudachiPy token to analyze
+        compound_in_dict: True if compound was found in a high-confidence source
+
+    Returns:
+        CompoundAnalysis with components and optional predicted accent,
+        or None if not a valid compound (single part or < 2 valid components)
+    """
+    # Split using Mode A (smallest units)
+    parts = token.split(tokenizer.Tokenizer.SplitMode.A)
+    if len(parts) <= 1:
+        return None  # Not a compound
+
+    # Filter by POS - only keep nouns, verbs, adjectives
+    filtered_parts = [p for p in parts if get_pos(p) in COMPOUND_VALID_POS]
+    if len(filtered_parts) < 2:
+        return None  # Not enough valid components
+
+    # Look up pitch for each component
+    components: list[ComponentPitch] = []
+    all_reliable = True
+
+    for part in filtered_parts:
+        reading_hira = jaconv.kata2hira(part.reading_form())
+        pos = get_pos(part)
+        lemma = part.dictionary_form()
+        normalized = part.normalized_form()
+
+        pitch = lookup_pitch(part.surface(), reading_hira, lemma, normalized)
+        reliable = is_component_reliable(pitch, pos)
+
+        if not reliable:
+            all_reliable = False
+
+        components.append(ComponentPitch(
+            surface=part.surface(),
+            reading=reading_hira,
+            accent_type=pitch.accent_type,
+            mora_count=count_morae(reading_hira),
+            part_of_speech=pos,
+            reliable=reliable,
+        ))
+
+    # Only predict if compound NOT in dictionary AND all components reliable
+    predicted_accent = None
+    can_predict = not compound_in_dict and all_reliable and len(components) >= 2
+
+    if can_predict:
+        predicted_accent = predict_compound_iterative(components)
+        logger.debug(
+            f"Compound '{token.surface()}': components={[c.surface for c in components]}, "
+            f"predicted_accent={predicted_accent}"
+        )
+
+    return CompoundAnalysis(
+        components=components,
+        predicted_accent=predicted_accent,
+        used_prediction=can_predict and predicted_accent is not None,
+        all_reliable=all_reliable,
+    )
+
+
 def lookup_pitch(
     surface: str,
     reading_hira: str,
@@ -568,17 +826,43 @@ def analyze_text(text: str) -> list[WordPitch]:
                 source, lookup_result.has_multiple_patterns, lookup_result.sources_agree
             )
 
+        # Compound analysis: check if this word splits into components
+        compound_analysis = None
+        components = None
+        is_compound = False
+        final_accent_type = lookup_result.accent_type
+
+        # Only analyze compounds for non-particles and non-proper-nouns
+        if not is_particle(pos) and not is_proper_noun(token):
+            compound_in_dict = source in HIGH_CONFIDENCE_SOURCES
+            compound_analysis = analyze_compound(token, compound_in_dict)
+
+            if compound_analysis is not None:
+                is_compound = True
+                components = compound_analysis.components
+
+                # Resolve final pitch using extracted decision logic
+                final_accent_type, source, confidence, warning = resolve_compound_pitch(
+                    compound_analysis,
+                    compound_in_dict,
+                    lookup_result.accent_type,
+                    source,
+                    confidence,
+                    warning,
+                )
+
         # Generate pitch pattern only for appropriate sources
+        # Don't generate pattern if accent is None (unpredictable compound or unknown)
         pitch_pattern = (
-            get_pitch_pattern(lookup_result.accent_type, mora_count)
-            if should_generate_pitch_pattern(source)
+            get_pitch_pattern(final_accent_type, mora_count)
+            if should_generate_pitch_pattern(source) and final_accent_type is not None
             else []
         )
 
         words_result.append(WordPitch(
             surface=surface,
             reading=reading_hira,
-            accent_type=lookup_result.accent_type,
+            accent_type=final_accent_type,
             mora_count=mora_count,
             morae=morae,
             pitch_pattern=pitch_pattern,
@@ -589,6 +873,8 @@ def analyze_text(text: str) -> list[WordPitch]:
             source=source,
             confidence=confidence,
             warning=warning,
+            is_compound=is_compound,
+            components=components,
         ))
 
     return words_result

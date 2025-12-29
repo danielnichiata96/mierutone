@@ -1,9 +1,31 @@
 "use client";
 
-import type { WordPitch } from "@/types/pitch";
+import type { WordPitch, ComponentPitch } from "@/types/pitch";
 import { getAccentLabel, getSourceLabel, getConfidenceBorderClass } from "@/types/pitch";
 import { PitchDot, RISO, getConfidenceStroke, PITCH_Y_HIGH, PITCH_Y_LOW, PITCH_Y_UNCERTAIN } from "./pitch";
 import { PlayButton } from "./PlayButton";
+
+/**
+ * Renders a single compound component in neutral/grey style.
+ */
+function CompoundComponent({ component }: { component: ComponentPitch }) {
+  const accentLabel = component.accent_type === 0 ? "⁰" : component.accent_type ? `${component.accent_type}` : "?";
+  return (
+    <div
+      className={`inline-flex items-baseline gap-0.5 px-1.5 py-0.5 rounded border ${
+        component.reliable
+          ? "border-ink-black/30 bg-ink-black/5"
+          : "border-ink-black/20 bg-ink-black/5 border-dashed"
+      }`}
+      title={`${component.reading} | ${component.mora_count} mora | ${component.part_of_speech}${
+        !component.reliable ? " (unreliable)" : ""
+      }`}
+    >
+      <span className="text-sm font-medium text-ink-black/80">{component.surface}</span>
+      <sup className="text-[10px] text-ink-black/50">{accentLabel}</sup>
+    </div>
+  );
+}
 
 interface WordCardProps {
   word: WordPitch;
@@ -196,6 +218,36 @@ export function WordCard({ word }: WordCardProps) {
         >
           <span className="text-ink-black/40">!</span>
           <span className="truncate max-w-[100px]">{warning}</span>
+        </div>
+      )}
+
+      {/* Compound breakdown - shown when word has components */}
+      {word.is_compound && word.components && word.components.length > 0 && (
+        <div className="mt-3 pt-2 border-t border-ink-black/10 w-full">
+          <div className="text-[10px] text-ink-black/50 mb-1.5 font-medium">
+            Components
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-1">
+            {word.components.map((comp, i) => (
+              <span key={i} className="inline-flex items-center">
+                {i > 0 && <span className="text-ink-black/30 mx-0.5 text-xs">+</span>}
+                <CompoundComponent component={comp} />
+              </span>
+            ))}
+          </div>
+          {/* Prediction status indicator - only for compound_rule source */}
+          {source === "compound_rule" ? (
+            word.accent_type !== null ? (
+              <div className="text-[10px] text-ink-black/50 mt-1.5 italic text-center">
+                Accent predicted (McCawley)
+              </div>
+            ) : (
+              <div className="text-[10px] text-ink-black/50 mt-1.5 italic text-center flex items-center justify-center gap-1">
+                <span className="text-ink-black/40">?</span>
+                <span>Cannot predict - verify with native</span>
+              </div>
+            )
+          ) : null}
         </div>
       )}
     </div>

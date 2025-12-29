@@ -19,6 +19,7 @@ SourceType = Literal[
     "proper_noun",         # Proper noun NOT in any dictionary (low, pitch uncertain)
     "particle",            # Particle/auxiliary verb, inherits pitch from prev word
     "rule",                # No dictionary match, using standard pitch rules (low)
+    "compound_rule",       # Compound accent predicted using McCawley rules (low)
     "unknown",             # No data available
 ]
 
@@ -28,6 +29,16 @@ ConfidenceType = Literal["high", "medium", "low"]
 class AnalyzeRequest(BaseModel):
     """Request body for /analyze endpoint."""
     text: str
+
+
+class ComponentPitch(BaseModel):
+    """Pitch info for a compound component."""
+    surface: str
+    reading: str
+    accent_type: int | None
+    mora_count: int
+    part_of_speech: str  # For display (名詞, 動詞, etc.)
+    reliable: bool  # True if source is trustworthy for prediction
 
 
 class WordPitch(BaseModel):
@@ -47,6 +58,10 @@ class WordPitch(BaseModel):
     source: SourceType = "unknown"
     confidence: ConfidenceType = "low"
     warning: str | None = None  # Contextual warning for ambiguous/uncertain cases
+
+    # Compound word fields
+    is_compound: bool = False  # True if word was split into components
+    components: list[ComponentPitch] | None = None  # Component parts if compound
 
 
 class AnalyzeResponse(BaseModel):

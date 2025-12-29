@@ -25,8 +25,19 @@ from app.services.pitch_analyzer import (
     count_morae,
     split_into_morae,
     get_pitch_pattern,
+    predict_compound_accent,
+    predict_compound_iterative,
+    is_component_reliable,
+    analyze_compound,
+    resolve_compound_pitch,
+    CompoundAnalysis,
     DB_PATH,
+    PitchLookupResult,
+    COMPOUND_VALID_POS,
+    RELIABLE_SOURCES,
+    WARNINGS,
 )
+from app.models.schemas import ComponentPitch
 
 # Skip all tests in this module if database doesn't exist
 pytestmark = pytest.mark.skipif(
@@ -629,3 +640,311 @@ class TestSourceTypeTransparency:
 
         assert warning == WARNINGS["sources_disagree"]
         assert "disagree" in warning.lower()
+
+
+class TestCompoundAnalysis:
+    """Test compound word analysis with McCawley rules."""
+
+    # =========================================================================
+    # McCawley Rule Unit Tests
+    # =========================================================================
+
+    @pytest.mark.parametrize("n1_morae,n2_morae,n2_accent,expected", [
+        # N2 <= 2 morae: accent on last mora of N1
+        (3, 1, 0, 3),    # 日本(3) + 語(1) → accent=3
+        (3, 2, 1, 3),    # N1(3) + N2(2) → accent=3
+        (4, 2, 0, 4),    # N1(4) + N2(2) → accent=4
+        # N2 3-4 morae: accent on first mora of N2
+        (2, 3, 0, 3),    # N1(2) + N2(3) → accent=3 (2+1)
+        (4, 3, 2, 5),    # 携帯(4) + 電話(3) → accent=5
+        (3, 4, 1, 4),    # N1(3) + N2(4) → accent=4 (3+1)
+        # N2 >= 5 morae: follow N2's accent, offset by N1
+        (3, 5, 2, 5),    # N1(3) + N2(5, accent=2) → accent=5 (3+2)
+        (4, 6, 3, 7),    # N1(4) + N2(6, accent=3) → accent=7 (4+3)
+        # N2 >= 5 with heiban → None (unpredictable)
+        (3, 5, 0, None), # N2 heiban → cannot predict
+        (2, 6, 0, None), # N2 heiban → cannot predict
+    ])
+    def test_predict_compound_accent(self, n1_morae, n2_morae, n2_accent, expected):
+        """Test McCawley compound accent prediction rules."""
+        result = predict_compound_accent(n1_morae, n2_morae, n2_accent)
+        assert result == expected, \
+            f"N1={n1_morae}, N2={n2_morae} (accent={n2_accent}): expected {expected}, got {result}"
+
+    def test_iterative_reduction_two_components(self):
+        """Test iterative reduction with 2 components."""
+        components = [
+            ComponentPitch(surface="日本", reading="にほん", accent_type=2, mora_count=3, part_of_speech="名詞", reliable=True),
+            ComponentPitch(surface="語", reading="ご", accent_type=1, mora_count=1, part_of_speech="名詞", reliable=True),
+        ]
+        result = predict_compound_iterative(components)
+        # N2 <= 2 morae → accent on last mora of N1 = 3
+        assert result == 3
+
+    def test_iterative_reduction_three_components(self):
+        """Test iterative reduction with 3 components.
+
+        国立(4) + 博物(4) + 館(3)
+        Step 1: 4 mora + 4 mora (N2 3-4 rule) → accent=5
+        Step 2: 8 mora + 3 mora (N2 3-4 rule) → accent=9
+        """
+        components = [
+            ComponentPitch(surface="国立", reading="こくりつ", accent_type=0, mora_count=4, part_of_speech="名詞", reliable=True),
+            ComponentPitch(surface="博物", reading="はくぶつ", accent_type=0, mora_count=4, part_of_speech="名詞", reliable=True),
+            ComponentPitch(surface="館", reading="かん", accent_type=1, mora_count=2, part_of_speech="名詞", reliable=True),
+        ]
+        result = predict_compound_iterative(components)
+        # Step 1: 4 + 4 (N2=4 morae) → 4+1=5
+        # Step 2: 8 + 2 (N2=2 morae) → 8
+        assert result == 8
+
+    def test_iterative_fails_on_unpredictable(self):
+        """Iterative reduction returns None if any step fails."""
+        components = [
+            ComponentPitch(surface="国", reading="こく", accent_type=0, mora_count=2, part_of_speech="名詞", reliable=True),
+            ComponentPitch(surface="なんとか", reading="なんとか", accent_type=0, mora_count=5, part_of_speech="名詞", reliable=True),
+        ]
+        result = predict_compound_iterative(components)
+        # N2 >= 5 with heiban → None
+        assert result is None
+
+    def test_unpredictable_compound_decision_logic(self):
+        """DETERMINISTIC: Test resolve_compound_pitch with unpredictable compound.
+
+        This directly tests the ACTUAL decision logic function used by analyze_text,
+        with controlled inputs that guarantee the unpredictable path.
+        """
+        # Create components where prediction WILL fail (N2≥5 with heiban)
+        components = [
+            ComponentPitch(
+                surface="国際", reading="こくさい", accent_type=0,
+                mora_count=4, part_of_speech="名詞", reliable=True
+            ),
+            ComponentPitch(
+                surface="なんとか", reading="なんとか", accent_type=0,  # heiban
+                mora_count=5, part_of_speech="名詞", reliable=True  # ≥5 morae
+            ),
+        ]
+
+        # Prediction must fail for N2≥5 heiban
+        predicted = predict_compound_iterative(components)
+        assert predicted is None, "N2≥5 heiban should return None"
+
+        # Create CompoundAnalysis as analyze_compound would
+        compound_analysis = CompoundAnalysis(
+            components=components,
+            predicted_accent=None,  # Prediction failed
+            used_prediction=False,  # Can't use None prediction
+            all_reliable=True,      # All components were reliable
+        )
+
+        # Call the ACTUAL decision logic function
+        accent, source, confidence, warning = resolve_compound_pitch(
+            compound_analysis=compound_analysis,
+            compound_in_dict=False,  # Not in dictionary
+            original_accent=0,       # Some fallback value we should NOT use
+            original_source="dictionary_reading",  # Low-confidence fallback
+            original_confidence="low",
+            original_warning=None,
+        )
+
+        # Verify unpredictable path was taken
+        assert accent is None, "Unpredictable compound should have accent_type=None"
+        assert source == "compound_rule", f"Source should be compound_rule, got {source}"
+        assert confidence == "low", f"Confidence should be low, got {confidence}"
+        assert warning == WARNINGS["compound_unpredictable"], f"Wrong warning: {warning}"
+
+        # Verify pitch pattern would be empty (as analyze_text does)
+        pitch_pattern = (
+            get_pitch_pattern(accent, 9)
+            if accent is not None
+            else []
+        )
+        assert pitch_pattern == [], "Pitch pattern should be empty when accent is None"
+
+    def test_resolve_compound_pitch_uses_dict_when_available(self):
+        """When compound is in dictionary, resolve_compound_pitch preserves original."""
+        components = [
+            ComponentPitch(surface="東", reading="とう", accent_type=1, mora_count=2, part_of_speech="名詞", reliable=True),
+            ComponentPitch(surface="京", reading="きょう", accent_type=1, mora_count=2, part_of_speech="名詞", reliable=True),
+        ]
+
+        compound_analysis = CompoundAnalysis(
+            components=components,
+            predicted_accent=None,  # Would predict, but dict takes priority
+            used_prediction=False,
+            all_reliable=True,
+        )
+
+        # Compound IS in dictionary
+        accent, source, confidence, warning = resolve_compound_pitch(
+            compound_analysis=compound_analysis,
+            compound_in_dict=True,  # In dictionary!
+            original_accent=0,      # Dict value
+            original_source="dictionary",
+            original_confidence="high",
+            original_warning=None,
+        )
+
+        # Should preserve original dict values
+        assert accent == 0, "Should use dictionary accent"
+        assert source == "dictionary", "Should preserve dictionary source"
+        assert confidence == "high", "Should preserve dictionary confidence"
+
+    # =========================================================================
+    # Component Reliability Tests
+    # =========================================================================
+
+    def test_component_reliable_dictionary_source(self):
+        """Components from dictionary sources are reliable."""
+        lookup = PitchLookupResult(accent_type=0, goshu=None, goshu_jp=None, source="dictionary")
+        assert is_component_reliable(lookup, "名詞") is True
+
+    def test_component_reliable_lemma_source(self):
+        """Components from dictionary_lemma are reliable."""
+        lookup = PitchLookupResult(accent_type=1, goshu=None, goshu_jp=None, source="dictionary_lemma")
+        assert is_component_reliable(lookup, "名詞") is True
+
+    def test_component_unreliable_reading_source(self):
+        """Components from dictionary_reading are NOT reliable."""
+        lookup = PitchLookupResult(accent_type=0, goshu=None, goshu_jp=None, source="dictionary_reading")
+        assert is_component_reliable(lookup, "名詞") is False
+
+    def test_component_unreliable_rule_source(self):
+        """Components from rule-based source are NOT reliable."""
+        lookup = PitchLookupResult(accent_type=0, goshu=None, goshu_jp=None, source="rule")
+        assert is_component_reliable(lookup, "名詞") is False
+
+    def test_component_unreliable_wrong_pos(self):
+        """Components with wrong POS are NOT reliable."""
+        lookup = PitchLookupResult(accent_type=0, goshu=None, goshu_jp=None, source="dictionary")
+        assert is_component_reliable(lookup, "助詞") is False
+        assert is_component_reliable(lookup, "副詞") is False
+
+    def test_component_unreliable_no_accent(self):
+        """Components without accent data are NOT reliable."""
+        lookup = PitchLookupResult(accent_type=None, goshu=None, goshu_jp=None, source="dictionary")
+        assert is_component_reliable(lookup, "名詞") is False
+
+    # =========================================================================
+    # Integration Tests - analyze_text with Compounds
+    # =========================================================================
+
+    def test_compound_detection_in_analyze_text(self):
+        """Compounds should be detected and have components field."""
+        result = analyze_text("東京大学")
+
+        # Should have at least one word
+        assert len(result) > 0
+
+        # Find compound (if detected)
+        compound = next((w for w in result if w.is_compound), None)
+
+        if compound:
+            assert compound.components is not None
+            assert len(compound.components) >= 2
+            # Components should have required fields
+            for comp in compound.components:
+                assert comp.surface
+                assert comp.reading
+                assert comp.mora_count > 0
+
+    def test_dictionary_compound_uses_dict_value(self):
+        """Compounds found in dictionary should use dictionary value, not prediction."""
+        # 東京 is a compound (東+京) but is in dictionary
+        result = analyze_text("東京")
+
+        tokyo = result[0]
+        assert tokyo.surface == "東京"
+        # Should NOT use compound_rule if in dictionary
+        assert tokyo.source != "compound_rule", \
+            f"Dictionary compound should not use compound_rule, got {tokyo.source}"
+        # Should have dict accent (0 for 東京)
+        assert tokyo.accent_type == 0
+
+    def test_compound_rule_source_has_warning(self):
+        """Compounds using prediction should have compound_rule source and warning."""
+        from app.services.pitch_analyzer import WARNINGS
+
+        # This test verifies the source type when prediction is used
+        # We need a compound that's NOT in dictionary
+        result = analyze_text("携帯電話")
+
+        for word in result:
+            if word.source == "compound_rule":
+                assert word.confidence == "low"
+                # Either predicted or unpredictable warning
+                assert word.warning in (
+                    WARNINGS["compound_rule"],
+                    WARNINGS["compound_unpredictable"]
+                ), f"Unexpected warning: {word.warning}"
+                # If predicted, accent_type should be set and pitch_pattern non-empty
+                if word.warning == WARNINGS["compound_rule"]:
+                    assert word.accent_type is not None
+                    assert len(word.pitch_pattern) > 0
+                # If unpredictable, accent_type should be None and pitch_pattern empty
+                else:
+                    assert word.accent_type is None
+                    assert word.pitch_pattern == []
+                break
+        # If no compound_rule found, that's OK - means it was in dictionary
+
+    def test_compound_prediction_failure_clears_accent(self):
+        """When prediction fails, accent_type must be None and pitch_pattern empty.
+
+        This is a critical regression test: we must NOT fall back to a
+        low-confidence source when prediction fails.
+        """
+        from app.services.pitch_analyzer import WARNINGS
+
+        # Test multiple compounds to increase chance of hitting unpredictable case
+        test_phrases = ["国際連合", "経済産業省", "情報通信技術"]
+
+        for phrase in test_phrases:
+            result = analyze_text(phrase)
+            for word in result:
+                if word.source == "compound_rule":
+                    if word.accent_type is None:
+                        # CRITICAL: empty pitch pattern when accent unknown
+                        assert word.pitch_pattern == [], (
+                            f"'{word.surface}': accent_type=None but pitch_pattern={word.pitch_pattern}. "
+                            "This indicates fallback to low-confidence source."
+                        )
+                        assert word.warning == WARNINGS["compound_unpredictable"]
+                    else:
+                        # Predicted successfully - pattern should match
+                        assert len(word.pitch_pattern) == word.mora_count
+                        assert word.warning == WARNINGS["compound_rule"]
+
+    def test_simple_word_not_compound(self):
+        """Simple words should not be marked as compounds."""
+        result = analyze_text("水")
+
+        mizu = result[0]
+        assert mizu.surface == "水"
+        assert mizu.is_compound is False
+        assert mizu.components is None
+
+    def test_particle_not_analyzed_as_compound(self):
+        """Particles should not be analyzed as compounds."""
+        result = analyze_text("東京に")
+
+        particle = next((w for w in result if w.surface == "に"), None)
+        assert particle is not None
+        assert particle.source == "particle"
+        assert particle.is_compound is False
+
+    # =========================================================================
+    # Mora Counting for Compounds
+    # =========================================================================
+
+    @pytest.mark.parametrize("reading,expected_count", [
+        ("きょう", 2),       # きょ (digraph) + う = 2
+        ("がっこう", 4),     # が + っ + こ + う = 4
+        ("しゃしん", 3),     # しゃ + し + ん = 3
+        ("ちょっと", 3),     # ちょ + っ + と = 3
+        ("きゃりーぱみゅぱみゅ", 7),  # Complex with multiple digraphs
+    ])
+    def test_mora_count_for_compound_components(self, reading, expected_count):
+        """Verify mora counting handles digraphs and sokuon correctly."""
+        assert count_morae(reading) == expected_count
