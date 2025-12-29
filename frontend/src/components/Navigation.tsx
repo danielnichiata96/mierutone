@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { AnalyticsIcon, BookIcon, TargetIcon } from "./icons/DoodleIcons";
 
 const navLinks = [
-  { href: "/", label: "Praticar", icon: AnalyticsIcon },
-  { href: "/learn", label: "Aprender", icon: BookIcon },
-  { href: "/examples", label: "Exemplos", icon: TargetIcon },
+  { href: "/", label: "Practice", icon: AnalyticsIcon },
+  { href: "/learn", label: "Learn", icon: BookIcon },
+  { href: "/examples", label: "Examples", icon: TargetIcon },
 ];
 
 export function Navigation() {
