@@ -179,6 +179,19 @@ export default function MorasPage() {
               Try the Analyzer
             </Link>
           </div>
+
+          {/* Sources */}
+          <section className="mt-8 pt-6 border-t border-ink-black/10 text-xs text-ink-black/40">
+            <p className="font-bold mb-2">Sources</p>
+            <ul className="space-y-1">
+              <li>
+                Vance, Timothy J. (2008). <em>The Sounds of Japanese</em>. Cambridge University Press.
+              </li>
+              <li>
+                Labrune, Laurence (2012). <em>The Phonology of Japanese</em>. Oxford University Press.
+              </li>
+            </ul>
+          </section>
         </article>
       </div>
     </main>

@@ -157,6 +157,17 @@ export default function LearnPage() {
             </div>
           </div>
         </section>
+
+        {/* Sources */}
+        <section className="mt-8 text-center text-xs text-ink-black/40">
+          <p>
+            Content based on{" "}
+            <a href="https://www.nhk.or.jp/bunken/book/book_dic_accent.html" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-black/60">
+              NHK日本語発音アクセント新辞典
+            </a>
+            {" "}and standard Tokyo dialect phonology.
+          </p>
+        </section>
       </div>
     </main>
   );

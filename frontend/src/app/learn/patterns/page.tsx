@@ -277,6 +277,29 @@ export default function PatternsPage() {
               Try the Analyzer
             </Link>
           </div>
+
+          {/* Sources */}
+          <section className="mt-8 pt-6 border-t border-ink-black/10 text-xs text-ink-black/40">
+            <p className="font-bold mb-2">Sources</p>
+            <ul className="space-y-1">
+              <li>
+                <a href="https://www.nhk.or.jp/bunken/book/book_dic_accent.html" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-black/60">
+                  NHK日本語発音アクセント新辞典
+                </a>
+                {" "}- Standard reference for Tokyo dialect pitch accent
+              </li>
+              <li>
+                Vance, Timothy J. (2008). <em>The Sounds of Japanese</em>. Cambridge University Press.
+              </li>
+              <li>
+                Pitch data from{" "}
+                <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-black/60">
+                  Kanjium
+                </a>
+                {" "}dictionary project.
+              </li>
+            </ul>
+          </section>
         </article>
       </div>
     </main>
