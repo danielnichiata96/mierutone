@@ -9,6 +9,9 @@ import { RecordCompare } from "@/components/RecordCompare";
 import { HowItWorks } from "@/components/HowItWorks";
 import { SocialProof } from "@/components/SocialProof";
 import { QuickExamples } from "@/components/QuickExamples";
+import { Features } from "@/components/Features";
+import { Pricing } from "@/components/Pricing";
+import Link from "next/link";
 import { analyzeText } from "@/lib/api";
 import type { WordPitch } from "@/types/pitch";
 
@@ -51,17 +54,28 @@ function HomeContent() {
     <main className="min-h-screen bg-paper-white">
       <div className="container mx-auto px-6 py-12 max-w-5xl">
         {/* Hero Section */}
-        <section className="mb-8 text-center">
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-ink-black mb-3">
-            See the invisible structure of Japanese
+        <section className="mb-12 text-center">
+          <div className="inline-block px-4 py-1.5 bg-primary-300/30 rounded-full text-sm font-medium text-primary-700 mb-4">
+            Free & Open Source
+          </div>
+          <h1 className="font-display text-4xl md:text-5xl font-bold text-ink-black mb-4 leading-tight">
+            See the invisible melody<br />of Japanese
           </h1>
-          <p className="text-ink-black/60 text-lg max-w-2xl mx-auto">
-            Visualize pitch accent patterns instantly. Understand the melody that makes Japanese sound natural.
+          <p className="text-ink-black/60 text-lg max-w-2xl mx-auto mb-8">
+            Visualize pitch accent patterns instantly. Understand what makes native speakers sound natural.
           </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="#try-it" className="riso-button-primary">
+              Try It Free
+            </a>
+            <Link href="/learn" className="riso-button-secondary">
+              Learn Pitch Patterns
+            </Link>
+          </div>
         </section>
 
         {/* Try It Now - Main Tool Section */}
-        <section className="mb-6">
+        <section id="try-it" className="mb-6 scroll-mt-8">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-2 h-2 rounded-full bg-secondary-500" />
             <span className="font-mono text-sm text-ink-black/50 uppercase tracking-wide">
@@ -122,8 +136,14 @@ function HomeContent() {
           <QuickExamples onSelect={handleAnalyze} />
         </section>
 
+        {/* Features Section */}
+        <Features />
+
         {/* How It Works Section */}
         <HowItWorks />
+
+        {/* Pricing Section */}
+        <Pricing />
 
         {/* Social Proof Section */}
         <SocialProof />
