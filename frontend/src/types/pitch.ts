@@ -33,6 +33,7 @@ export interface WordPitch {
     | "particle"            // Particle (助詞/助動詞)
     | "proper_noun"         // Proper noun not in any dictionary
     | "compound_rule"       // Compound accent predicted using McCawley rules
+    | "expression_parts"    // Expression analyzed by splitting into parts
     | "unknown";
   confidence: "high" | "medium" | "low";
   warning: string | null;
@@ -53,6 +54,7 @@ export function getSourceLabel(source: WordPitch["source"]): string {
     case "particle": return "Particle (助詞)";
     case "proper_noun": return "Proper Noun (固有名詞)";
     case "compound_rule": return "Compound (predicted)";
+    case "expression_parts": return "Expression (parts)";
     case "unknown": return "Unknown";
   }
 }

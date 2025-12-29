@@ -55,6 +55,8 @@ WARNINGS = {
     # Compound prediction
     "compound_rule": "Compound accent predicted - verify with native speaker",
     "compound_unpredictable": "Compound accent unpredictable - verify with native speaker",
+    # Expression fallback
+    "expression_parts": "Analyzed by splitting into parts",
 }
 
 
@@ -272,7 +274,7 @@ def get_confidence_for_source(
     # Base confidence by source type
     if source == "dictionary":
         base = "high"
-    elif source in ("dictionary_lemma", "dictionary_proper"):
+    elif source in ("dictionary_lemma", "dictionary_proper", "expression_parts"):
         base = "medium"
     elif source == "particle":
         return "high"  # Particles don't need cross-validation
@@ -584,6 +586,94 @@ def analyze_compound(token, compound_in_dict: bool) -> CompoundAnalysis | None:
     )
 
 
+
+class ExpressionFallbackResult:
+    """Result of expression fallback analysis using Mode A split."""
+    __slots__ = ("components", "combined_pattern", "success")
+
+    def __init__(
+        self,
+        components: list[ComponentPitch],
+        combined_pattern: list[str],
+        success: bool,
+    ):
+        self.components = components
+        self.combined_pattern = combined_pattern
+        self.success = success
+
+
+def analyze_expression_fallback(token) -> ExpressionFallbackResult | None:
+    """Fallback analysis for expressions not found in dictionary.
+    
+    When a token (especially interjections like おはようございます) is not found
+    in the dictionary, try splitting it using Mode A and analyze each part.
+    
+    Args:
+        token: SudachiPy token to analyze
+        
+    Returns:
+        ExpressionFallbackResult with components and combined pattern,
+        or None if splitting doesn't help
+    """
+    # Split using Mode A (smallest units)
+    parts = token.split(tokenizer.Tokenizer.SplitMode.A)
+    if len(parts) <= 1:
+        return None  # Can't split further
+    
+    components: list[ComponentPitch] = []
+    combined_pattern: list[str] = []
+    has_known_accent = False
+    
+    for part in parts:
+        reading_hira = jaconv.kata2hira(part.reading_form())
+        pos = get_pos(part)
+        lemma = part.dictionary_form()
+        normalized = part.normalized_form()
+        
+        # Look up pitch for this part
+        pitch = lookup_pitch(part.surface(), reading_hira, lemma, normalized)
+        
+        mora_count = count_morae(reading_hira)
+        
+        # Determine if this part has reliable pitch data
+        reliable = pitch.source in RELIABLE_SOURCES and pitch.accent_type is not None
+        if reliable:
+            has_known_accent = True
+        
+        # Generate pattern for this part
+        if mora_count == 0:
+            part_pattern = []  # Skip empty readings
+        elif pitch.accent_type is not None:
+            part_pattern = get_pitch_pattern(pitch.accent_type, mora_count)
+        elif is_particle(pos):
+            # Particles: follow the previous pitch (simplified: use H)
+            part_pattern = ["H"] * mora_count if combined_pattern and combined_pattern[-1] == "H" else ["L"] * mora_count
+        else:
+            # Unknown: default to heiban-like (L then H)
+            part_pattern = ["L"] + ["H"] * (mora_count - 1) if mora_count > 1 else ["H"]
+        
+        combined_pattern.extend(part_pattern)
+        
+        components.append(ComponentPitch(
+            surface=part.surface(),
+            reading=reading_hira,
+            accent_type=pitch.accent_type,
+            mora_count=mora_count,
+            part_of_speech=pos,
+            reliable=reliable,
+        ))
+    
+    # Only return if we found at least one part with known accent
+    if not has_known_accent:
+        return None
+    
+    return ExpressionFallbackResult(
+        components=components,
+        combined_pattern=combined_pattern,
+        success=True,
+    )
+
+
 def lookup_pitch(
     surface: str,
     reading_hira: str,
@@ -828,6 +918,7 @@ def analyze_text(text: str) -> list[WordPitch]:
 
         # Compound analysis: check if this word splits into components
         compound_analysis = None
+        expression_fallback = None
         components = None
         is_compound = False
         final_accent_type = lookup_result.accent_type
@@ -851,13 +942,32 @@ def analyze_text(text: str) -> list[WordPitch]:
                     warning,
                 )
 
+        # Expression fallback: if lookup failed and no compound analysis helped,
+        # try splitting with Mode A and analyzing parts
+        # Skip for particles and proper nouns (they have special handling)
+        if (source == "rule" or final_accent_type is None) and not is_compound and not is_particle(pos) and not is_proper_noun(token):
+            expression_fallback = analyze_expression_fallback(token)
+            
+            if expression_fallback is not None and expression_fallback.success:
+                # Use the combined pattern from parts
+                is_compound = True  # Show as compound for UI
+                components = expression_fallback.components
+                pitch_pattern = expression_fallback.combined_pattern
+                source = "expression_parts"
+                confidence = get_confidence_for_source(source)
+                warning = WARNINGS["expression_parts"]
+                # Set accent_type to None since it's a combined pattern
+                final_accent_type = None
+
         # Generate pitch pattern only for appropriate sources
         # Don't generate pattern if accent is None (unpredictable compound or unknown)
-        pitch_pattern = (
-            get_pitch_pattern(final_accent_type, mora_count)
-            if should_generate_pitch_pattern(source) and final_accent_type is not None
-            else []
-        )
+        # Skip if expression_fallback already set the pattern
+        if expression_fallback is None or not expression_fallback.success:
+            pitch_pattern = (
+                get_pitch_pattern(final_accent_type, mora_count)
+                if should_generate_pitch_pattern(source) and final_accent_type is not None
+                else []
+            )
 
         words_result.append(WordPitch(
             surface=surface,
