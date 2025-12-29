@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnalyticsIcon } from "./icons/DoodleIcons";
+import { AnalyticsIcon, BookIcon, TargetIcon } from "./icons/DoodleIcons";
 
-const tools = [
-  { href: "/", label: "Analyzer", icon: AnalyticsIcon },
+const navLinks = [
+  { href: "/", label: "Praticar", icon: AnalyticsIcon },
+  { href: "/learn", label: "Aprender", icon: BookIcon },
+  { href: "/examples", label: "Exemplos", icon: TargetIcon },
 ];
 
 export function Navigation() {
@@ -27,14 +29,15 @@ export function Navigation() {
             </span>
           </Link>
 
-          {/* Tool Tabs */}
+          {/* Navigation Links */}
           <nav className="flex gap-1">
-            {tools.map((tool) => {
-              const isActive = pathname === tool.href;
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href ||
+                (link.href !== "/" && pathname.startsWith(link.href));
               return (
                 <Link
-                  key={tool.href}
-                  href={tool.href}
+                  key={link.href}
+                  href={link.href}
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-riso font-medium text-sm
                     transition-all duration-200
@@ -44,8 +47,8 @@ export function Navigation() {
                     }
                   `}
                 >
-                  <tool.icon size={16} />
-                  <span>{tool.label}</span>
+                  <link.icon size={16} />
+                  <span className="hidden sm:inline">{link.label}</span>
                 </Link>
               );
             })}

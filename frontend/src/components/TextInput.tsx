@@ -1,14 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface TextInputProps {
   onAnalyze: (text: string) => void;
   isLoading: boolean;
+  initialValue?: string | null;
 }
 
-export function TextInput({ onAnalyze, isLoading }: TextInputProps) {
+export function TextInput({ onAnalyze, isLoading, initialValue }: TextInputProps) {
   const [text, setText] = useState("昨日は橋を渡って箸でご飯を食べました");
+
+  // Update text when initialValue changes (from query param)
+  useEffect(() => {
+    if (initialValue) {
+      setText(initialValue);
+    }
+  }, [initialValue]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

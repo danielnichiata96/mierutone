@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { TextInput } from "@/components/TextInput";
 import { PitchVisualizer } from "@/components/PitchVisualizer";
 import { Legend } from "@/components/Legend";
@@ -11,14 +12,16 @@ import { QuickExamples } from "@/components/QuickExamples";
 import { analyzeText } from "@/lib/api";
 import type { WordPitch } from "@/types/pitch";
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [words, setWords] = useState<WordPitch[]>([]);
   const [currentText, setCurrentText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRecordCompare, setShowRecordCompare] = useState(false);
+  const [initialText, setInitialText] = useState<string | null>(null);
 
-  const handleAnalyze = async (text: string) => {
+  const handleAnalyze = useCallback(async (text: string) => {
     setIsLoading(true);
     setError(null);
     setCurrentText(text);
@@ -33,7 +36,16 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Check for text query parameter from /examples
+  useEffect(() => {
+    const textParam = searchParams.get("text");
+    if (textParam && textParam !== initialText) {
+      setInitialText(textParam);
+      handleAnalyze(textParam);
+    }
+  }, [searchParams, initialText, handleAnalyze]);
 
   return (
     <main className="min-h-screen bg-paper-white">
@@ -60,7 +72,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <section className="lg:col-span-4 space-y-6">
-            <TextInput onAnalyze={handleAnalyze} isLoading={isLoading} />
+            <TextInput onAnalyze={handleAnalyze} isLoading={isLoading} initialValue={initialText} />
             <Legend />
           </section>
 
@@ -142,5 +154,22 @@ export default function Home() {
         </footer>
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-paper-white">
+        <div className="container mx-auto px-6 py-12 max-w-5xl">
+          <div className="animate-pulse">
+            <div className="h-12 bg-ink-black/10 rounded-riso mb-4 w-2/3 mx-auto"></div>
+            <div className="h-6 bg-ink-black/5 rounded-riso w-1/2 mx-auto"></div>
+          </div>
+        </div>
+      </main>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
