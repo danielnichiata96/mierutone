@@ -49,9 +49,12 @@ export default function PatternsPage() {
             <ul className="mt-4 space-y-2 text-ink-black/80">
               <li><strong>0</strong> = No drop (Heiban - flat)</li>
               <li><strong>1</strong> = Drop after 1st mora (Atamadaka - head-high)</li>
-              <li><strong>2 to N-1</strong> = Drop after a middle mora (Nakadaka - middle-high)</li>
-              <li><strong>N</strong> = Drop after last mora (Odaka - tail-high)</li>
+              <li><strong>2, 3...</strong> = Drop after a middle mora (Nakadaka - middle-high)</li>
+              <li><strong>Last mora</strong> = Drop after final mora (Odaka - tail-high)</li>
             </ul>
+            <p className="text-xs text-ink-black/50 mt-4 italic">
+              Note: Patterns shown are for standard Tokyo dialect (標準語). Regional dialects may differ significantly.
+            </p>
           </section>
 
           {/* Pattern 1: Heiban */}
@@ -172,24 +175,24 @@ export default function PatternsPage() {
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <ExampleLink
-                word="心"
-                reading="こころ"
+                word="卵"
+                reading="たまご"
                 accent="²"
-                meaning="Heart"
-                pattern="こ↗こ↘ろ"
+                meaning="Egg"
+                pattern="た↗ま↘ご"
               />
               <ExampleLink
-                word="男"
-                reading="おとこ"
+                word="先生"
+                reading="せんせい"
                 accent="³"
-                meaning="Man"
-                pattern="お↗とこ↘"
+                meaning="Teacher"
+                pattern="せ↗んせ↘い"
               />
             </div>
 
             <p className="text-sm text-ink-black/70 mt-4">
-              <strong>Key:</strong> The number indicates the accented mora. 心² means
-              the pitch drops AFTER the 2nd mora.
+              <strong>Key:</strong> The number indicates the accented mora. 卵² means
+              the pitch drops AFTER the 2nd mora (3 morae total, so middle).
             </p>
           </section>
 
@@ -252,33 +255,33 @@ export default function PatternsPage() {
                     <th className="text-left py-2 px-3">Type</th>
                     <th className="text-left py-2 px-3">Name</th>
                     <th className="text-left py-2 px-3">Drop</th>
-                    <th className="text-left py-2 px-3">Pattern</th>
+                    <th className="text-left py-2 px-3">Example</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-ink-black/5">
                     <td className="py-2 px-3 font-bold">0</td>
-                    <td className="py-2 px-3">平板</td>
-                    <td className="py-2 px-3">None</td>
-                    <td className="py-2 px-3 font-mono">LHHH...</td>
+                    <td className="py-2 px-3">平板 Heiban</td>
+                    <td className="py-2 px-3">Never</td>
+                    <td className="py-2 px-3 font-mono">さ↗くら― (cherry)</td>
                   </tr>
                   <tr className="border-b border-ink-black/5">
                     <td className="py-2 px-3 font-bold">1</td>
-                    <td className="py-2 px-3">頭高</td>
+                    <td className="py-2 px-3">頭高 Atamadaka</td>
                     <td className="py-2 px-3">After 1st</td>
-                    <td className="py-2 px-3 font-mono">HLLL...</td>
+                    <td className="py-2 px-3 font-mono">ね↘こ (cat)</td>
                   </tr>
                   <tr className="border-b border-ink-black/5">
-                    <td className="py-2 px-3 font-bold">2–(N-1)</td>
-                    <td className="py-2 px-3">中高</td>
-                    <td className="py-2 px-3">Before last</td>
-                    <td className="py-2 px-3 font-mono">LHHL...</td>
+                    <td className="py-2 px-3 font-bold">2, 3...</td>
+                    <td className="py-2 px-3">中高 Nakadaka</td>
+                    <td className="py-2 px-3">Middle</td>
+                    <td className="py-2 px-3 font-mono">た↗ま↘ご (egg)</td>
                   </tr>
                   <tr>
-                    <td className="py-2 px-3 font-bold">N</td>
-                    <td className="py-2 px-3">尾高</td>
-                    <td className="py-2 px-3">After last</td>
-                    <td className="py-2 px-3 font-mono">LHHH↘が</td>
+                    <td className="py-2 px-3 font-bold">=morae</td>
+                    <td className="py-2 px-3">尾高 Odaka</td>
+                    <td className="py-2 px-3">On particle</td>
+                    <td className="py-2 px-3 font-mono">は↗し↘が (bridge)</td>
                   </tr>
                 </tbody>
               </table>
