@@ -84,7 +84,21 @@ export default function DashboardPage() {
         })
         .catch((err) => {
           console.error("Failed to load dashboard data:", err);
-          setError("Failed to load your data. Please try again.");
+          // Show detailed error message
+          const errorMsg = err.message || String(err);
+          if (errorMsg.includes("401")) {
+            setError(`Authentication error (401): Your session may have expired or the backend cannot validate your token. Try signing out and back in.`);
+          } else if (errorMsg.includes("403")) {
+            setError(`Access denied (403): You don't have permission to access this data.`);
+          } else if (errorMsg.includes("404")) {
+            setError(`API not found (404): The history endpoint doesn't exist on the backend.`);
+          } else if (errorMsg.includes("500")) {
+            setError(`Server error (500): The backend encountered an error. Check Railway logs.`);
+          } else if (errorMsg.includes("Failed to fetch") || errorMsg.includes("NetworkError")) {
+            setError(`Network error: Cannot reach the backend. Check if NEXT_PUBLIC_API_URL is correct and CORS is configured.`);
+          } else {
+            setError(`Error: ${errorMsg}`);
+          }
         })
         .finally(() => {
           setLoadingData(false);
