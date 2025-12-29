@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { MusicIcon } from "@/components/icons/DoodleIcons";
 
 export const metadata: Metadata = {
   title: "What are Moras? | Learn Japanese Pitch Accent",
@@ -22,8 +23,8 @@ export default function MorasPage() {
         {/* Header */}
         <header className="mb-12">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 rounded-riso bg-primary-300 flex items-center justify-center text-3xl">
-              🎵
+            <div className="w-14 h-14 rounded-riso bg-primary-300 flex items-center justify-center">
+              <MusicIcon size={28} />
             </div>
             <div>
               <h1 className="font-display text-3xl font-bold text-ink-black">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { ChartIcon } from "@/components/icons/DoodleIcons";
 
 export const metadata: Metadata = {
   title: "The 4 Pitch Patterns | Learn Japanese Pitch Accent",
@@ -22,8 +23,8 @@ export default function PatternsPage() {
         {/* Header */}
         <header className="mb-12">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 rounded-riso bg-secondary-300 flex items-center justify-center text-3xl">
-              📊
+            <div className="w-14 h-14 rounded-riso bg-secondary-300 flex items-center justify-center">
+              <ChartIcon size={28} />
             </div>
             <div>
               <h1 className="font-display text-3xl font-bold text-ink-black">

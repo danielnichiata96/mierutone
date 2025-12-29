@@ -4,11 +4,13 @@ export interface Example {
   pair?: string; // For minimal pairs
 }
 
+export type IconName = "wave" | "shuffle" | "hash" | "run" | "palette" | "map" | "chat";
+
 export interface ExampleCategory {
   id: string;
   name: string;
   nameJp: string;
-  icon: string;
+  iconName: IconName;
   description: string;
   items: Example[];
 }
@@ -18,7 +20,7 @@ export const exampleCategories: ExampleCategory[] = [
     id: "greetings",
     name: "Greetings",
     nameJp: "挨拶",
-    icon: "👋",
+    iconName: "wave",
     description: "Essential daily greetings and polite expressions",
     items: [
       { text: "おはようございます", translation: "Good morning (polite)" },
@@ -37,7 +39,7 @@ export const exampleCategories: ExampleCategory[] = [
     id: "minimal-pairs",
     name: "Minimal Pairs",
     nameJp: "同音異義語",
-    icon: "🔀",
+    iconName: "shuffle",
     description: "Words that sound similar but have different pitch patterns",
     items: [
       { text: "箸", translation: "Chopsticks (はし¹)", pair: "橋" },
@@ -54,7 +56,7 @@ export const exampleCategories: ExampleCategory[] = [
     id: "numbers",
     name: "Numbers",
     nameJp: "数字",
-    icon: "🔢",
+    iconName: "hash",
     description: "Counting and number-related expressions",
     items: [
       { text: "一", translation: "One" },
@@ -75,7 +77,7 @@ export const exampleCategories: ExampleCategory[] = [
     id: "verbs",
     name: "Common Verbs",
     nameJp: "動詞",
-    icon: "🏃",
+    iconName: "run",
     description: "Frequently used verbs in various forms",
     items: [
       { text: "食べる", translation: "To eat" },
@@ -97,7 +99,7 @@ export const exampleCategories: ExampleCategory[] = [
     id: "adjectives",
     name: "Adjectives",
     nameJp: "形容詞",
-    icon: "🎨",
+    iconName: "palette",
     description: "Common descriptive words",
     items: [
       { text: "大きい", translation: "Big" },
@@ -116,7 +118,7 @@ export const exampleCategories: ExampleCategory[] = [
     id: "places",
     name: "Places",
     nameJp: "場所",
-    icon: "🗺️",
+    iconName: "map",
     description: "Common locations and proper nouns",
     items: [
       { text: "東京", translation: "Tokyo" },
@@ -135,7 +137,7 @@ export const exampleCategories: ExampleCategory[] = [
     id: "sentences",
     name: "Sentences",
     nameJp: "文",
-    icon: "💬",
+    iconName: "chat",
     description: "Complete sentences to practice phrase-level pitch",
     items: [
       { text: "日本語を勉強しています", translation: "I am studying Japanese" },

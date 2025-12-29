@@ -183,3 +183,172 @@ export function StopIcon({ className = "", size = 20 }: IconProps) {
     </svg>
   );
 }
+
+export function MusicIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M85 5v60c0 11-9 20-20 20s-20-9-20-20 9-20 20-20c4 0 8 1 11 3V20L40 30v45c0 11-9 20-20 20S0 86 0 75s9-20 20-20c4 0 8 1 11 3V15L85 5z"/>
+    </svg>
+  );
+}
+
+export function ChartIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="currentColor"
+      className={className}
+    >
+      <rect x="5" y="60" width="20" height="35" rx="3"/>
+      <rect x="30" y="40" width="20" height="55" rx="3"/>
+      <rect x="55" y="20" width="20" height="75" rx="3"/>
+      <rect x="80" y="5" width="15" height="90" rx="3"/>
+      <circle cx="15" cy="50" r="5"/>
+      <circle cx="40" cy="30" r="5"/>
+      <circle cx="65" cy="10" r="5"/>
+      <path d="M15 50L40 30L65 10" stroke="currentColor" strokeWidth="3" fill="none"/>
+    </svg>
+  );
+}
+
+export function LinkIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M45 55L55 45M35 65c-11-11-11-29 0-40l10-10c11-11 29-11 40 0s11 29 0 40l-5 5M65 35c11 11 11 29 0 40l-10 10c-11 11-29 11-40 0s-11-29 0-40l5-5" stroke="currentColor" strokeWidth="10" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
+
+export function PuzzleIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M25 5h25v10c0 5 5 10 10 10s10-5 10-10V5h25v25h-10c-5 0-10 5-10 10s5 10 10 10h10v25H70v-10c0-5-5-10-10-10s-10 5-10 10v10H25V70h10c5 0 10-5 10-10s-5-10-10-10H25V25h10c5 0 10-5 10-10S40 5 35 5H25z"/>
+    </svg>
+  );
+}
+
+export function WaveIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M50 95c-25 0-45-20-45-45S25 5 50 5s45 20 45 45-20 45-45 45zm0-80c-19 0-35 16-35 35s16 35 35 35 35-16 35-35-16-35-35-35z"/>
+      <path d="M35 45c0-8 7-15 15-15s15 7 15 15M30 60c0 11 9 20 20 20s20-9 20-20"/>
+      <circle cx="35" cy="40" r="5"/>
+      <circle cx="65" cy="40" r="5"/>
+    </svg>
+  );
+}
+
+export function ShuffleIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M5 25h20l50 50h20M5 75h20l15-15M55 40l20-15h20" stroke="currentColor" strokeWidth="10" strokeLinecap="round" fill="none"/>
+      <path d="M80 15l15 10-15 10M80 65l15 10-15 10"/>
+    </svg>
+  );
+}
+
+export function HashIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M25 5L15 95M45 5L35 95M5 35h90M5 65h90" stroke="currentColor" strokeWidth="10" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
+
+export function RunIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="currentColor"
+      className={className}
+    >
+      <circle cx="65" cy="15" r="12"/>
+      <path d="M45 35l25 5 15 25M35 55l20-10 10 20-15 25M25 45l20 10M55 75l10 20" stroke="currentColor" strokeWidth="8" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
+
+export function PaletteIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M50 5C25 5 5 25 5 50s20 45 45 45c5 0 10-5 10-10 0-3-1-5-3-7-2-2-3-4-3-8 0-5 5-10 10-10h12c22 0 40-18 40-40 0-25-30-45-66-45zm-30 45c-5 0-10-5-10-10s5-10 10-10 10 5 10 10-5 10-10 10zm15-25c-5 0-10-5-10-10s5-10 10-10 10 5 10 10-5 10-10 10zm30 0c-5 0-10-5-10-10s5-10 10-10 10 5 10 10-5 10-10 10zm15 25c-5 0-10-5-10-10s5-10 10-10 10 5 10 10-5 10-10 10z"/>
+    </svg>
+  );
+}
+
+export function MapIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M50 5C30 5 15 20 15 40c0 25 35 55 35 55s35-30 35-55c0-20-15-35-35-35zm0 50c-8 0-15-7-15-15s7-15 15-15 15 7 15 15-7 15-15 15z"/>
+    </svg>
+  );
+}
+
+export function ChatIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M50 5C25 5 5 22 5 43c0 12 7 23 18 30v22l20-15c2 0 5 0 7 0 25 0 45-17 45-38S75 5 50 5z"/>
+      <circle cx="30" cy="43" r="5" fill="white"/>
+      <circle cx="50" cy="43" r="5" fill="white"/>
+      <circle cx="70" cy="43" r="5" fill="white"/>
+    </svg>
+  );
+}

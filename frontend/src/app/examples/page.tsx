@@ -2,7 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { exampleCategories, type ExampleCategory, type Example } from "@/data/examples";
+import { exampleCategories, type ExampleCategory, type Example, type IconName } from "@/data/examples";
+import {
+  WaveIcon,
+  ShuffleIcon,
+  HashIcon,
+  RunIcon,
+  PaletteIcon,
+  MapIcon,
+  ChatIcon,
+} from "@/components/icons/DoodleIcons";
+import type { ComponentType } from "react";
+
+const iconMap: Record<IconName, ComponentType<{ size?: number; className?: string }>> = {
+  wave: WaveIcon,
+  shuffle: ShuffleIcon,
+  hash: HashIcon,
+  run: RunIcon,
+  palette: PaletteIcon,
+  map: MapIcon,
+  chat: ChatIcon,
+};
 
 function CategoryCard({
   category,
@@ -20,8 +40,11 @@ function CategoryCard({
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full p-4 flex items-center gap-4 hover:bg-ink-black/5 transition-colors"
       >
-        <div className="w-12 h-12 rounded-riso bg-primary-300/30 flex items-center justify-center text-2xl">
-          {category.icon}
+        <div className="w-12 h-12 rounded-riso bg-primary-300/30 flex items-center justify-center">
+          {(() => {
+            const Icon = iconMap[category.iconName];
+            return <Icon size={24} />;
+          })()}
         </div>
         <div className="flex-1 text-left">
           <h2 className="font-display text-lg font-bold text-ink-black">

@@ -1,18 +1,30 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { MusicIcon, ChartIcon, LinkIcon, PuzzleIcon } from "@/components/icons/DoodleIcons";
+import type { ComponentType } from "react";
 
 export const metadata: Metadata = {
   title: "Learn Japanese Pitch Accent",
   description: "Understand moras, pitch patterns, and how Japanese melody works. Free educational content for mastering pitch accent.",
 };
 
-const learnTopics = [
+interface LearnTopic {
+  id: string;
+  title: string;
+  titleJp: string;
+  description: string;
+  Icon: ComponentType<{ size?: number; className?: string }>;
+  color: string;
+  available: boolean;
+}
+
+const learnTopics: LearnTopic[] = [
   {
     id: "moras",
     title: "What are Moras?",
     titleJp: "拍とは",
     description: "Understanding the rhythmic units of Japanese - different from syllables!",
-    icon: "🎵",
+    Icon: MusicIcon,
     color: "bg-primary-300",
     available: true,
   },
@@ -21,7 +33,7 @@ const learnTopics = [
     title: "The 4 Pitch Patterns",
     titleJp: "4つのアクセント型",
     description: "Heiban, Atamadaka, Nakadaka, Odaka - the building blocks of Japanese melody.",
-    icon: "📊",
+    Icon: ChartIcon,
     color: "bg-secondary-300",
     available: true,
   },
@@ -30,7 +42,7 @@ const learnTopics = [
     title: "Particles & Pitch",
     titleJp: "助詞とアクセント",
     description: "How particles inherit pitch from the words they follow.",
-    icon: "🔗",
+    Icon: LinkIcon,
     color: "bg-accent-300",
     available: false, // Coming soon
   },
@@ -39,7 +51,7 @@ const learnTopics = [
     title: "Compound Words",
     titleJp: "複合語",
     description: "How pitch changes when words combine - McCawley's rules explained.",
-    icon: "🧩",
+    Icon: PuzzleIcon,
     color: "bg-energy-300",
     available: false, // Coming soon
   },
@@ -64,8 +76,8 @@ export default function LearnPage() {
           {learnTopics.map((topic) => {
             const cardContent = (
               <div className="flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-riso ${topic.color} flex items-center justify-center text-2xl`}>
-                  {topic.icon}
+                <div className={`w-12 h-12 rounded-riso ${topic.color} flex items-center justify-center`}>
+                  <topic.Icon size={24} />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
