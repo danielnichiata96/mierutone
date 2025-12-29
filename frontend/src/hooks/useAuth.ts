@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
 
 export function useAuth() {
@@ -11,8 +11,15 @@ export function useAuth() {
 
   // Use singleton - stable reference across renders
   const supabase = useMemo(() => getSupabase(), []);
+  const isConfigured = isSupabaseConfigured();
 
   useEffect(() => {
+    // Skip if Supabase is not configured
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -38,24 +45,31 @@ export function useAuth() {
   }, []);
 
   const signInWithGoogle = useCallback(
-    (next?: string) =>
-      supabase.auth.signInWithOAuth({
+    (next?: string) => {
+      if (!supabase) return Promise.resolve({ data: null, error: new Error("Supabase not configured") });
+      return supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: getRedirectUrl(next) },
-      }),
+      });
+    },
     [supabase, getRedirectUrl]
   );
 
   const signInWithGithub = useCallback(
-    (next?: string) =>
-      supabase.auth.signInWithOAuth({
+    (next?: string) => {
+      if (!supabase) return Promise.resolve({ data: null, error: new Error("Supabase not configured") });
+      return supabase.auth.signInWithOAuth({
         provider: "github",
         options: { redirectTo: getRedirectUrl(next) },
-      }),
+      });
+    },
     [supabase, getRedirectUrl]
   );
 
-  const signOut = useCallback(() => supabase.auth.signOut(), [supabase]);
+  const signOut = useCallback(() => {
+    if (!supabase) return Promise.resolve({ error: null });
+    return supabase.auth.signOut();
+  }, [supabase]);
 
   return {
     user,

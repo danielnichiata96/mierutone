@@ -6,6 +6,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 // Helper to get auth token for protected endpoints
 async function getAuthHeaders(): Promise<HeadersInit> {
   const supabase = getSupabase();
+  if (!supabase) return {};
+
   const {
     data: { session },
   } = await supabase.auth.getSession();
