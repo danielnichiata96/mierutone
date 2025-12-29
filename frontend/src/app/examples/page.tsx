@@ -11,7 +11,9 @@ import {
   PaletteIcon,
   MapIcon,
   ChatIcon,
+  LinkIcon,
 } from "@/components/icons/DoodleIcons";
+import { AudioPlayButton } from "@/components/AudioPlayButton";
 import type { ComponentType } from "react";
 
 const iconMap: Record<IconName, ComponentType<{ size?: number; className?: string }>> = {
@@ -22,6 +24,7 @@ const iconMap: Record<IconName, ComponentType<{ size?: number; className?: strin
   palette: PaletteIcon,
   map: MapIcon,
   chat: ChatIcon,
+  link: LinkIcon,
 };
 
 function CategoryCard({
@@ -70,16 +73,23 @@ function CategoryCard({
         <div className="border-t-2 border-ink-black/10 p-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
             {category.items.map((item) => (
-              <button
+              <div
                 key={`${category.id}-${item.text}`}
-                onClick={() => onSelect(item.text)}
-                className="p-3 rounded-riso border-2 border-ink-black/10 hover:border-primary-500 hover:bg-primary-300/10 transition-all text-left group"
+                className="p-3 rounded-riso border-2 border-ink-black/10 hover:border-primary-500 hover:bg-primary-300/10 transition-all group"
               >
-                <p className="font-bold text-ink-black group-hover:text-primary-500 transition-colors">
-                  {item.text}
-                </p>
-                <p className="text-xs text-ink-black/50 truncate">{item.translation}</p>
-              </button>
+                <div className="flex items-start justify-between gap-2">
+                  <button
+                    onClick={() => onSelect(item.text)}
+                    className="flex-1 text-left min-w-0"
+                  >
+                    <p className="font-bold text-ink-black group-hover:text-primary-500 transition-colors">
+                      {item.text}
+                    </p>
+                    <p className="text-xs text-ink-black/50 truncate">{item.translation}</p>
+                  </button>
+                  <AudioPlayButton text={item.text} size="sm" />
+                </div>
+              </div>
             ))}
           </div>
         </div>

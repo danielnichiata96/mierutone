@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ChartIcon } from "@/components/icons/DoodleIcons";
+import { ExampleLink } from "@/components/ExampleLink";
 
 export const metadata: Metadata = {
   title: "The 4 Pitch Patterns | Learn Japanese Pitch Accent",
@@ -77,16 +78,20 @@ export default function PatternsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="p-3 bg-ink-black/5 rounded-riso">
-                <p className="font-bold">桜 (さくら⁰)</p>
-                <p className="text-ink-black/60">Cherry blossom</p>
-                <p className="font-mono text-xs mt-1">さ↗くら―</p>
-              </div>
-              <div className="p-3 bg-ink-black/5 rounded-riso">
-                <p className="font-bold">友達 (ともだち⁰)</p>
-                <p className="text-ink-black/60">Friend</p>
-                <p className="font-mono text-xs mt-1">と↗もだち―</p>
-              </div>
+              <ExampleLink
+                word="桜"
+                reading="さくら"
+                accent="⁰"
+                meaning="Cherry blossom"
+                pattern="さ↗くら―"
+              />
+              <ExampleLink
+                word="友達"
+                reading="ともだち"
+                accent="⁰"
+                meaning="Friend"
+                pattern="と↗もだち―"
+              />
             </div>
 
             <p className="text-sm text-ink-black/70 mt-4">
@@ -119,16 +124,20 @@ export default function PatternsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="p-3 bg-ink-black/5 rounded-riso">
-                <p className="font-bold">猫 (ねこ¹)</p>
-                <p className="text-ink-black/60">Cat</p>
-                <p className="font-mono text-xs mt-1">ね↘こ</p>
-              </div>
-              <div className="p-3 bg-ink-black/5 rounded-riso">
-                <p className="font-bold">箸 (はし¹)</p>
-                <p className="text-ink-black/60">Chopsticks</p>
-                <p className="font-mono text-xs mt-1">は↘し</p>
-              </div>
+              <ExampleLink
+                word="猫"
+                reading="ねこ"
+                accent="¹"
+                meaning="Cat"
+                pattern="ね↘こ"
+              />
+              <ExampleLink
+                word="箸"
+                reading="はし"
+                accent="¹"
+                meaning="Chopsticks"
+                pattern="は↘し"
+              />
             </div>
 
             <p className="text-sm text-ink-black/70 mt-4">
@@ -162,16 +171,20 @@ export default function PatternsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="p-3 bg-ink-black/5 rounded-riso">
-                <p className="font-bold">心 (こころ²)</p>
-                <p className="text-ink-black/60">Heart</p>
-                <p className="font-mono text-xs mt-1">こ↗こ↘ろ</p>
-              </div>
-              <div className="p-3 bg-ink-black/5 rounded-riso">
-                <p className="font-bold">男 (おとこ³)</p>
-                <p className="text-ink-black/60">Man</p>
-                <p className="font-mono text-xs mt-1">お↗とこ↘</p>
-              </div>
+              <ExampleLink
+                word="心"
+                reading="こころ"
+                accent="²"
+                meaning="Heart"
+                pattern="こ↗こ↘ろ"
+              />
+              <ExampleLink
+                word="男"
+                reading="おとこ"
+                accent="³"
+                meaning="Man"
+                pattern="お↗とこ↘"
+              />
             </div>
 
             <p className="text-sm text-ink-black/70 mt-4">
@@ -205,16 +218,20 @@ export default function PatternsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="p-3 bg-ink-black/5 rounded-riso">
-                <p className="font-bold">橋 (はし²)</p>
-                <p className="text-ink-black/60">Bridge</p>
-                <p className="font-mono text-xs mt-1">は↗し↘が</p>
-              </div>
-              <div className="p-3 bg-ink-black/5 rounded-riso">
-                <p className="font-bold">山 (やま²)</p>
-                <p className="text-ink-black/60">Mountain</p>
-                <p className="font-mono text-xs mt-1">や↗ま↘が</p>
-              </div>
+              <ExampleLink
+                word="橋"
+                reading="はし"
+                accent="²"
+                meaning="Bridge"
+                pattern="は↗し↘が"
+              />
+              <ExampleLink
+                word="山"
+                reading="やま"
+                accent="²"
+                meaning="Mountain"
+                pattern="や↗ま↘が"
+              />
             </div>
 
             <p className="text-sm text-ink-black/70 mt-4">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { MusicIcon, ChartIcon, LinkIcon, PuzzleIcon } from "@/components/icons/DoodleIcons";
+import { ExampleLink } from "@/components/ExampleLink";
 import type { ComponentType } from "react";
 
 export const metadata: Metadata = {
@@ -133,16 +134,22 @@ export default function LearnPage() {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-primary-300/20 rounded-riso">
-                <p className="font-bold mb-2">箸 (はし)</p>
-                <p className="text-sm">HA-shi = <span className="text-ink-coral font-bold">HIGH</span>-<span className="text-ink-cornflower font-bold">LOW</span></p>
-                <p className="text-sm text-ink-black/60">Chopsticks</p>
-              </div>
-              <div className="p-4 bg-secondary-300/20 rounded-riso">
-                <p className="font-bold mb-2">橋 (はし)</p>
-                <p className="text-sm">ha-SHI = <span className="text-ink-cornflower font-bold">LOW</span>-<span className="text-ink-coral font-bold">HIGH</span></p>
-                <p className="text-sm text-ink-black/60">Bridge</p>
-              </div>
+              <ExampleLink
+                word="箸"
+                reading="はし"
+                accent="¹"
+                meaning="Chopsticks"
+                pattern="HA-shi = HIGH-LOW"
+                className="bg-primary-300/20"
+              />
+              <ExampleLink
+                word="橋"
+                reading="はし"
+                accent="²"
+                meaning="Bridge"
+                pattern="ha-SHI = LOW-HIGH"
+                className="bg-secondary-300/20"
+              />
             </div>
 
             <p>

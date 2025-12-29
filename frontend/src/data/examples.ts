@@ -4,7 +4,7 @@ export interface Example {
   pair?: string; // For minimal pairs
 }
 
-export type IconName = "wave" | "shuffle" | "hash" | "run" | "palette" | "map" | "chat";
+export type IconName = "wave" | "shuffle" | "hash" | "run" | "palette" | "map" | "chat" | "link";
 
 export interface ExampleCategory {
   id: string;
@@ -93,6 +93,31 @@ export const exampleCategories: ExampleCategory[] = [
       { text: "する", translation: "To do" },
       { text: "ある", translation: "To exist (things)" },
       { text: "いる", translation: "To exist (living)" },
+    ],
+  },
+  {
+    id: "conjugations",
+    name: "Verb Conjugations",
+    nameJp: "動詞の活用",
+    iconName: "link",
+    description: "See how pitch changes across verb forms",
+    items: [
+      { text: "食べる", translation: "To eat (dictionary)" },
+      { text: "食べます", translation: "To eat (polite)" },
+      { text: "食べた", translation: "Ate (past)" },
+      { text: "食べました", translation: "Ate (polite past)" },
+      { text: "食べない", translation: "Don't eat (negative)" },
+      { text: "食べて", translation: "Eating (te-form)" },
+      { text: "行く", translation: "To go (dictionary)" },
+      { text: "行きます", translation: "To go (polite)" },
+      { text: "行った", translation: "Went (past)" },
+      { text: "行きました", translation: "Went (polite past)" },
+      { text: "行かない", translation: "Don't go (negative)" },
+      { text: "行って", translation: "Going (te-form)" },
+      { text: "する", translation: "To do (dictionary)" },
+      { text: "します", translation: "To do (polite)" },
+      { text: "した", translation: "Did (past)" },
+      { text: "しない", translation: "Don't do (negative)" },
     ],
   },
   {
