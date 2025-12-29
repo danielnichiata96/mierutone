@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     r2_secret_access_key: str = ""
     r2_bucket_name: str = "mierutone-tts-cache"
 
+    # Supabase (Auth + Database)
+    supabase_url: str = ""
+    supabase_anon_key: str = ""
+    supabase_jwt_secret: str = ""
+
     class Config:
         env_file = BACKEND_DIR / ".env"
         extra = "ignore"

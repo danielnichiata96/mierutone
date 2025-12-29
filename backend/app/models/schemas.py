@@ -20,6 +20,7 @@ SourceType = Literal[
     "particle",            # Particle/auxiliary verb, inherits pitch from prev word
     "rule",                # No dictionary match, using standard pitch rules (low)
     "compound_rule",       # Compound accent predicted using McCawley rules (low)
+    "expression_parts",    # Expression analyzed by splitting into parts (medium)
     "unknown",             # No data available
 ]
 

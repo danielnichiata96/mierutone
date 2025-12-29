@@ -1,6 +1,20 @@
 import type { AnalyzeResponse } from "@/types/pitch";
+import { getSupabase } from "./supabase";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
+// Helper to get auth token for protected endpoints
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const supabase = getSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (session?.access_token) {
+    return { Authorization: `Bearer ${session.access_token}` };
+  }
+  return {};
+}
 
 export async function analyzeText(text: string): Promise<AnalyzeResponse> {
   const response = await fetch(`${API_URL}/analyze`, {
@@ -197,4 +211,93 @@ export async function getTTSWithTimings(
     wordTimings: data.word_timings,
     durationMs: data.duration_ms,
   };
+}
+
+// ============================================================================
+// History API (protected - requires authentication)
+// ============================================================================
+
+export interface HistoryAnalysis {
+  id: string;
+  text: string;
+  word_count: number;
+  created_at: string;
+}
+
+export interface HistoryScore {
+  id: string;
+  text: string;
+  score: number;
+  created_at: string;
+}
+
+export interface HistoryResponse {
+  analyses: HistoryAnalysis[];
+  scores: HistoryScore[];
+}
+
+export interface StatsResponse {
+  total_analyses: number;
+  total_comparisons: number;
+  average_score: number;
+}
+
+export async function saveAnalysis(
+  text: string,
+  wordCount: number
+): Promise<{ success: boolean; id: string }> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/history/analysis`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify({ text, word_count: wordCount }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to save analysis: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function saveScore(
+  text: string,
+  score: number
+): Promise<{ success: boolean; id: string }> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/history/score`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify({ text, score }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to save score: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function getHistory(limit = 50): Promise<HistoryResponse> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/history?limit=${limit}`, {
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get history: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function getStats(): Promise<StatsResponse> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/history/stats`, { headers });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get stats: ${response.status}`);
+  }
+
+  return response.json();
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { TextInput } from "@/components/TextInput";
 import { PitchVisualizer } from "@/components/PitchVisualizer";
@@ -23,6 +23,17 @@ function HomeContent() {
   const [error, setError] = useState<string | null>(null);
   const [showRecordCompare, setShowRecordCompare] = useState(false);
   const [initialText, setInitialText] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const copiedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleAnalyze = useCallback(async (text: string) => {
     setIsLoading(true);
@@ -33,6 +44,11 @@ function HomeContent() {
     try {
       const response = await analyzeText(text);
       setWords(response.words);
+
+      // Update URL with text param (without reload)
+      const url = new URL(window.location.href);
+      url.searchParams.set("text", text);
+      window.history.replaceState({}, "", url.toString());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to analyze text");
       setWords([]);
@@ -49,6 +65,48 @@ function HomeContent() {
       handleAnalyze(textParam);
     }
   }, [searchParams, initialText, handleAnalyze]);
+
+  // ESC key to close RecordCompare
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && showRecordCompare) {
+        setShowRecordCompare(false);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showRecordCompare]);
+
+  const handleShare = async () => {
+    const url = window.location.href;
+
+    // Try native share first (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "MieruTone - Pitch Accent",
+          text: currentText,
+          url,
+        });
+        return;
+      } catch {
+        // User cancelled or error, fall through to clipboard
+      }
+    }
+
+    // Fallback to clipboard
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      // Clear any existing timeout
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+      copiedTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard failed, do nothing
+    }
+  };
 
   return (
     <main className="min-h-screen bg-paper-white">
@@ -103,12 +161,34 @@ function HomeContent() {
                 </div>
 
                 {words.length > 0 && !showRecordCompare && (
-                  <div className="flex justify-center">
+                  <div className="flex flex-wrap justify-center gap-3">
                     <button
                       onClick={() => setShowRecordCompare(true)}
                       className="riso-button-secondary"
                     >
-                      Record & Compare
+                      <span className="hidden sm:inline">Record & Compare</span>
+                      <span className="sm:hidden">Record</span>
+                    </button>
+                    <button
+                      onClick={handleShare}
+                      className="riso-button-ghost flex items-center gap-2"
+                      title="Share this analysis"
+                    >
+                      {copied ? (
+                        <>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                          </svg>
+                          Share
+                        </>
+                      )}
                     </button>
                   </div>
                 )}

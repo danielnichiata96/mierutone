@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import analyze, tts, compare
+from app.routers import analyze, tts, compare, history
 
 app = FastAPI(
     title=settings.app_name,
@@ -25,6 +25,7 @@ app.add_middleware(
 app.include_router(analyze.router, prefix=settings.api_prefix)
 app.include_router(tts.router, prefix=settings.api_prefix)
 app.include_router(compare.router, prefix=settings.api_prefix)
+app.include_router(history.router, prefix=settings.api_prefix)
 
 
 @app.get("/health")
