@@ -159,22 +159,28 @@
 }
 ```
 
-### 📋 Fase 4 - Conteúdo Guiado ← **PRÓXIMO**
+### ✅ Fase 4 - Conteúdo Guiado (Completo)
 
 **Objetivo:** Usuário não precisa pensar "o que praticar"
 
-- [ ] **Biblioteca de Exemplos**
-  - Cumprimentos (10 frases)
-  - Números (1-100, contadores)
-  - Verbos comuns (50 verbos)
-  - Pares mínimos (20 pares)
+- [x] **Biblioteca de Exemplos** (`/examples`)
+  - 8 categorias (Greetings, Minimal Pairs, Numbers, Verbs, Conjugations, Adjectives, Places, Sentences)
+  - 80+ exemplos com TTS audio buttons
+  - Cards clicáveis que levam ao analyzer
 
-- [ ] **Decks Temáticos**
-  - Business Japanese
-  - Travel Japanese
-  - JLPT N5-N1 vocabulary
+- [x] **Learn Pages** (`/learn`)
+  - Página de Moras com exemplos clicáveis
+  - Página de Patterns com os 4 tipos explicados
+  - Fontes acadêmicas (NHK, Vance, Labrune)
+  - Nota sobre dialeto de Tokyo
 
-- [ ] **Daily Challenge**
+- [x] **Landing Page**
+  - Hero section com CTAs
+  - Features section (4 features)
+  - Pricing preview (Free tier)
+  - Social proof section
+
+- [ ] **Daily Challenge** (Futuro)
   - 5 palavras/dia
   - Streak counter
   - Notificação
@@ -270,27 +276,28 @@ Dictionary: GitHub Releases (mierutone-dictionary)
 
 ## Próximo Passo Imediato
 
-**Fase 3.5 está completa!** Sistema tem:
-- Transparência total (source, confidence, warnings)
-- Análise de compostos com McCawley rules
-- Cross-validation UniDic
-- PhraseFlow com pitch conectado
-- Visual design consistente (Riso palette)
+**Fase 4 está completa!** Sistema tem:
+- Biblioteca de 80+ exemplos em 8 categorias
+- Páginas /learn com conteúdo sobre moras e patterns
+- Landing page com Features, Pricing, Social Proof
+- TTS audio buttons em todos os exemplos
+- SEO meta tags em todas as páginas
 
-Próximos passos são **Fase 4 - Conteúdo Guiado**:
+Próximos passos são **Fase 5 - Auth & Progresso**:
 
-1. **Criar biblioteca de exemplos** (JSON estático inicial)
-   - Cumprimentos (10 frases)
-   - Números básicos
-   - Pares mínimos clássicos (箸/橋/端, 雨/飴)
+1. **Setup Auth** (Clerk ou Supabase)
+   - Login/signup flow
+   - Protected routes
+   - User profile
 
-2. **UI para selecionar exemplos**
-   - Cards com categorias
-   - Click para preencher input
+2. **Histórico de Prática**
+   - Salvar scores por palavra
+   - Gráfico de evolução
+   - Palavras problemáticas
 
-3. **Daily Challenge** (opcional)
-   - 5 palavras/dia
-   - Streak counter
+3. **Monetização** (opcional)
+   - Stripe integration
+   - Usage limits para free tier
 
 ---
 

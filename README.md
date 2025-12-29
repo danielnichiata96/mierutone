@@ -1,21 +1,19 @@
-# PitchLab JP 🇯🇵
+# MieruTone 🎵
 
-> **The "Grammarly" of Japanese Pronunciation.**
+> **See the invisible melody of Japanese.**
 >
-> *Stop sounding like a robot. Start sounding native.*
-
-
-![PitchLab Preview](/assets/preview.png)
+> *Master pitch accent with instant visualization and native audio.*
 
 ---
 
 ## 🚀 Features
 
--   **Real-time Pitch Visualization**: Type any Japanese sentence and see the high/low pitch pattern instantly.
--   **Studio Layout**: A distraction-free, premium editor environment designed for serious study. 
--   **Soft Risograph Aesthetic**: A beautiful, calming UI inspired by print design to make studying less stressful.
--   **Analyze Anything**: Works with Kanji, Hiragana, and Katakana.
--   **Detailed Breakdown**: clear visibility of accent types (Heiban, Atamadaka, Nakadaka, Odaka).
+-   **Instant Pitch Visualization**: Type any Japanese and see HIGH/LOW patterns immediately
+-   **Native TTS Audio**: Azure Neural voices for natural pronunciation
+-   **Record & Compare**: Overlay your voice on native pitch contours
+-   **80+ Curated Examples**: Minimal pairs, verbs, greetings, and more
+-   **Learn Section**: Guides on moras, the 4 pitch patterns, and more
+-   **Cozy Risograph Design**: Soft, print-inspired aesthetic for stress-free study
 
 ## 🛠️ Tech Stack
 
@@ -68,16 +66,19 @@ npm run dev
 
 ## 🗺️ Roadmap
 
--   [x] **Phase 1: MVP Core** - Text Analysis & Visualization
--   [ ] **Phase 2: Audio (TTS)** - Native-level text-to-speech playback
--   [ ] **Phase 3: Record & Compare** - Overlay your voice on native pitch
--   [ ] **Phase 4: Browser Extension** - Pitch accent on any website
+### Completed
+-   [x] **Phase 1: MVP Core** - Text analysis & pitch visualization
+-   [x] **Phase 2: Audio (TTS)** - Azure Neural TTS with caching
+-   [x] **Phase 3: Record & Compare** - Voice comparison with DTW alignment
+-   [x] **Phase 4: Content** - /learn pages, /examples library, landing page
 
-### Future (Requires Auth)
+### In Progress
+-   [ ] **Phase 5: Auth** - User accounts, progress tracking
 
--   [ ] **Pydub** - Prepare audio clips for download/Anki export
--   [ ] **FSRS** - Spaced repetition system for pitch accent review
+### Future
+-   [ ] **Anki Export** - Download pitch cards for spaced repetition
+-   [ ] **Browser Extension** - Pitch accent on any website
 
 ## 📄 License
 
-MIT © PitchLab JP
+MIT © MieruTone
