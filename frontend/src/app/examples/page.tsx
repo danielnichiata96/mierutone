@@ -39,34 +39,37 @@ function CategoryCard({
   return (
     <div className="riso-card overflow-hidden">
       {/* Category Header */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-center gap-4 hover:bg-ink-black/5 transition-colors"
-      >
-        <div className="w-12 h-12 rounded-riso bg-primary-300/30 flex items-center justify-center">
-          {(() => {
-            const Icon = iconMap[category.iconName];
-            return <Icon size={24} />;
-          })()}
-        </div>
-        <div className="flex-1 text-left">
-          <h2 className="font-display text-lg font-bold text-ink-black">
-            {category.name}
-          </h2>
-          <p className="text-xs text-ink-black/50 font-mono">{category.nameJp}</p>
-          <p className="text-sm text-ink-black/60 mt-1">{category.description}</p>
-        </div>
-        <div className="text-ink-black/40">
-          <svg
-            className={`w-5 h-5 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </button>
+      <div className="w-full p-4 flex items-center gap-4">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-4 flex-1 hover:bg-ink-black/5 transition-colors rounded-riso p-1 -m-1"
+        >
+          <div className="w-12 h-12 rounded-riso bg-primary-300/30 flex items-center justify-center">
+            {(() => {
+              const Icon = iconMap[category.iconName];
+              return <Icon size={24} />;
+            })()}
+          </div>
+          <div className="flex-1 text-left">
+            <h2 className="font-display text-lg font-bold text-ink-black">
+              {category.name}
+            </h2>
+            <p className="text-xs text-ink-black/50 font-mono">{category.nameJp}</p>
+            <p className="text-sm text-ink-black/60 mt-1">{category.description}</p>
+          </div>
+          <div className="text-ink-black/40">
+            <svg
+              className={`w-5 h-5 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </button>
+        <AudioPlayButton text={category.nameJp} size="md" />
+      </div>
 
       {/* Expanded Items */}
       {isExpanded && (
