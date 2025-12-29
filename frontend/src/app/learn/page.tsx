@@ -147,10 +147,15 @@ export default function LearnPage() {
                 reading="はし"
                 accent="²"
                 meaning="Bridge"
-                pattern="ha-SHI = LOW-HIGH"
+                pattern="ha-SHI(-ga) = LOW-HIGH(-LOW)"
                 className="bg-secondary-300/20"
               />
             </div>
+
+            <p className="text-sm text-ink-black/60 italic">
+              Note: 橋 is <strong>Odaka</strong> - the pitch drop only appears on the following particle (が, を, etc.).
+              In isolation, it sounds like a flat pattern!
+            </p>
 
             <p>
               Getting pitch wrong won&apos;t always cause misunderstanding, but it&apos;s the difference
