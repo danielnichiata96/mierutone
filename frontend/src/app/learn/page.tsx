@@ -14,6 +14,7 @@ const learnTopics = [
     description: "Understanding the rhythmic units of Japanese - different from syllables!",
     icon: "🎵",
     color: "bg-primary-300",
+    available: true,
   },
   {
     id: "patterns",
@@ -22,6 +23,7 @@ const learnTopics = [
     description: "Heiban, Atamadaka, Nakadaka, Odaka - the building blocks of Japanese melody.",
     icon: "📊",
     color: "bg-secondary-300",
+    available: true,
   },
   {
     id: "particles",
@@ -30,6 +32,7 @@ const learnTopics = [
     description: "How particles inherit pitch from the words they follow.",
     icon: "🔗",
     color: "bg-accent-300",
+    available: false, // Coming soon
   },
   {
     id: "compounds",
@@ -38,6 +41,7 @@ const learnTopics = [
     description: "How pitch changes when words combine - McCawley's rules explained.",
     icon: "🧩",
     color: "bg-energy-300",
+    available: false, // Coming soon
   },
 ];
 
@@ -57,26 +61,50 @@ export default function LearnPage() {
 
         {/* Topic Cards */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-          {learnTopics.map((topic) => (
-            <Link
-              key={topic.id}
-              href={`/learn/${topic.id}`}
-              className="riso-card-interactive p-6 group"
-            >
+          {learnTopics.map((topic) => {
+            const cardContent = (
               <div className="flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-riso ${topic.color} flex items-center justify-center text-2xl`}>
                   {topic.icon}
                 </div>
                 <div className="flex-1">
-                  <h2 className="font-display text-lg font-bold text-ink-black group-hover:text-primary-500 transition-colors">
-                    {topic.title}
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className={`font-display text-lg font-bold ${
+                      topic.available
+                        ? "text-ink-black group-hover:text-primary-500 transition-colors"
+                        : "text-ink-black/70"
+                    }`}>
+                      {topic.title}
+                    </h2>
+                    {!topic.available && (
+                      <span className="text-[10px] px-2 py-0.5 bg-ink-black/10 rounded-full text-ink-black/50 font-medium">
+                        Coming Soon
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-ink-black/50 font-mono mb-2">{topic.titleJp}</p>
                   <p className="text-sm text-ink-black/70">{topic.description}</p>
                 </div>
               </div>
-            </Link>
-          ))}
+            );
+
+            return topic.available ? (
+              <Link
+                key={topic.id}
+                href={`/learn/${topic.id}`}
+                className="riso-card riso-card-interactive p-6 group cursor-pointer"
+              >
+                {cardContent}
+              </Link>
+            ) : (
+              <div
+                key={topic.id}
+                className="riso-card p-6 group opacity-70 cursor-default"
+              >
+                {cardContent}
+              </div>
+            );
+          })}
         </section>
 
         {/* Quick Overview */}

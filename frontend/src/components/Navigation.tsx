@@ -30,7 +30,7 @@ export function Navigation() {
           </Link>
 
           {/* Navigation Links */}
-          <nav className="flex gap-1">
+          <nav className="flex gap-1" aria-label="Main navigation">
             {navLinks.map((link) => {
               const isActive = pathname === link.href ||
                 (link.href !== "/" && pathname.startsWith(link.href));
@@ -38,6 +38,8 @@ export function Navigation() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  aria-label={link.label}
+                  aria-current={isActive ? "page" : undefined}
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-riso font-medium text-sm
                     transition-all duration-200
@@ -47,7 +49,7 @@ export function Navigation() {
                     }
                   `}
                 >
-                  <link.icon size={16} />
+                  <link.icon size={16} aria-hidden="true" />
                   <span className="hidden sm:inline">{link.label}</span>
                 </Link>
               );

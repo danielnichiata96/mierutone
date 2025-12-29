@@ -46,9 +46,9 @@ function CategoryCard({
       {isExpanded && (
         <div className="border-t-2 border-ink-black/10 p-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {category.items.map((item, index) => (
+            {category.items.map((item) => (
               <button
-                key={index}
+                key={`${category.id}-${item.text}`}
                 onClick={() => onSelect(item.text)}
                 className="p-3 rounded-riso border-2 border-ink-black/10 hover:border-primary-500 hover:bg-primary-300/10 transition-all text-left group"
               >

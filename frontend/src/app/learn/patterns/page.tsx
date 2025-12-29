@@ -269,8 +269,8 @@ export default function PatternsPage() {
 
           {/* CTA */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Link href="/learn/particles" className="riso-button-secondary text-center">
-              Next: Particles & Pitch →
+            <Link href="/learn" className="riso-button-secondary text-center">
+              ← Back to Learn
             </Link>
             <Link href="/" className="riso-button-primary text-center">
               Try the Analyzer
