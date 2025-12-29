@@ -1,4 +1,4 @@
-# PitchLab JP - Product Roadmap
+# Mierutone - Product Roadmap
 
 ## Visão do Produto
 
@@ -109,32 +109,57 @@
 
 | Feature | Descrição | Tech | Status |
 |---------|-----------|------|--------|
-| **Mora Breakdown** | と\|う\|きょ\|う (visual) | fugashi | ✅ Done |
-| **Furigana** | 東京(とうきょう) | fugashi | ✅ Done |
-| **Accent Type** | 平板型, 頭高型, etc. | fugashi + UniDic | ✅ Done |
-| **Word Segmentation** | Colorir por palavra | fugashi | ✅ Done |
-| **Part of Speech** | 名詞, 動詞, etc. | fugashi | ✅ Done |
-| **Phonemes/IPA** | /to.o.kjo.o/ | pyopenjtalk | 📋 Future |
+| **Mora Breakdown** | と\|う\|きょ\|う (visual) | sudachipy | ✅ Done |
+| **Furigana** | 東京(とうきょう) | sudachipy | ✅ Done |
+| **Accent Type** | 平板型, 頭高型, etc. | Kanjium DB | ✅ Done |
+| **Word Segmentation** | Colorir por palavra | sudachipy | ✅ Done |
+| **Part of Speech** | 名詞, 動詞, etc. | sudachipy | ✅ Done |
 
-**Endpoint atual:** `POST /api/analyze` já retorna:
+### ✅ Fase 3.5 - Transparência & Compostos (Completo)
+
+**Objetivo:** Mostrar confiança nos dados e analisar palavras compostas
+
+| Feature | Descrição | Status |
+|---------|-----------|--------|
+| **Source Types** | dictionary, dictionary_lemma, particle, compound_rule, etc. | ✅ Done |
+| **Confidence Levels** | high/medium/low com visual (solid/dashed/dotted) | ✅ Done |
+| **UniDic Cross-validation** | Valida accent com segunda fonte | ✅ Done |
+| **Word Origin (Goshu)** | 和語, 漢語, 外来語, 固有名詞 | ✅ Done |
+| **Compound Analysis** | Detecta componentes via Mode.A split | ✅ Done |
+| **McCawley Rules** | Prediz accent de compostos (N2≤2, N2=3-4, N2≥5) | ✅ Done |
+| **PhraseFlow** | Visualização de pitch conectado entre palavras | ✅ Done |
+| **Riso Palette** | coral (H), cornflower (L), black (neutral) | ✅ Done |
+
+**Endpoint atual:** `POST /api/analyze` retorna:
 ```json
 {
-  "text": "東京",
+  "text": "東京大学",
   "words": [
     {
-      "surface": "東京",
-      "reading": "とうきょう",
-      "morae": ["と", "う", "きょ", "う"],
-      "accent_type": 1,
-      "mora_count": 4,
-      "pitch_pattern": ["L", "H", "H", "L"],
-      "part_of_speech": "名詞"
+      "surface": "東京大学",
+      "reading": "とうきょうだいがく",
+      "morae": ["と", "う", "きょ", "う", "だ", "い", "が", "く"],
+      "accent_type": 5,
+      "mora_count": 8,
+      "pitch_pattern": ["L", "H", "H", "H", "H", "L", "L", "L"],
+      "part_of_speech": "名詞",
+      "origin": "kango",
+      "origin_jp": "漢語",
+      "lemma": "東京大学",
+      "source": "dictionary",
+      "confidence": "high",
+      "warning": null,
+      "is_compound": true,
+      "components": [
+        {"surface": "東京", "reading": "とうきょう", "accent_type": 0, "mora_count": 4, "part_of_speech": "名詞", "reliable": true},
+        {"surface": "大学", "reading": "だいがく", "accent_type": 0, "mora_count": 4, "part_of_speech": "名詞", "reliable": true}
+      ]
     }
   ]
 }
 ```
 
-### 📋 Fase 4 - Conteúdo Guiado
+### 📋 Fase 4 - Conteúdo Guiado ← **PRÓXIMO**
 
 **Objetivo:** Usuário não precisa pensar "o que praticar"
 
@@ -190,23 +215,29 @@
 ### Backend (Python/FastAPI)
 ```
 Libs atuais:
+├── sudachipy + sudachidict-full (tokenization, Mode C/A)
+├── fugashi + unidic (cross-validation, goshu)
 ├── azure-cognitiveservices-speech (TTS)
 ├── parselmouth (pitch extraction)
 ├── fastdtw (comparison)
-├── fugashi + unidic (mora, reading, accent, POS) ✅
+├── redis (TTS cache)
 └── pydantic (validation)
+
+Database:
+└── pitch.db (Kanjium 124k+ entries) via mierutone-dictionary
 
 Futuro:
 ├── pyopenjtalk (phonemes/IPA)
-└── redis/upstash (cache produção)
+└── cloudflare R2 (cold storage produção)
 ```
 
 ### Frontend (Next.js 14)
 ```
 Atual:
 ├── React + TypeScript
-├── Tailwind CSS
-└── Web Audio API (recording)
+├── Tailwind CSS (Riso palette)
+├── Web Audio API (recording)
+└── pitch/ components (shared PitchDot, PitchGlow)
 
 Adicionar:
 ├── Framer Motion (animações)
@@ -218,17 +249,18 @@ Adicionar:
 ```
 Backend: Railway ou Render
 Frontend: Vercel
-Cache: Upstash Redis
+Cache: Redis (local) / Upstash (prod)
 DB: Supabase (auth + histórico)
 Payments: Stripe
+Dictionary: GitHub Releases (mierutone-dictionary)
 ```
 
 ---
 
 ## Métricas de Sucesso
 
-| Métrica | Target Fase 3 | Target Fase 5 |
-|---------|---------------|---------------|
+| Métrica | Target Fase 3.5 | Target Fase 5 |
+|---------|-----------------|---------------|
 | DAU | 100 | 1,000 |
 | Retention D7 | 20% | 40% |
 | Conversion Free→Pro | - | 5% |
@@ -238,7 +270,12 @@ Payments: Stripe
 
 ## Próximo Passo Imediato
 
-**Fase 3 está completa!** O sistema já retorna dados ricos via fugashi.
+**Fase 3.5 está completa!** Sistema tem:
+- Transparência total (source, confidence, warnings)
+- Análise de compostos com McCawley rules
+- Cross-validation UniDic
+- PhraseFlow com pitch conectado
+- Visual design consistente (Riso palette)
 
 Próximos passos são **Fase 4 - Conteúdo Guiado**:
 
@@ -254,3 +291,12 @@ Próximos passos são **Fase 4 - Conteúdo Guiado**:
 3. **Daily Challenge** (opcional)
    - 5 palavras/dia
    - Streak counter
+
+---
+
+## Edge Cases para V2
+
+- Heibanização de nomes próprios em compostos
+- Sufixos especiais (~的, ~中, ~性)
+- Variação regional de pitch
+- Compostos com 3+ componentes (iterative reduction já implementado)
