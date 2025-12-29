@@ -1,6 +1,8 @@
 .cache/
-data/
-*.db
 venv/
 __pycache__/
 .env
+
+# Keep pitch database (required for deployment)
+!data/
+!data/pitch.db
