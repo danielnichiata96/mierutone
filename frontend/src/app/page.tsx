@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { TextInput } from "@/components/TextInput";
 import { PitchVisualizer } from "@/components/PitchVisualizer";
 import { Legend } from "@/components/Legend";
@@ -16,6 +16,7 @@ import { analyzeText } from "@/lib/api";
 import type { WordPitch } from "@/types/pitch";
 
 function HomeContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [words, setWords] = useState<WordPitch[]>([]);
   const [currentText, setCurrentText] = useState("");
@@ -65,6 +66,15 @@ function HomeContent() {
       handleAnalyze(textParam);
     }
   }, [searchParams, initialText, handleAnalyze]);
+
+  // Check for auth callback code (fallback if redirect URI lands on root)
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (code) {
+      // Forward to the callback route
+      router.push(`/auth/callback?code=${code}`);
+    }
+  }, [searchParams, router]);
 
   // ESC key to close RecordCompare
   useEffect(() => {
