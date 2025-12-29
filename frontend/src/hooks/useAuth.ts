@@ -40,8 +40,15 @@ export function useAuth() {
 
   // Client-only: uses window.location
   const getRedirectUrl = useCallback((next?: string) => {
-    const base = `${window.location.origin}/auth/callback`;
-    return next ? `${base}?next=${encodeURIComponent(next)}` : base;
+    // Use current origin for the callback URL
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const base = `${origin}/auth/callback`;
+    const url = next ? `${base}?next=${encodeURIComponent(next)}` : base;
+    // Debug: log the redirect URL
+    if (typeof window !== "undefined") {
+      console.log("[Auth] redirectTo:", url);
+    }
+    return url;
   }, []);
 
   const signInWithGoogle = useCallback(
