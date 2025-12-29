@@ -48,7 +48,7 @@ export default function PatternsPage() {
             <ul className="mt-4 space-y-2 text-ink-black/80">
               <li><strong>0</strong> = No drop (Heiban - flat)</li>
               <li><strong>1</strong> = Drop after 1st mora (Atamadaka - head-high)</li>
-              <li><strong>2, 3, 4...</strong> = Drop after that mora (Nakadaka - middle-high)</li>
+              <li><strong>2 to N-1</strong> = Drop after a middle mora (Nakadaka - middle-high)</li>
               <li><strong>N</strong> = Drop after last mora (Odaka - tail-high)</li>
             </ul>
           </section>
@@ -80,12 +80,12 @@ export default function PatternsPage() {
               <div className="p-3 bg-ink-black/5 rounded-riso">
                 <p className="font-bold">桜 (さくら⁰)</p>
                 <p className="text-ink-black/60">Cherry blossom</p>
-                <p className="font-mono text-xs mt-1">さ↗く↗ら→</p>
+                <p className="font-mono text-xs mt-1">さ↗くら―</p>
               </div>
               <div className="p-3 bg-ink-black/5 rounded-riso">
                 <p className="font-bold">友達 (ともだち⁰)</p>
                 <p className="text-ink-black/60">Friend</p>
-                <p className="font-mono text-xs mt-1">と↗も↗だ↗ち→</p>
+                <p className="font-mono text-xs mt-1">と↗もだち―</p>
               </div>
             </div>
 
@@ -140,12 +140,12 @@ export default function PatternsPage() {
           {/* Pattern 3: Nakadaka */}
           <section className="riso-card p-6 border-l-4 border-secondary-500">
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-2xl font-bold text-secondary-500">2+</span>
+              <span className="text-2xl font-bold text-secondary-500">2–</span>
               <div>
                 <h2 className="font-display text-xl font-bold text-ink-black">
                   中高型 Nakadaka
                 </h2>
-                <p className="text-sm text-ink-black/50">&quot;Middle-high&quot; pattern - drop in middle</p>
+                <p className="text-sm text-ink-black/50">&quot;Middle-high&quot; pattern - drop before last mora</p>
               </div>
             </div>
 
@@ -163,19 +163,19 @@ export default function PatternsPage() {
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="p-3 bg-ink-black/5 rounded-riso">
-                <p className="font-bold">卵 (たまご²)</p>
-                <p className="text-ink-black/60">Egg</p>
-                <p className="font-mono text-xs mt-1">た↗ま↘ご</p>
+                <p className="font-bold">心 (こころ²)</p>
+                <p className="text-ink-black/60">Heart</p>
+                <p className="font-mono text-xs mt-1">こ↗こ↘ろ</p>
               </div>
               <div className="p-3 bg-ink-black/5 rounded-riso">
                 <p className="font-bold">男 (おとこ³)</p>
                 <p className="text-ink-black/60">Man</p>
-                <p className="font-mono text-xs mt-1">お↗と↗こ↘</p>
+                <p className="font-mono text-xs mt-1">お↗とこ↘</p>
               </div>
             </div>
 
             <p className="text-sm text-ink-black/70 mt-4">
-              <strong>Key:</strong> The number tells you where the peak is. 卵² means
+              <strong>Key:</strong> The number indicates the accented mora. 心² means
               the pitch drops AFTER the 2nd mora.
             </p>
           </section>
@@ -252,9 +252,9 @@ export default function PatternsPage() {
                     <td className="py-2 px-3 font-mono">HLLL...</td>
                   </tr>
                   <tr className="border-b border-ink-black/5">
-                    <td className="py-2 px-3 font-bold">2-N</td>
+                    <td className="py-2 px-3 font-bold">2–(N-1)</td>
                     <td className="py-2 px-3">中高</td>
-                    <td className="py-2 px-3">Middle</td>
+                    <td className="py-2 px-3">Before last</td>
                     <td className="py-2 px-3 font-mono">LHHL...</td>
                   </tr>
                   <tr>
