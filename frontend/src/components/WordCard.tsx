@@ -78,8 +78,8 @@ export function WordCard({ word }: WordCardProps) {
         <PlayButton text={surface} size="sm" />
       </div>
 
-      {/* SVG Pitch Visualization */}
-      <svg width={svgWidth} height={svgHeight + 25} className="mb-2">
+      {/* SVG Pitch Visualization - mt-4 creates space for play button */}
+      <svg width={svgWidth} height={svgHeight + 25} className="mb-2 mt-4">
         {hasPitchData ? (
           <>
             {/* Pitch line - styled by confidence */}
@@ -106,29 +106,16 @@ export function WordCard({ word }: WordCardProps) {
           </>
         ) : isParticle ? (
           /* Particle - dashed line to indicate follows context */
-          <>
-            <line
-              x1={10}
-              y1={PITCH_Y_UNCERTAIN}
-              x2={svgWidth - 10}
-              y2={PITCH_Y_UNCERTAIN}
-              stroke={RISO.black}
-              strokeWidth="2"
-              strokeDasharray="4,4"
-              opacity={0.4}
-            />
-            <text
-              x={svgWidth / 2}
-              y={PITCH_Y_UNCERTAIN + 6}
-              textAnchor="middle"
-              fontSize="12"
-              fill={RISO.black}
-              opacity={0.6}
-              className="font-sans"
-            >
-              ~
-            </text>
-          </>
+          <line
+            x1={10}
+            y1={PITCH_Y_UNCERTAIN}
+            x2={svgWidth - 10}
+            y2={PITCH_Y_UNCERTAIN}
+            stroke={RISO.black}
+            strokeWidth="2"
+            strokeDasharray="4,4"
+            opacity={0.4}
+          />
         ) : (
           /* Unknown pitch - using shared PitchDot with isUncertain */
           morae.map((_, i) => (
@@ -213,11 +200,11 @@ export function WordCard({ word }: WordCardProps) {
       {/* Warning indicator - ink-black with dotted border */}
       {warning && (
         <div
-          className="flex items-center gap-1 mt-1 text-[10px] text-ink-black/60 border border-ink-black/30 border-dotted px-2 py-0.5 rounded"
+          className="flex items-center gap-1 mt-1 text-[10px] text-ink-black/60 border border-ink-black/30 border-dotted px-2 py-0.5 rounded max-w-full"
           title={warning}
         >
-          <span className="text-ink-black/40">!</span>
-          <span className="truncate max-w-[100px]">{warning}</span>
+          <span className="text-ink-black/40 shrink-0">!</span>
+          <span className="text-center">{warning}</span>
         </div>
       )}
 

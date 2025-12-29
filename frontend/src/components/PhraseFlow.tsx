@@ -349,7 +349,7 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
                 stroke={RISO.black}
                 strokeWidth="2.5"
                 strokeLinecap="round"
-                strokeDasharray={isDashed ? "4,3" : "none"}
+                strokeDasharray={isDashed ? "6,4" : "none"}
                 opacity={isDashed ? 0.6 : 1}
               />
             );
@@ -411,7 +411,7 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
                 stroke={RISO.black}
                 strokeWidth="1"
                 strokeDasharray="3,3"
-                opacity={0.3}
+                opacity={0.2}
               />
             );
           }
@@ -421,41 +421,51 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
       </div>
 
       {/* Legend - Riso palette only */}
-      <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 text-[10px] text-ink-black/60">
-        {/* Pitch colors */}
-        <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-ink-coral border border-ink-black/30"></span>
-          <span>High</span>
+      <div className="mt-3 text-[10px] text-ink-black/60 space-y-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-[9px] uppercase tracking-widest text-ink-black/40">Pitch</span>
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-ink-coral border border-ink-black/30"></span>
+            <span>High</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-ink-cornflower border border-ink-black/30"></span>
+            <span>Low</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-ink-cornflower border border-ink-black/30"></span>
-          <span>Low</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-[9px] uppercase tracking-widest text-ink-black/40">Markers</span>
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-ink-black/20 border border-dashed border-ink-black/50"></span>
+            <span>Particle</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-ink-black/20 border-2 border-dotted border-ink-black/50"></span>
+            <span>Proper (dict)</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-ink-black/50 font-bold text-xs">?</span>
+            <span>Uncertain</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-ink-coral border-2 border-ink-coral"></span>
+            <span>Playing</span>
+          </div>
         </div>
-        {/* Special markers - neutral color */}
-        <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-ink-black/20 border border-dashed border-ink-black/50"></span>
-          <span>Particle</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-ink-black/20 border-2 border-dotted border-ink-black/50"></span>
-          <span>Proper (dict)</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-ink-black/50 font-bold text-xs">?</span>
-          <span>Uncertain</span>
-        </div>
-        {/* Confidence - stroke styles */}
-        <div className="flex items-center gap-1 border-l border-ink-black/20 pl-3 ml-1">
-          <span className="w-3 h-0 border-t-2 border-ink-black/60"></span>
-          <span>High conf.</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-0 border-t-2 border-dashed border-ink-black/60"></span>
-          <span>Medium</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-0 border-t-2 border-dotted border-ink-black/60"></span>
-          <span>Low</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-[9px] uppercase tracking-widest text-ink-black/40">Confidence</span>
+          <div className="flex items-center gap-1">
+            <span className="w-4 h-0 border-t-2 border-ink-black/60"></span>
+            <span>High</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-4 h-0 border-t-2 border-dashed border-ink-black/60"></span>
+            <span>Medium</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-4 h-0 border-t-2 border-dotted border-ink-black/60"></span>
+            <span>Low</span>
+          </div>
         </div>
       </div>
     </div>

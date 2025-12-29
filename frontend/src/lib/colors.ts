@@ -58,8 +58,8 @@ export const DOT_RADIUS_ACTIVE = 9;
 
 /** Stroke styles for special markers */
 export const STROKE_STYLES = {
-  particle: { dasharray: "3,2", width: 2 },
-  dictionaryProper: { dasharray: "2,2", width: 2 },
+  particle: { dasharray: "6,4", width: 2 },
+  dictionaryProper: { dasharray: "2,4", width: 2 },
   normal: { dasharray: "none", width: 1.5 },
   active: { dasharray: "none", width: 4 },
 } as const;
