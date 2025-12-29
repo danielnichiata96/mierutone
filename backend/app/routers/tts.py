@@ -326,9 +326,9 @@ async def tts_with_timings(
         raise HTTPException(status_code=500, detail=f"TTS with timings failed: {str(e)}")
 
     # Calculate total duration from audio (WAV header: bytes 4-8 = file size)
-    # For 16kHz 16-bit mono: duration = (file_size - 44) / (16000 * 2) * 1000
+    # For 48kHz 16-bit mono: duration = (file_size - 44) / (48000 * 2) * 1000
     audio_size = len(audio_bytes)
-    duration_ms = int((audio_size - 44) / 32000 * 1000)
+    duration_ms = int((audio_size - 44) / 96000 * 1000)
 
     # Encode audio as base64
     audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")

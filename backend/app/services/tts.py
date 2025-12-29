@@ -42,7 +42,7 @@ def _get_speech_config() -> speechsdk.SpeechConfig:
         region=settings.azure_speech_region
     )
     speech_config.set_speech_synthesis_output_format(
-        speechsdk.SpeechSynthesisOutputFormat.Riff16Khz16BitMonoPcm
+        speechsdk.SpeechSynthesisOutputFormat.Riff48Khz16BitMonoPcm
     )
     return speech_config
 
