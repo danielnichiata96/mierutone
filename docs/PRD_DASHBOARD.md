@@ -156,6 +156,24 @@ Create a separated "workspace" experience for authenticated users that provides:
 - Each item shows: text, timestamp, word count (analyses) or score (practice)
 - Click to expand/view details
 
+**Pagination Strategy**: Cursor-based (recommended for real-time data)
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `limit` | int | Items per page (default: 20, max: 100) |
+| `cursor` | string | Opaque cursor from previous response (base64 encoded `created_at:id`) |
+| `direction` | enum | `next` (older) or `prev` (newer), default: `next` |
+
+**Response Format**:
+```json
+{
+  "items": [...],
+  "next_cursor": "eyJjcmVhdGVkX2F0IjoiMjAyNS0wMS0wMVQxMjowMDowMFoiLCJpZCI6IjEyMyJ9",
+  "prev_cursor": null,
+  "has_more": true
+}
+```
+
 #### FR-3.3.2 Filters (P3 - Future)
 
 **Requirements**:
@@ -332,7 +350,7 @@ CREATE POLICY "Users can update own preferences"
 | PATCH | /api/profile | JWT | anon + RLS | Update display name |
 | GET | /api/preferences | JWT | anon + RLS | Get user preferences |
 | PATCH | /api/preferences | JWT | anon + RLS | Update preferences |
-| GET | /api/history | JWT | anon + RLS | Get paginated history |
+| GET | /api/history | JWT | anon + RLS | Get paginated history (`?limit=20&cursor=...&direction=next`) |
 | GET | /api/history/stats | JWT | anon + RLS | Get aggregate statistics |
 | POST | /api/history/export | JWT | anon + RLS | Generate data export |
 | DELETE | /api/history | JWT | anon + RLS | Clear all history |
