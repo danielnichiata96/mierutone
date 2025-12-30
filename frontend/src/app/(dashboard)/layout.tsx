@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 
@@ -12,13 +12,14 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (preserve deep-link)
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login?next=/dashboard");
+      router.push(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [loading, user, router]);
+  }, [loading, user, router, pathname]);
 
   if (loading) {
     return (

@@ -5,7 +5,14 @@ export default function robots(): MetadataRoute.Robots {
         rules: {
             userAgent: "*",
             allow: "/",
-            disallow: ["/api/", "/admin/"],
+            disallow: [
+                "/api/",
+                "/admin/",
+                "/dashboard",
+                "/settings",
+                "/history",
+                "/progress",
+            ],
         },
         sitemap: "https://mierutone.com/sitemap.xml",
     };
