@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_anon_key: str = ""
     supabase_jwt_secret: str = ""
+    supabase_jwt_public_key: str = ""
 
     class Config:
         env_file = BACKEND_DIR / ".env"

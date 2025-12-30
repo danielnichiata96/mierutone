@@ -28,7 +28,9 @@ def get_jwks_client() -> PyJWKClient:
     """Get or create JWKS client for Supabase."""
     global _jwks_client
     if _jwks_client is None:
-        jwks_url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
+        if not settings.supabase_url:
+            raise RuntimeError("Supabase URL not configured")
+        jwks_url = f"{settings.supabase_url.rstrip('/')}/auth/v1/keys"
         _jwks_client = PyJWKClient(jwks_url)
     return _jwks_client
 
@@ -54,14 +56,19 @@ async def get_current_user(
         )
 
     try:
-        if token_alg == "RS256":
-            # Get signing key from Supabase JWKS
-            jwks_client = get_jwks_client()
-            signing_key = jwks_client.get_signing_key_from_jwt(token)
+        if token_alg in {"RS256", "ES256"}:
+            if settings.supabase_jwt_public_key:
+                verification_key = settings.supabase_jwt_public_key
+            else:
+                # Get signing key from Supabase JWKS
+                jwks_client = get_jwks_client()
+                signing_key = jwks_client.get_signing_key_from_jwt(token)
+                verification_key = signing_key.key
+
             payload = pyjwt.decode(
                 token,
-                signing_key.key,
-                algorithms=["RS256"],
+                verification_key,
+                algorithms=[token_alg],
                 audience="authenticated",
             )
         else:
@@ -98,6 +105,12 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not fetch signing keys",
+        )
+    except RuntimeError as e:
+        logger.error(str(e))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
         )
 
 
