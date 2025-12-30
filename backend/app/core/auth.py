@@ -30,7 +30,7 @@ def get_jwks_client() -> PyJWKClient:
     if _jwks_client is None:
         if not settings.supabase_url:
             raise RuntimeError("Supabase URL not configured")
-        jwks_url = f"{settings.supabase_url.rstrip('/')}/auth/v1/keys"
+        jwks_url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
         _jwks_client = PyJWKClient(jwks_url)
     return _jwks_client
 
