@@ -55,7 +55,7 @@ Create a separated "workspace" experience for authenticated users that provides:
 | ID | Scenario | Expected Behavior |
 |----|----------|-------------------|
 | EC-01 | User accesses /dashboard without login | Redirect to /login?next=/dashboard |
-| EC-02 | User's session expires mid-session | Show re-auth modal, preserve current state |
+| EC-02 | User's token expires during session | Client-side token refresh via Supabase SDK (silent); if refresh fails, redirect to /login |
 | EC-03 | User has no history yet | Show empty state with CTA to practice |
 
 ---
@@ -118,12 +118,12 @@ Create a separated "workspace" experience for authenticated users that provides:
 
 **Display the following metrics**:
 
-| Stat | Source | Display |
-|------|--------|---------|
-| Total Analyses | COUNT(analyses) | Number |
-| Total Practice Sessions | COUNT(comparison_scores) | Number |
-| Average Score | AVG(comparison_scores.score) | Percentage |
-| Words Practiced | COUNT(DISTINCT text) | Number |
+| Stat | Source | Display | Note |
+|------|--------|---------|------|
+| Total Analyses | COUNT(analyses) | Number | All analysis requests |
+| Total Practice Sessions | COUNT(comparison_scores) | Number | Voice comparisons completed |
+| Average Score | AVG(comparison_scores.score) | Percentage | Mean of all comparison scores |
+| Unique Texts | COUNT(DISTINCT text) | Number | Unique phrases analyzed (not tokenized words) |
 
 **Visual Requirements**:
 - 2x2 grid on desktop, stacked on mobile
@@ -208,7 +208,11 @@ Create a separated "workspace" experience for authenticated users that provides:
 | Show Part of Speech | Toggle | Display word class (noun, verb, etc.) | Off |
 | Show Confidence | Toggle | Display confidence indicators | On |
 
-**Storage**: Preferences stored in localStorage + synced to public.user_preferences table.
+**Storage Strategy**:
+- **Source of truth**: Server (public.user_preferences table)
+- **Flow**: On page load, fetch from server → cache in memory. On change, update server first → update local state on success.
+- **Offline**: No offline support for preferences (requires auth anyway)
+- **Multi-device**: Server always wins; no client-side persistence to avoid stale overwrites.
 
 #### FR-3.4.3 Data & Privacy Section
 
@@ -216,7 +220,8 @@ Create a separated "workspace" experience for authenticated users that provides:
 - Button: "Export My Data"
 - Formats: JSON (default), CSV
 - Contents: All analyses, all scores, profile data
-- Delivery: Immediate download
+- **Limits**: Max 10,000 records per export; if exceeded, show message to contact support
+- **Delivery**: Immediate download for <1000 records; for larger exports, generate async and email download link (future enhancement)
 
 **Danger Zone**:
 
@@ -244,9 +249,16 @@ Create a separated "workspace" experience for authenticated users that provides:
    a. Continue to requested page
 ```
 
-**Edge Cases**:
-- Handle expired tokens gracefully
-- Support token refresh without full redirect
+**Session Handling Strategy**:
+
+| Scenario | Handler | Behavior |
+|----------|---------|----------|
+| No session on page load | Middleware (server) | Redirect to /login?next={path} |
+| Token expires during use | Client (useAuth hook) | Silent refresh via Supabase SDK |
+| Refresh token expired | Client (useAuth hook) | Redirect to /login?next={path} |
+| API returns 401 | Client (API layer) | Trigger re-auth flow |
+
+**Note**: Middleware handles initial access control. Client-side handles token lifecycle during active sessions to avoid interrupting user workflow.
 
 ### 4.2 Database Schema
 
@@ -316,18 +328,38 @@ CREATE POLICY "Users can update own preferences"
 
 ### 4.4 Row Level Security
 
-**Requirement**: All queries must pass user's access_token to Supabase client.
+**Requirement**: All queries must pass user's access_token to Supabase for RLS to apply.
 
-**Implementation**:
+**Implementation (supabase-py v2)**:
 ```python
 # Backend: Create authenticated Supabase client per request
-from supabase import create_client
+from supabase import create_client, Client
 
-def get_supabase_client(access_token: str):
-    client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-    client.auth.set_session(access_token)
+def get_authenticated_supabase(access_token: str) -> Client:
+    """
+    Create a Supabase client with the user's JWT for RLS.
+    The token is passed via Authorization header to PostgREST.
+    """
+    client = create_client(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        options={
+            "headers": {
+                "Authorization": f"Bearer {access_token}"
+            }
+        }
+    )
     return client
 ```
+
+**Alternative (per-request header)**:
+```python
+# If reusing client, set auth per query
+client.postgrest.auth(access_token)
+response = client.table("analyses").select("*").execute()
+```
+
+**Important**: Do NOT use `client.auth.set_session()` for RLS - it manages client-side session state but doesn't set the PostgREST Authorization header needed for RLS policies.
 
 ---
 
