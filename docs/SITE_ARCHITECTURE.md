@@ -228,17 +228,15 @@ Arquitetura freemium: ferramenta gratuita poderosa (SEO, viral) + features Pro p
 - [x] Protected routes middleware
 - [x] User context no frontend
 
-### Fase 5.2 - Dashboard
-- [ ] /dashboard layout
-- [ ] Histórico de análises
+### Fase 5.2 - Dashboard (Parcial) ✅
+- [x] /dashboard layout com Sidebar responsiva
+- [x] Route groups ((public), (dashboard))
+- [x] Auth protection e redirect
+- [x] Stub pages (/history, /progress, /settings)
+- [x] noindex/nofollow para páginas logadas
+- [ ] Histórico de análises (Supabase)
 - [ ] Estatísticas básicas
-- [ ] Supabase integration
-
-### Fase 5.3 - Monetização
-- [ ] /pricing page
-- [ ] Stripe checkout
-- [ ] Plan gating (middleware)
-- [ ] Upgrade prompts
+- [ ] Supabase integration completa
 
 ### Fase 5.4 - Features Pro
 - [ ] Record & Compare ilimitado
@@ -320,9 +318,8 @@ Mora (拍) é a unidade rítmica do japonês - diferente de sílabas!
 
 ## Próximo Passo
 
-Começar pela **Fase 5.2 - Dashboard**:
+Completar **Fase 5.2 - Dashboard**:
 
-1. Criar layout do /dashboard com sidebar
-2. Implementar histórico de análises (já tem tabela no Supabase)
-3. Mostrar estatísticas básicas (total análises, comparações, média score)
-4. Conectar com endpoints /api/history e /api/history/stats
+1. Implementar histórico de análises (conectar com Supabase)
+2. Mostrar estatísticas básicas (total análises, comparações, média score)
+3. Conectar frontend com endpoints /api/history e /api/history/stats
