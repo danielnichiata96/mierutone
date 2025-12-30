@@ -228,25 +228,17 @@ Arquitetura freemium: ferramenta gratuita poderosa (SEO, viral) + features Pro p
 - [x] Protected routes middleware
 - [x] User context no frontend
 
-### Fase 5.2 - Dashboard (Parcial) ✅
-- [x] /dashboard layout com Sidebar responsiva
-- [x] Route groups ((public), (dashboard))
-- [x] Auth protection e redirect
-- [x] Stub pages (/history, /progress, /settings)
-- [x] noindex/nofollow para páginas logadas
-- [ ] Histórico de análises (Supabase)
+### Fase 5.2 - Dashboard
+- [ ] /dashboard layout
+- [ ] Histórico de análises
 - [ ] Estatísticas básicas
-- [ ] Supabase integration completa
+- [ ] Supabase integration
 
-### Fase 5.3 - Monetização (Parcial) ✅
-- [x] /pricing page com Free vs Pro
-- [x] Stripe checkout integration
-- [x] Stripe customer portal
-- [x] Subscription status API
-- [x] Upgrade prompts (Nav, Sidebar, Settings)
-- [ ] Supabase subscriptions table
-- [ ] Plan gating middleware
-- [ ] Webhook persistence
+### Fase 5.3 - Monetização
+- [ ] /pricing page
+- [ ] Stripe checkout
+- [ ] Plan gating (middleware)
+- [ ] Upgrade prompts
 
 ### Fase 5.4 - Features Pro
 - [ ] Record & Compare ilimitado
@@ -328,11 +320,9 @@ Mora (拍) é a unidade rítmica do japonês - diferente de sílabas!
 
 ## Próximo Passo
 
-Começar pela **Fase 5.3 - Monetização**:
+Começar pela **Fase 5.2 - Dashboard**:
 
-1. Criar página /pricing com comparação Free vs Pro
-2. Configurar Stripe (produtos, preços, checkout)
-3. Criar tabela subscriptions no Supabase
-4. Implementar webhooks para atualizar status
-5. Adicionar middleware de plan gating
-6. Adicionar upgrade prompts na UI
+1. Criar layout do /dashboard com sidebar
+2. Implementar histórico de análises (já tem tabela no Supabase)
+3. Mostrar estatísticas básicas (total análises, comparações, média score)
+4. Conectar com endpoints /api/history e /api/history/stats

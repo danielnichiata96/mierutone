@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
-import { getSubscriptionStatus, SubscriptionStatus } from "@/lib/api";
+import { useState } from "react";
 
 const navItems = [
   {
@@ -50,15 +49,6 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      getSubscriptionStatus().then(setSubscription).catch(() => {
-        setSubscription({ plan: "free", status: null, current_period_end: null, cancel_at_period_end: false });
-      });
-    }
-  }, [user]);
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -92,29 +82,6 @@ export function Sidebar() {
           );
         })}
       </nav>
-
-      {/* Upgrade Card (for free users) */}
-      {subscription && subscription.plan === "free" && (
-        <div className="p-4">
-          <div className="p-4 rounded-lg bg-gradient-to-br from-primary-300/30 to-accent-300/30 border border-primary-300">
-            <div className="flex items-center gap-2 mb-2">
-              <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span className="font-bold text-ink-black">Upgrade to Pro</span>
-            </div>
-            <p className="text-xs text-ink-black/60 mb-3">
-              Unlimited TTS, history, Anki export, and more.
-            </p>
-            <Link
-              href="/pricing"
-              className="block w-full text-center px-3 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors"
-            >
-              View Plans
-            </Link>
-          </div>
-        </div>
-      )}
 
       {/* Back to App */}
       <div className="p-4 border-t border-ink-black/10">
