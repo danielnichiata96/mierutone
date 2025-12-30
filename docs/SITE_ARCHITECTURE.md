@@ -175,9 +175,10 @@ Arquitetura freemium: ferramenta gratuita poderosa (SEO, viral) + features Pro p
 ## Stack Técnica
 
 ### Auth
-- **Clerk** - Login social (Google, GitHub), magic link
+- **Supabase Auth** - Login social (Google, GitHub), magic link
+- JWT validation (ES256 via JWKS)
 - Middleware para rotas protegidas
-- Webhook para Stripe sync
+- RLS (Row Level Security) para dados do usuário
 
 ### Database
 - **Supabase** (PostgreSQL)
@@ -219,11 +220,13 @@ Arquitetura freemium: ferramenta gratuita poderosa (SEO, viral) + features Pro p
 - [x] Pricing preview (free tier destacado)
 - [x] CTAs estratégicos (Try It Free, Learn Patterns)
 
-### Fase 5.1 - Auth
-- [ ] Clerk setup
-- [ ] Login/signup flow
-- [ ] Protected routes middleware
-- [ ] User profile
+### Fase 5.1 - Auth ✅
+- [x] Supabase Auth setup (substituiu Clerk)
+- [x] Login/signup flow (Google OAuth)
+- [x] JWT validation backend (ES256 + JWKS)
+- [x] CORS configurado para produção
+- [x] Protected routes middleware
+- [x] User context no frontend
 
 ### Fase 5.2 - Dashboard
 - [ ] /dashboard layout
@@ -317,9 +320,9 @@ Mora (拍) é a unidade rítmica do japonês - diferente de sílabas!
 
 ## Próximo Passo
 
-Começar pela **Fase 4.1 - Estrutura Base**:
+Começar pela **Fase 5.2 - Dashboard**:
 
-1. Criar layout com navegação
-2. Adicionar rotas /learn, /examples
-3. Implementar tabs no /app
-4. Mover conteúdo atual para tab "Praticar"
+1. Criar layout do /dashboard com sidebar
+2. Implementar histórico de análises (já tem tabela no Supabase)
+3. Mostrar estatísticas básicas (total análises, comparações, média score)
+4. Conectar com endpoints /api/history e /api/history/stats
