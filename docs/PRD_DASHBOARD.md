@@ -219,6 +219,22 @@ Create a separated "workspace" experience for authenticated users that provides:
 | Default Voice | Select | Female 1-4, Male 1-3 | Female 1 |
 | Playback Speed | Slider | 0.5x - 1.5x | 1.0x |
 
+**Validation** (frontend + backend):
+```typescript
+// lib/constants.ts
+export const VALID_VOICES = [
+  'female1', 'female2', 'female3', 'female4',
+  'male1', 'male2', 'male3'
+] as const;
+
+export type VoiceOption = typeof VALID_VOICES[number];
+
+// Validate before API call
+function isValidVoice(voice: string): voice is VoiceOption {
+  return VALID_VOICES.includes(voice as VoiceOption);
+}
+```
+
 **Display Preferences**:
 
 | Setting | Type | Description | Default |
@@ -256,12 +272,8 @@ Create a separated "workspace" experience for authenticated users that provides:
   2. Frontend calls `DELETE /api/account` with user's JWT
   3. Backend validates JWT, extracts user_id
   4. Backend uses **service role client** to:
+     - Delete from public.profiles (CASCADE handles related tables)
      - Call `supabase.auth.admin.delete_user(user_id)`
-     - This triggers `ON DELETE CASCADE` on all tables with `user_id` FK:
-       - `public.profiles` (id → auth.users)
-       - `public.user_preferences` (id → auth.users)
-       - `public.analysis_history` (user_id → auth.users)
-       - `public.comparison_scores` (user_id → auth.users)
   5. Frontend clears local session, redirects to home
 - **Security**: Service role key is server-side only, never exposed to client
 
@@ -323,10 +335,16 @@ CREATE POLICY "Users can update own profile"
 #### Table: public.user_preferences
 
 ```sql
+-- Valid voices enum (matches Azure Neural voices in backend)
+CREATE TYPE voice_option AS ENUM (
+  'female1', 'female2', 'female3', 'female4',
+  'male1', 'male2', 'male3'
+);
+
 CREATE TABLE public.user_preferences (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  default_voice TEXT DEFAULT 'female1',
-  playback_speed DECIMAL DEFAULT 1.0,
+  default_voice voice_option DEFAULT 'female1',
+  playback_speed DECIMAL DEFAULT 1.0 CHECK (playback_speed >= 0.5 AND playback_speed <= 1.5),
   show_accent_numbers BOOLEAN DEFAULT true,
   show_part_of_speech BOOLEAN DEFAULT false,
   show_confidence BOOLEAN DEFAULT true,
