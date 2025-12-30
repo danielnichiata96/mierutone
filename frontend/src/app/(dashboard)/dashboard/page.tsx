@@ -148,7 +148,7 @@ export default function DashboardPage() {
                   <p className="text-ink-black/60 mb-4">
                     No analyses yet. Start practicing!
                   </p>
-                  <Link href="/" className="riso-button-primary">
+                  <Link href="/app" className="riso-button-primary">
                     Analyze Text
                   </Link>
                 </div>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
                   <p className="text-ink-black/60 mb-4">
                     No practice sessions yet. Try recording your pronunciation!
                   </p>
-                  <Link href="/" className="riso-button-primary">
+                  <Link href="/app" className="riso-button-primary">
                     Start Practice
                   </Link>
                 </div>

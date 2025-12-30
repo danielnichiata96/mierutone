@@ -86,13 +86,13 @@ export function Sidebar() {
       {/* Back to App */}
       <div className="p-4 border-t border-ink-black/10">
         <Link
-          href="/"
+          href="/app"
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-ink-black/60 hover:bg-ink-black/5 hover:text-ink-black transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
           </svg>
-          <span>Back to App</span>
+          <span>Practice</span>
         </Link>
       </div>
 

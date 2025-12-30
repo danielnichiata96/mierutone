@@ -7,7 +7,7 @@ import { AnalyticsIcon, BookIcon, TargetIcon } from "./icons/DoodleIcons";
 import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
-  { href: "/", label: "Practice", icon: AnalyticsIcon },
+  { href: "/app", label: "Practice", icon: AnalyticsIcon },
   { href: "/learn", label: "Learn", icon: BookIcon },
   { href: "/examples", label: "Examples", icon: TargetIcon },
 ];
