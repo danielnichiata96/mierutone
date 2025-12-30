@@ -160,6 +160,7 @@ Create a separated "workspace" experience for authenticated users that provides:
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
+| `type` | enum | **Required**: `analysis` or `comparison` (each tab maintains independent cursor) |
 | `limit` | int | Items per page (default: 20, max: 100) |
 | `cursor` | string | Opaque cursor from previous response (base64 encoded `created_at:id`) |
 | `direction` | enum | `next` (older) or `prev` (newer), default: `next` |
@@ -255,8 +256,12 @@ Create a separated "workspace" experience for authenticated users that provides:
   2. Frontend calls `DELETE /api/account` with user's JWT
   3. Backend validates JWT, extracts user_id
   4. Backend uses **service role client** to:
-     - Delete from public.profiles (CASCADE handles related tables)
      - Call `supabase.auth.admin.delete_user(user_id)`
+     - This triggers `ON DELETE CASCADE` on all tables with `user_id` FK:
+       - `public.profiles` (id → auth.users)
+       - `public.user_preferences` (id → auth.users)
+       - `public.analysis_history` (user_id → auth.users)
+       - `public.comparison_scores` (user_id → auth.users)
   5. Frontend clears local session, redirects to home
 - **Security**: Service role key is server-side only, never exposed to client
 
@@ -340,6 +345,68 @@ CREATE POLICY "Users can update own preferences"
   USING (auth.uid() = id);
 ```
 
+#### Table: public.analysis_history
+
+```sql
+CREATE TABLE public.analysis_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  word_count INTEGER NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_analysis_history_user_created
+  ON public.analysis_history(user_id, created_at DESC);
+
+-- RLS Policy
+ALTER TABLE public.analysis_history ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own analyses"
+  ON public.analysis_history FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own analyses"
+  ON public.analysis_history FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own analyses"
+  ON public.analysis_history FOR DELETE
+  USING (auth.uid() = user_id);
+```
+
+#### Table: public.comparison_scores
+
+```sql
+CREATE TABLE public.comparison_scores (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  score DECIMAL NOT NULL CHECK (score >= 0 AND score <= 100),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_comparison_scores_user_created
+  ON public.comparison_scores(user_id, created_at DESC);
+
+-- RLS Policy
+ALTER TABLE public.comparison_scores ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own scores"
+  ON public.comparison_scores FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own scores"
+  ON public.comparison_scores FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own scores"
+  ON public.comparison_scores FOR DELETE
+  USING (auth.uid() = user_id);
+```
+
+**Note**: Both tables use `ON DELETE CASCADE` on `user_id` FK, so deleting the auth user automatically removes all history.
+
 ### 4.3 API Endpoints
 
 #### Backend (FastAPI)
@@ -350,7 +417,7 @@ CREATE POLICY "Users can update own preferences"
 | PATCH | /api/profile | JWT | anon + RLS | Update display name |
 | GET | /api/preferences | JWT | anon + RLS | Get user preferences |
 | PATCH | /api/preferences | JWT | anon + RLS | Update preferences |
-| GET | /api/history | JWT | anon + RLS | Get paginated history (`?limit=20&cursor=...&direction=next`) |
+| GET | /api/history | JWT | anon + RLS | Get paginated history (`?type=analysis&limit=20&cursor=...`) |
 | GET | /api/history/stats | JWT | anon + RLS | Get aggregate statistics |
 | POST | /api/history/export | JWT | anon + RLS | Generate data export |
 | DELETE | /api/history | JWT | anon + RLS | Clear all history |
@@ -419,31 +486,31 @@ if (pathname.startsWith('/_next') ||
 
 For users with large history (1000+ records), real-time `COUNT`/`AVG` queries can be slow.
 
-**Recommended: PostgreSQL View or RPC**
+**Recommended: PostgreSQL RPC Function** (single round-trip, uses actual tables)
 
 ```sql
--- Option A: Materialized View (refresh on schedule)
-CREATE MATERIALIZED VIEW user_stats AS
-SELECT
-  user_id,
-  COUNT(*) FILTER (WHERE type = 'analysis') as total_analyses,
-  COUNT(*) FILTER (WHERE type = 'comparison') as total_comparisons,
-  AVG(score) FILTER (WHERE type = 'comparison') as avg_score,
-  COUNT(DISTINCT text) as unique_texts
-FROM history
-GROUP BY user_id;
-
--- Option B: RPC Function (real-time, single round-trip)
+-- RPC Function joining both history tables
 CREATE OR REPLACE FUNCTION get_user_stats(p_user_id UUID)
 RETURNS JSON AS $$
   SELECT json_build_object(
-    'total_analyses', COUNT(*) FILTER (WHERE type = 'analysis'),
-    'total_comparisons', COUNT(*) FILTER (WHERE type = 'comparison'),
-    'avg_score', ROUND(AVG(score) FILTER (WHERE type = 'comparison')::numeric, 1),
-    'unique_texts', COUNT(DISTINCT text)
-  )
-  FROM history
-  WHERE user_id = p_user_id;
+    'total_analyses', (
+      SELECT COUNT(*) FROM public.analysis_history WHERE user_id = p_user_id
+    ),
+    'total_comparisons', (
+      SELECT COUNT(*) FROM public.comparison_scores WHERE user_id = p_user_id
+    ),
+    'avg_score', (
+      SELECT ROUND(AVG(score)::numeric, 1)
+      FROM public.comparison_scores WHERE user_id = p_user_id
+    ),
+    'unique_texts', (
+      SELECT COUNT(DISTINCT text) FROM (
+        SELECT text FROM public.analysis_history WHERE user_id = p_user_id
+        UNION
+        SELECT text FROM public.comparison_scores WHERE user_id = p_user_id
+      ) t
+    )
+  );
 $$ LANGUAGE SQL SECURITY DEFINER;
 ```
 
@@ -451,6 +518,20 @@ $$ LANGUAGE SQL SECURITY DEFINER;
 ```python
 # Single RPC call instead of multiple queries
 result = client.rpc('get_user_stats', {'p_user_id': user_id}).execute()
+```
+
+**Alternative: Materialized View** (for very large datasets, refresh on schedule)
+```sql
+CREATE MATERIALIZED VIEW user_stats AS
+SELECT
+  user_id,
+  (SELECT COUNT(*) FROM analysis_history a WHERE a.user_id = u.id) as total_analyses,
+  (SELECT COUNT(*) FROM comparison_scores c WHERE c.user_id = u.id) as total_comparisons,
+  (SELECT AVG(score) FROM comparison_scores c WHERE c.user_id = u.id) as avg_score
+FROM auth.users u;
+
+-- Refresh periodically
+REFRESH MATERIALIZED VIEW user_stats;
 ```
 
 #### 4.5.3 Export Format Compatibility
