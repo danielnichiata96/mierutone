@@ -391,6 +391,94 @@ response = client.table("analyses").select("*").execute()
 
 **Important**: Do NOT use `client.auth.set_session()` for RLS - it manages client-side session state but doesn't set the PostgREST Authorization header needed for RLS policies.
 
+### 4.5 Performance Optimizations
+
+#### 4.5.1 Middleware Static Asset Exclusion
+
+The auth middleware should skip validation for static assets to avoid unnecessary latency:
+
+```typescript
+// middleware.ts
+export const config = {
+  matcher: [
+    // Only match dashboard routes, exclude static files
+    '/(dashboard|history|progress|settings)/:path*',
+    // Exclude: _next, static, images, favicon, manifest
+  ],
+};
+
+// Or explicit check
+if (pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.match(/\.(ico|png|jpg|svg|webp|woff2?)$/)) {
+  return NextResponse.next();
+}
+```
+
+#### 4.5.2 Dashboard Statistics Optimization
+
+For users with large history (1000+ records), real-time `COUNT`/`AVG` queries can be slow.
+
+**Recommended: PostgreSQL View or RPC**
+
+```sql
+-- Option A: Materialized View (refresh on schedule)
+CREATE MATERIALIZED VIEW user_stats AS
+SELECT
+  user_id,
+  COUNT(*) FILTER (WHERE type = 'analysis') as total_analyses,
+  COUNT(*) FILTER (WHERE type = 'comparison') as total_comparisons,
+  AVG(score) FILTER (WHERE type = 'comparison') as avg_score,
+  COUNT(DISTINCT text) as unique_texts
+FROM history
+GROUP BY user_id;
+
+-- Option B: RPC Function (real-time, single round-trip)
+CREATE OR REPLACE FUNCTION get_user_stats(p_user_id UUID)
+RETURNS JSON AS $$
+  SELECT json_build_object(
+    'total_analyses', COUNT(*) FILTER (WHERE type = 'analysis'),
+    'total_comparisons', COUNT(*) FILTER (WHERE type = 'comparison'),
+    'avg_score', ROUND(AVG(score) FILTER (WHERE type = 'comparison')::numeric, 1),
+    'unique_texts', COUNT(DISTINCT text)
+  )
+  FROM history
+  WHERE user_id = p_user_id;
+$$ LANGUAGE SQL SECURITY DEFINER;
+```
+
+**API Call**:
+```python
+# Single RPC call instead of multiple queries
+result = client.rpc('get_user_stats', {'p_user_id': user_id}).execute()
+```
+
+#### 4.5.3 Export Format Compatibility
+
+Data export should be compatible with popular SRS tools:
+
+**Anki-Compatible Format** (for `/api/history/export?format=anki`):
+```json
+{
+  "notes": [
+    {
+      "front": "東京",
+      "back": "とうきょう [0] - Heiban",
+      "tags": ["mierutone", "heiban", "2025-01"]
+    }
+  ],
+  "deck_name": "MieruTone Pitch Accent",
+  "note_type": "Basic"
+}
+```
+
+**Standard Formats**:
+| Format | Use Case |
+|--------|----------|
+| `json` | Full data backup, programmatic access |
+| `csv` | Spreadsheet analysis, custom imports |
+| `anki` | Direct Anki deck import (.apkg generation future) |
+
 ---
 
 ## 5. UI/UX Specifications
