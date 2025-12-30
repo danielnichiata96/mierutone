@@ -50,6 +50,13 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = ""
     supabase_jwt_public_key: str = ""
 
+    # Stripe (Payments)
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_price_id_pro_monthly: str = ""  # Price ID for Pro plan ($9/month)
+    stripe_success_url: str = "https://mierutone.com/dashboard?upgrade=success"
+    stripe_cancel_url: str = "https://mierutone.com/pricing?upgrade=cancelled"
+
     class Config:
         env_file = BACKEND_DIR / ".env"
         extra = "ignore"

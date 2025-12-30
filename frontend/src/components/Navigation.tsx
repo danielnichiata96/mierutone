@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { AnalyticsIcon, BookIcon, TargetIcon } from "./icons/DoodleIcons";
 import { useAuth } from "@/hooks/useAuth";
+import { getSubscriptionStatus, SubscriptionStatus } from "@/lib/api";
 
 const navLinks = [
   { href: "/app", label: "Practice", icon: AnalyticsIcon },
@@ -16,6 +17,7 @@ export function Navigation() {
   const pathname = usePathname();
   const { user, loading, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -28,6 +30,16 @@ export function Navigation() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Fetch subscription status for logged-in users
+  useEffect(() => {
+    if (user) {
+      getSubscriptionStatus().then(setSubscription).catch(() => {
+        // Default to free if fetch fails
+        setSubscription({ plan: "free", status: null, current_period_end: null, cancel_at_period_end: false });
+      });
+    }
+  }, [user]);
 
   return (
     <header className="border-b-2 border-ink-black/10 bg-paper-white/80 backdrop-blur-sm sticky top-0 z-50">
@@ -72,6 +84,19 @@ export function Navigation() {
                 );
               })}
             </nav>
+
+            {/* Upgrade Button (for free users) */}
+            {user && subscription && subscription.plan === "free" && (
+              <Link
+                href="/pricing"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary-500 to-accent-500 text-white text-sm font-medium rounded-riso hover:opacity-90 transition-opacity"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Upgrade
+              </Link>
+            )}
 
             {/* User Menu / Sign In */}
             {!loading && (
@@ -119,6 +144,15 @@ export function Navigation() {
                       >
                         Dashboard
                       </Link>
+                      {subscription && subscription.plan === "free" && (
+                        <Link
+                          href="/pricing"
+                          className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 transition-colors"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          Upgrade to Pro
+                        </Link>
+                      )}
                       <button
                         onClick={() => {
                           signOut();

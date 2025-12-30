@@ -303,3 +303,63 @@ export async function getStats(): Promise<StatsResponse> {
 
   return response.json();
 }
+
+// ============================================================================
+// Stripe API (protected - requires authentication)
+// ============================================================================
+
+export interface SubscriptionStatus {
+  plan: "free" | "pro";
+  status: string | null;
+  current_period_end: number | null;
+  cancel_at_period_end: boolean;
+}
+
+export async function createCheckoutSession(): Promise<{ url: string }> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/stripe/create-checkout-session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Checkout failed" }));
+    throw new Error(error.detail || `Checkout error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function createPortalSession(): Promise<{ url: string }> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/stripe/create-portal-session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Portal session failed" }));
+    throw new Error(error.detail || `Portal error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function getSubscriptionStatus(): Promise<SubscriptionStatus> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/stripe/subscription-status`, {
+    headers,
+  });
+
+  if (!response.ok) {
+    // Default to free if can't fetch
+    return {
+      plan: "free",
+      status: null,
+      current_period_end: null,
+      cancel_at_period_end: false,
+    };
+  }
+
+  return response.json();
+}
