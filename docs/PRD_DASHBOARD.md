@@ -227,8 +227,20 @@ Create a separated "workspace" experience for authenticated users that provides:
 
 | Action | Confirmation | Effect |
 |--------|--------------|--------|
-| Clear History | Double confirm modal | Delete all analyses & scores |
+| Clear History | Double confirm modal | Delete all analyses & scores (user's RLS scope) |
 | Delete Account | Type "DELETE" to confirm | Remove all data, sign out, delete auth user |
+
+**Delete Account Implementation**:
+- Requires backend endpoint with **service role key** (not anon key)
+- Flow:
+  1. User confirms deletion (type "DELETE")
+  2. Frontend calls `DELETE /api/account` with user's JWT
+  3. Backend validates JWT, extracts user_id
+  4. Backend uses **service role client** to:
+     - Delete from public.profiles (CASCADE handles related tables)
+     - Call `supabase.auth.admin.delete_user(user_id)`
+  5. Frontend clears local session, redirects to home
+- **Security**: Service role key is server-side only, never exposed to client
 
 ---
 
@@ -314,17 +326,17 @@ CREATE POLICY "Users can update own preferences"
 
 #### Backend (FastAPI)
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | /api/profile | Yes | Get user profile |
-| PATCH | /api/profile | Yes | Update display name |
-| GET | /api/preferences | Yes | Get user preferences |
-| PATCH | /api/preferences | Yes | Update preferences |
-| GET | /api/history | Yes | Get paginated history |
-| GET | /api/history/stats | Yes | Get aggregate statistics |
-| POST | /api/history/export | Yes | Generate data export |
-| DELETE | /api/history | Yes | Clear all history |
-| DELETE | /api/account | Yes | Delete account |
+| Method | Endpoint | Auth | Supabase Client | Description |
+|--------|----------|------|-----------------|-------------|
+| GET | /api/profile | JWT | anon + RLS | Get user profile |
+| PATCH | /api/profile | JWT | anon + RLS | Update display name |
+| GET | /api/preferences | JWT | anon + RLS | Get user preferences |
+| PATCH | /api/preferences | JWT | anon + RLS | Update preferences |
+| GET | /api/history | JWT | anon + RLS | Get paginated history |
+| GET | /api/history/stats | JWT | anon + RLS | Get aggregate statistics |
+| POST | /api/history/export | JWT | anon + RLS | Generate data export |
+| DELETE | /api/history | JWT | anon + RLS | Clear all history |
+| DELETE | /api/account | JWT | **service role** | Delete account (requires admin API) |
 
 ### 4.4 Row Level Security
 
