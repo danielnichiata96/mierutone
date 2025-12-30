@@ -42,11 +42,11 @@ async def get_current_user(
         token_alg = 'HS256'
 
     try:
-        # Use the algorithm from the token header
+        # Supabase uses HS256 with a symmetric secret
         payload = jwt.decode(
             credentials.credentials,
             jwt_secret,
-            algorithms=[token_alg],  # Use the algorithm specified in the token
+            algorithms=["HS256"],
             audience="authenticated",
         )
         user_id = payload.get("sub")
