@@ -2,7 +2,6 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   getHistory,
   getStats,
@@ -50,8 +49,7 @@ function formatDate(dateStr: string): string {
 }
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const [history, setHistory] = useState<HistoryResponse>({
     analyses: [],
     scores: [],
@@ -64,70 +62,43 @@ export default function DashboardPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect to login if not authenticated
+  // Fetch data on mount (auth is handled by layout)
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login?next=/dashboard");
-    }
-  }, [loading, user, router]);
+    setLoadingData(true);
+    setError(null);
 
-  // Fetch data when authenticated
-  useEffect(() => {
-    if (user) {
-      setLoadingData(true);
-      setError(null);
-
-      Promise.all([getHistory(), getStats()])
-        .then(([historyData, statsData]) => {
-          setHistory(historyData);
-          setStats(statsData);
-        })
-        .catch((err) => {
-          console.error("Failed to load dashboard data:", err);
-          // Show detailed error message
-          const errorMsg = err.message || String(err);
-          if (errorMsg.includes("401")) {
-            setError(`Authentication error (401): Your session may have expired or the backend cannot validate your token. Try signing out and back in.`);
-          } else if (errorMsg.includes("403")) {
-            setError(`Access denied (403): You don't have permission to access this data.`);
-          } else if (errorMsg.includes("404")) {
-            setError(`API not found (404): The history endpoint doesn't exist on the backend.`);
-          } else if (errorMsg.includes("500")) {
-            setError(`Server error (500): The backend encountered an error. Check Railway logs.`);
-          } else if (errorMsg.includes("Failed to fetch") || errorMsg.includes("NetworkError")) {
-            setError(`Network error: Cannot reach the backend. Check if NEXT_PUBLIC_API_URL is correct and CORS is configured.`);
-          } else {
-            setError(`Error: ${errorMsg}`);
-          }
-        })
-        .finally(() => {
-          setLoadingData(false);
-        });
-    }
-  }, [user]);
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-paper-white flex items-center justify-center">
-        <div className="text-ink-black/60">Loading...</div>
-      </main>
-    );
-  }
-
-  if (!user) {
-    return null; // Will redirect via useEffect
-  }
+    Promise.all([getHistory(), getStats()])
+      .then(([historyData, statsData]) => {
+        setHistory(historyData);
+        setStats(statsData);
+      })
+      .catch((err) => {
+        console.error("Failed to load dashboard data:", err);
+        const errorMsg = err.message || String(err);
+        if (errorMsg.includes("401")) {
+          setError("Session expired. Please sign out and back in.");
+        } else if (errorMsg.includes("500")) {
+          setError("Server error. Please try again later.");
+        } else if (errorMsg.includes("Failed to fetch")) {
+          setError("Cannot reach server. Check your connection.");
+        } else {
+          setError(`Error: ${errorMsg}`);
+        }
+      })
+      .finally(() => {
+        setLoadingData(false);
+      });
+  }, []);
 
   return (
-    <main className="min-h-screen bg-paper-white">
-      <div className="container mx-auto px-6 py-12 max-w-5xl">
+    <div className="container mx-auto px-6 py-8 pt-16 lg:pt-8 max-w-4xl">
         {/* Header */}
         <section className="mb-8">
           <h1 className="font-display text-3xl font-bold text-ink-black mb-2">
             Dashboard
           </h1>
           <p className="text-ink-black/60">
-            Welcome back, {user.user_metadata?.full_name || "learner"}!
+            Welcome back, {user?.user_metadata?.full_name || "learner"}!
           </p>
         </section>
 
@@ -256,6 +227,5 @@ export default function DashboardPage() {
           </>
         )}
       </div>
-    </main>
   );
 }

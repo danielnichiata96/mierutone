@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Navigation } from "@/components/Navigation";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,7 +6,8 @@ export const metadata: Metadata = {
     default: "MieruTone | Japanese Pitch Accent Training",
     template: "%s | MieruTone",
   },
-  description: "Master Japanese pitch accent with cozy, gamified ear training. MieruTone helps learners see the invisible structure of Japanese Audio.",
+  description:
+    "Master Japanese pitch accent with cozy, gamified ear training. MieruTone helps learners see the invisible structure of Japanese Audio.",
   keywords: [
     "Japanese pitch accent",
     "Japanese ear training",
@@ -27,9 +27,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://mierutone.com", // Placeholder domain
+    url: "https://mierutone.com",
     title: "MieruTone | Master Japanese Pitch Accent",
-    description: "Cozy, gamified ear training for Japanese learners. Visualize and practice pitch patterns.",
+    description:
+      "Cozy, gamified ear training for Japanese learners. Visualize and practice pitch patterns.",
     siteName: "MieruTone",
   },
   twitter: {
@@ -44,16 +45,17 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "name": "MieruTone",
-      "applicationCategory": "EducationalApplication",
-      "operatingSystem": "Web",
-      "offers": {
+      name: "MieruTone",
+      applicationCategory: "EducationalApplication",
+      operatingSystem: "Web",
+      offers: {
         "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD",
+        price: "0",
+        priceCurrency: "USD",
       },
-      "description": "A cozy, gamified web application for training Japanese pitch accent listening skills.",
-      "featureList": [
+      description:
+        "A cozy, gamified web application for training Japanese pitch accent listening skills.",
+      featureList: [
         "Interactive playback",
         "Pitch vizualization",
         "Gamified quizzes",
@@ -62,10 +64,11 @@ const jsonLd = {
     },
     {
       "@type": "LearningResource",
-      "name": "Japanese Pitch Accent Ear Training",
-      "description": "Interactive exercises to distinguish between Heiban, Atamadaka, Nakadaka, and Odaka patterns.",
-      "educationalLevel": "Beginner to Advanced",
-      "teaches": "Japanese Pitch Accent",
+      name: "Japanese Pitch Accent Ear Training",
+      description:
+        "Interactive exercises to distinguish between Heiban, Atamadaka, Nakadaka, and Odaka patterns.",
+      educationalLevel: "Beginner to Advanced",
+      teaches: "Japanese Pitch Accent",
     },
   ],
 };
@@ -84,8 +87,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-paper-white text-ink-black font-medium antialiased">
-        <Navigation />
-        <div className="relative z-10">{children}</div>
+        {children}
       </body>
     </html>
   );
