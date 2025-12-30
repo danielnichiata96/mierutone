@@ -88,7 +88,7 @@ function LoginContent() {
         </p>
 
         <div className="mt-6 pt-6 border-t border-ink-black/10">
-          <Link href="/" className="text-sm text-ink-black/60 hover:text-ink-black transition-colors">
+          <Link href="/app" className="text-sm text-ink-black/60 hover:text-ink-black transition-colors">
             Continue without signing in
           </Link>
         </div>
