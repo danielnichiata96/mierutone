@@ -65,8 +65,9 @@ export function AudioPlayButton({ text, size = "sm", className = "" }: AudioPlay
     <button
       onClick={handlePlay}
       disabled={isLoading}
-      className={`${buttonSize} rounded-full bg-primary-500/10 hover:bg-primary-500/20 text-primary-500 transition-all disabled:opacity-50 ${className}`}
-      title={isPlaying ? "Stop" : "Play audio"}
+      aria-label={isPlaying ? `Stop playing ${text}` : `Play audio for ${text}`}
+      aria-pressed={isPlaying}
+      className={`${buttonSize} rounded-full bg-primary-500/10 hover:bg-primary-500/20 text-primary-500 transition-all disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 ${isPlaying ? "bg-primary-500/30 ring-2 ring-primary-500" : ""} ${className}`}
     >
       {isLoading ? (
         <svg className={`${iconSize} animate-spin`} fill="none" viewBox="0 0 24 24">
