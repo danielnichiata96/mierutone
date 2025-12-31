@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { TextInput } from "@/components/TextInput";
+import { normalizeInput } from "@/lib/normalizeInput";
 import { PitchVisualizer } from "@/components/PitchVisualizer";
 import { Legend } from "@/components/Legend";
 import { RecordCompare } from "@/components/RecordCompare";
@@ -68,12 +69,16 @@ function AppContent() {
     }
   }, [checkForAchievements]);
 
-  // Check for text query parameter
+  // Check for text query parameter - normalize romaji from URL (preserve katakana)
   useEffect(() => {
     const textParam = searchParams.get("text");
-    if (textParam && textParam !== initialText) {
-      setInitialText(textParam);
-      handleAnalyze(textParam);
+    if (textParam) {
+      const normalized = normalizeInput(textParam);
+      // Compare normalized value to avoid repeated triggers from romaji URLs
+      if (normalized !== initialText) {
+        setInitialText(normalized);
+        handleAnalyze(normalized);
+      }
     }
   }, [searchParams, initialText, handleAnalyze]);
 

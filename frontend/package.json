@@ -17,7 +17,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sonner": "^2.0.7",
-    "tone": "^15.1.22"
+    "tone": "^15.1.22",
+    "wanakana": "^5.3.1"
   },
   "devDependencies": {
     "@types/node": "^20",

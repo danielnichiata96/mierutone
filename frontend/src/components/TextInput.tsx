@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { bind, unbind } from "wanakana";
 import { useSearchHistory, type HistoryItem } from "@/hooks/useSearchHistory";
+import { normalizeInput } from "@/lib/normalizeInput";
 
 interface TextInputProps {
   onAnalyze: (text: string) => void;
@@ -14,11 +16,22 @@ export function TextInput({ onAnalyze, isLoading, initialValue }: TextInputProps
   const [showHistory, setShowHistory] = useState(false);
   const { history, addToHistory } = useSearchHistory();
   const historyRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Update text when initialValue changes (from query param)
+  // Bind wanakana for real-time romaji → hiragana conversion
+  // IMEMode: false = immediate conversion (nn not required for ん before vowel)
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      bind(textarea, { IMEMode: false });
+      return () => unbind(textarea);
+    }
+  }, []);
+
+  // Update text when initialValue changes (from query param) - normalize romaji
   useEffect(() => {
     if (initialValue) {
-      setText(initialValue);
+      setText(normalizeInput(initialValue));
     }
   }, [initialValue]);
 
@@ -35,9 +48,10 @@ export function TextInput({ onAnalyze, isLoading, initialValue }: TextInputProps
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (text.trim()) {
-      addToHistory(text);
-      onAnalyze(text);
+    const trimmed = text.trim();
+    if (trimmed) {
+      addToHistory(trimmed);
+      onAnalyze(trimmed);
     }
   };
 
@@ -45,9 +59,10 @@ export function TextInput({ onAnalyze, isLoading, initialValue }: TextInputProps
     // Ctrl/Cmd + Enter to submit
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      if (text.trim() && !isLoading) {
-        addToHistory(text);
-        onAnalyze(text);
+      const trimmed = text.trim();
+      if (trimmed && !isLoading) {
+        addToHistory(trimmed);
+        onAnalyze(trimmed);
       }
     }
   };
@@ -62,19 +77,22 @@ export function TextInput({ onAnalyze, isLoading, initialValue }: TextInputProps
 
   const handleHistorySelect = (item: HistoryItem) => {
     if (isLoading) return;
-    setText(item.text);
+    const normalized = normalizeInput(item.text);
+    setText(normalized);
     setShowHistory(false);
-    onAnalyze(item.text);
+    addToHistory(normalized);
+    onAnalyze(normalized);
   };
 
   return (
     <form onSubmit={handleSubmit} className="riso-card space-y-4">
       <div className="relative">
         <textarea
+          ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="日本語のテキストを入力..."
+          placeholder="日本語のテキストを入力... (type romaji for auto-conversion)"
           rows={6}
           className="w-full bg-transparent border-0 resize-none focus:ring-0 text-lg leading-relaxed text-ink-black placeholder:text-ink-black/30 font-sans p-0 focus:outline-none"
           style={{ minHeight: "150px" }}
