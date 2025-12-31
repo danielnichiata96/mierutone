@@ -17,7 +17,8 @@ SourceType = Literal[
     "dictionary_proper",   # Proper noun found in Kanjium dictionary (medium, with warning)
     "unidic_proper",       # Proper noun found in UniDic only (low, with warning)
     "proper_noun",         # Proper noun NOT in any dictionary (low, pitch uncertain)
-    "particle",            # Particle/auxiliary verb, inherits pitch from prev word
+    "particle",            # Particle (助詞), inherits pitch from prev word
+    "auxiliary",           # Auxiliary verb (助動詞), inherits pitch from prev word
     "rule",                # No dictionary match, using standard pitch rules (low)
     "compound_rule",       # Compound accent predicted using McCawley rules (low)
     "expression_parts",    # Expression analyzed by splitting into parts (medium)

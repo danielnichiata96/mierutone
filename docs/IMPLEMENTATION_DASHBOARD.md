@@ -1,7 +1,7 @@
 # Implementation Plan: Dashboard & User Workspace
 
 **Source PRD**: [PRD_DASHBOARD.md](./PRD_DASHBOARD.md)
-**Last Updated**: 2025-12-30
+**Last Updated**: 2025-12-31
 
 ---
 
@@ -1977,39 +1977,39 @@ def test_check_achievements(authenticated_client: TestClient):
 ## Checklist de Entrega
 
 ### Database (Supabase)
-- [ ] DB-1: Tabela `profiles` com trigger
-- [ ] DB-2: Tabela `user_preferences` com ENUM
-- [ ] DB-3: Tabela `analysis_history`
-- [ ] DB-4: Tabela `comparison_scores`
-- [ ] DB-5: Tabela `user_achievements`
-- [ ] DB-6: Tabela `user_stats_snapshot`
-- [ ] DB-7: RPC `get_user_stats()`
+- [x] DB-1: Tabela `profiles` com trigger
+- [x] DB-2: Tabela `user_preferences` com ENUM
+- [x] DB-3: Tabela `analysis_history`
+- [x] DB-4: Tabela `comparison_scores`
+- [x] DB-5: Tabela `user_achievements`
+- [x] DB-6: Tabela `user_stats_snapshot`
+- [x] DB-7: RPC `get_user_stats()`
 
 ### Backend (FastAPI)
-- [ ] BE-1: GET/PATCH `/api/user/profile`
-- [ ] BE-2: GET/PATCH `/api/user/preferences`
-- [ ] BE-3: GET `/api/history/paginated` + `/api/history/stats` + DELETE `/api/history`
-- [ ] BE-4: Auto-save análise no histórico (modificar analyze.py)
-- [ ] BE-5: Auto-save comparison no histórico (modificar compare.py)
-- [ ] BE-6: GET/POST `/api/achievements`
-- [ ] BE-7: DELETE `/api/user/account` (+ adicionar service role key)
-- [ ] BE-8: POST `/api/history/export`
+- [x] BE-1: GET/PATCH `/api/user/profile`
+- [x] BE-2: GET/PATCH `/api/user/preferences`
+- [x] BE-3: GET `/api/history/paginated` + `/api/history/stats` + DELETE `/api/history`
+- [x] BE-4: Auto-save análise no histórico (modificar analyze.py)
+- [x] BE-5: Auto-save comparison no histórico (modificar compare.py)
+- [x] BE-6: GET/POST `/api/achievements`
+- [x] BE-7: DELETE `/api/user/account` (+ adicionar service role key)
+- [x] BE-8: POST `/api/history/export`
 
 ### Frontend (Next.js)
-- [ ] FE-0: Instalar dependências (date-fns, sonner)
-- [ ] FE-1: Funções API client (`/api/user/*`, `/api/history/*`, `/api/achievements/*`)
-- [ ] FE-2: Types TypeScript
-- [ ] FE-3: Dashboard page
-- [ ] FE-4: StatsCards component
-- [ ] FE-5: RecentActivity component
-- [ ] FE-6: Settings page
-- [ ] FE-7: PreferencesSection component
-- [ ] FE-8: History page
-- [ ] FE-9: HistoryList com paginação cursor-based
-- [ ] FE-10: Componentes auxiliares (Toggle, Skeleton, HistoryItem, EmptyState, HistoryTabs, AchievementBadges, QuickActions, AccountSection, DangerZone, ExportSection)
-- [ ] FE-11: useAchievementToast hook
-- [ ] FE-12: Achievement check integration (após análise/comparação)
-- [ ] FE-13: RetentionWarningBanner
+- [x] FE-0: Instalar dependências (date-fns, sonner)
+- [x] FE-1: Funções API client (`/api/user/*`, `/api/history/*`, `/api/achievements/*`)
+- [x] FE-2: Types TypeScript
+- [x] FE-3: Dashboard page
+- [x] FE-4: StatsCards component (implementado inline no dashboard)
+- [x] FE-5: RecentActivity component (implementado inline no dashboard)
+- [x] FE-6: Settings page
+- [x] FE-7: PreferencesSection component (implementado inline em Settings)
+- [x] FE-8: History page
+- [x] FE-9: HistoryList com paginação cursor-based (implementado inline)
+- [x] FE-10: Componentes auxiliares (implementados inline quando aplicavel)
+- [x] FE-11: useAchievementToast hook (via AchievementToast + useAchievements)
+- [x] FE-12: Achievement check integration (após análise/comparação)
+- [x] FE-13: RetentionWarningBanner
 
 ### Tests
 - [ ] TEST-1: Backend API tests

@@ -107,7 +107,8 @@ def test_r2_get_stats_uses_cache(monkeypatch):
         return {"connected": True, "objects": 1, "size_mb": 1.0}
 
     monkeypatch.setattr(storage_service, "_compute_r2_stats", fake_compute)
-    monkeypatch.setattr(storage_service.time, "time", lambda: 100)
+    # Use time > TTL (300) so initial empty cache (timestamp=0) is considered expired
+    monkeypatch.setattr(storage_service.time, "time", lambda: 1000)
 
     stats1 = storage_service.r2_get_stats()
     stats2 = storage_service.r2_get_stats()
@@ -124,11 +125,13 @@ def test_r2_get_stats_refreshes_after_ttl(monkeypatch):
         return {"connected": True, "objects": 1, "size_mb": 1.0}
 
     monkeypatch.setattr(storage_service, "_compute_r2_stats", fake_compute)
-    monkeypatch.setattr(storage_service.time, "time", lambda: 100)
+    # First call at 1000: 1000 - 0 = 1000 > TTL (300), triggers compute
+    monkeypatch.setattr(storage_service.time, "time", lambda: 1000)
 
     storage_service.r2_get_stats()
 
-    monkeypatch.setattr(storage_service.time, "time", lambda: 1000)
+    # Second call at 1400: 1400 - 1000 = 400 > TTL (300), triggers compute again
+    monkeypatch.setattr(storage_service.time, "time", lambda: 1400)
     storage_service.r2_get_stats()
 
     assert calls["count"] == 2

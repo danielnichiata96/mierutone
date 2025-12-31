@@ -30,6 +30,8 @@ def test_add_emphasis_escapes_and_wraps_word():
 
 
 def test_add_breaks_between_words_end_boundary():
-    result = tts_service.add_breaks_between_words("a?_", break_ms=300)
+    # Function adds breaks after Japanese particles (は, が, etc.) at word boundaries
+    result = tts_service.add_breaks_between_words("これは", break_ms=300)
 
-    assert result == 'a?_<break time="300ms"/>'
+    # は at end of string gets a break (matches $ in word_boundary pattern)
+    assert result == 'これは<break time="300ms"/>'

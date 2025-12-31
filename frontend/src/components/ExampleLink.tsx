@@ -22,7 +22,7 @@ export function ExampleLink({
   className = "",
   showAudio = true,
 }: ExampleLinkProps) {
-  const displayText = reading && accent ? `${word} (${reading}${accent})` : word;
+  const displayText = reading ? `${word} (${reading}${accent || ''})` : word;
 
   return (
     <Link

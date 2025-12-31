@@ -106,6 +106,7 @@ Dictionary entries always take priority over rule predictions.
 - `components/PhraseFlow.tsx` - Connected pitch visualization across word boundaries
 - `components/pitch/` - Shared pitch rendering components (PitchDot, PitchGlow)
 - `components/RecordCompare.tsx` - Record & compare pronunciation
+- `components/JapaneseText.tsx` - BudouX-powered text component for proper Japanese line breaking
 - `lib/api.ts` - API client functions (`analyzeText`, `textToSpeech`, `comparePronunciation`)
 - `lib/colors.ts` - Riso color palette and styling constants
 - `types/pitch.ts` - TypeScript types mirroring backend schemas
@@ -130,6 +131,8 @@ Dictionary entries always take priority over rule predictions.
 **Frontend:**
 - `pitchy` - Real-time pitch detection from microphone
 - `tone` - Audio playback
+- `wanakana` - Romaji to hiragana conversion
+- `budoux` - Japanese line breaking (wraps text at grammatically correct positions)
 
 ### Pitch Database
 

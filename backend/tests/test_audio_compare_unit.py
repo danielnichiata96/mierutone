@@ -31,7 +31,7 @@ def test_normalize_pitch_handles_zero_std():
 def test_compare_audio_happy_path(monkeypatch):
     monkeypatch.setattr(audio_compare, "extract_pitch", lambda *_: np.array([1.0, 2.0]))
     monkeypatch.setattr(audio_compare, "normalize_pitch", lambda x: x)
-    monkeypatch.setattr(audio_compare, "fastdtw", lambda *_: (0.0, [(0, 0), (1, 1)]))
+    monkeypatch.setattr(audio_compare, "fastdtw", lambda *args, **kwargs: (0.0, [(0, 0), (1, 1)]))
 
     result = audio_compare.compare_audio(b"native", b"user")
 

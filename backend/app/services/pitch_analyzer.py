@@ -276,8 +276,8 @@ def get_confidence_for_source(
         base = "high"
     elif source in ("dictionary_lemma", "dictionary_proper", "expression_parts"):
         base = "medium"
-    elif source == "particle":
-        return "high"  # Particles don't need cross-validation
+    elif source in ("particle", "auxiliary"):
+        return "high"  # Particles/auxiliaries don't need cross-validation
     else:  # dictionary_reading, dictionary_unidic, unidic_proper, rule, proper_noun, unknown
         base = "low"
 
@@ -354,8 +354,8 @@ def get_lookup_warning(
 
 def should_generate_pitch_pattern(source: SourceType) -> bool:
     """Determine if we should generate a pitch pattern for this source type."""
-    # Particles and uncertain proper nouns don't get pitch patterns
-    return source not in ("particle", "proper_noun")
+    # Particles, auxiliaries, and uncertain proper nouns don't get pitch patterns
+    return source not in ("particle", "auxiliary", "proper_noun")
 
 
 # =============================================================================
@@ -645,8 +645,8 @@ def analyze_expression_fallback(token) -> ExpressionFallbackResult | None:
             part_pattern = []  # Skip empty readings
         elif pitch.accent_type is not None:
             part_pattern = get_pitch_pattern(pitch.accent_type, mora_count)
-        elif is_particle(pos):
-            # Particles: follow the previous pitch (simplified: use H)
+        elif is_particle_like(pos):
+            # Particles/auxiliaries: follow the previous pitch (simplified: use H)
             part_pattern = ["H"] * mora_count if combined_pattern and combined_pattern[-1] == "H" else ["L"] * mora_count
         else:
             # Unknown: default to heiban-like (L then H)
@@ -815,7 +815,17 @@ def get_pos(token) -> str:
 
 
 def is_particle(pos: str) -> bool:
-    """Check if part of speech is a particle or auxiliary verb."""
+    """Check if part of speech is a particle (助詞)."""
+    return pos == "助詞"
+
+
+def is_auxiliary(pos: str) -> bool:
+    """Check if part of speech is an auxiliary verb (助動詞)."""
+    return pos == "助動詞"
+
+
+def is_particle_like(pos: str) -> bool:
+    """Check if part of speech behaves like a particle (inherits pitch)."""
     return pos in ("助詞", "助動詞")
 
 
@@ -875,6 +885,13 @@ def analyze_text(text: str) -> list[WordPitch]:
             warning = None
             lookup_result = PitchLookupResult(None, None, None, source="particle")
 
+        elif is_auxiliary(pos):
+            # Auxiliary verbs also inherit pitch from context - don't look up
+            source = "auxiliary"
+            confidence = "high"  # Confident it IS an auxiliary verb
+            warning = None
+            lookup_result = PitchLookupResult(None, None, None, source="auxiliary")
+
         elif is_proper_noun(token):
             # Try dictionary first, then decide based on result
             lookup_result = lookup_pitch(surface, reading_hira, lemma, normalized)
@@ -923,8 +940,8 @@ def analyze_text(text: str) -> list[WordPitch]:
         is_compound = False
         final_accent_type = lookup_result.accent_type
 
-        # Only analyze compounds for non-particles and non-proper-nouns
-        if not is_particle(pos) and not is_proper_noun(token):
+        # Only analyze compounds for non-particles/auxiliaries and non-proper-nouns
+        if not is_particle_like(pos) and not is_proper_noun(token):
             compound_in_dict = source in HIGH_CONFIDENCE_SOURCES
             compound_analysis = analyze_compound(token, compound_in_dict)
 
@@ -944,8 +961,8 @@ def analyze_text(text: str) -> list[WordPitch]:
 
         # Expression fallback: if lookup failed and no compound analysis helped,
         # try splitting with Mode A and analyzing parts
-        # Skip for particles and proper nouns (they have special handling)
-        if (source == "rule" or final_accent_type is None) and not is_compound and not is_particle(pos) and not is_proper_noun(token):
+        # Skip for particles/auxiliaries and proper nouns (they have special handling)
+        if (source == "rule" or final_accent_type is None) and not is_compound and not is_particle_like(pos) and not is_proper_noun(token):
             expression_fallback = analyze_expression_fallback(token)
             
             if expression_fallback is not None and expression_fallback.success:

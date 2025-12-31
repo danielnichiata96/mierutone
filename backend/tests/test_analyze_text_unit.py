@@ -32,6 +32,10 @@ class StubToken:
     def part_of_speech(self):
         return [self._pos]
 
+    def split(self, mode):
+        """Return self as a single-element list (no compound splitting)."""
+        return [self]
+
     @property
     def is_proper(self):
         return self._proper

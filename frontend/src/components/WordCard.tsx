@@ -72,7 +72,8 @@ export function WordCard({ word, displayPrefs = {} }: WordCardProps) {
 
   // Check if we have pitch data
   const hasPitchData = pitch_pattern.length > 0;
-  const isParticle = source === "particle";
+  // Particles (助詞) and auxiliaries (助動詞) both follow context pitch
+  const isParticleLike = source === "particle" || source === "auxiliary";
 
   const svgWidth = morae.length * 30;
   const svgHeight = 45;
@@ -121,8 +122,8 @@ export function WordCard({ word, displayPrefs = {} }: WordCardProps) {
               />
             ))}
           </>
-        ) : isParticle ? (
-          /* Particle - dashed line to indicate follows context */
+        ) : isParticleLike ? (
+          /* Particle/Auxiliary - dashed line to indicate follows context */
           <line
             x1={10}
             y1={PITCH_Y_UNCERTAIN}
@@ -169,7 +170,7 @@ export function WordCard({ word, displayPrefs = {} }: WordCardProps) {
       <div className="font-mono text-xs tracking-wider text-ink-black/60 mt-1">
         {hasPitchData
           ? pitch_pattern.join(" ")
-          : isParticle
+          : isParticleLike
             ? <span className="text-ink-black/50 italic">Follows context</span>
             : <span className="text-ink-black/50 italic">Pitch unknown</span>}
       </div>
@@ -177,7 +178,7 @@ export function WordCard({ word, displayPrefs = {} }: WordCardProps) {
         <div className="text-xs text-ink-black/50 mt-1.5 text-center font-medium">
           {hasPitchData
             ? getAccentLabel(accent_type, mora_count, word.part_of_speech)
-            : isParticle
+            : isParticleLike
               ? "See Phrase Flow"
               : "Unknown"}
         </div>

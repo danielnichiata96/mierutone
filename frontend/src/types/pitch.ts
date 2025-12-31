@@ -30,7 +30,8 @@ export interface WordPitch {
     | "dictionary_proper"   // Proper noun in Kanjium
     | "unidic_proper"       // Proper noun in UniDic only
     | "rule"                // Rule-based fallback
-    | "particle"            // Particle (助詞/助動詞)
+    | "particle"            // Particle (助詞)
+    | "auxiliary"           // Auxiliary verb (助動詞)
     | "proper_noun"         // Proper noun not in any dictionary
     | "compound_rule"       // Compound accent predicted using McCawley rules
     | "expression_parts"    // Expression analyzed by splitting into parts
@@ -52,6 +53,7 @@ export function getSourceLabel(source: WordPitch["source"]): string {
     case "unidic_proper": return "Proper Noun (UniDic)";
     case "rule": return "Rule-based";
     case "particle": return "Particle (助詞)";
+    case "auxiliary": return "Auxiliary (助動詞)";
     case "proper_noun": return "Proper Noun (固有名詞)";
     case "compound_rule": return "Compound (predicted)";
     case "expression_parts": return "Expression (parts)";

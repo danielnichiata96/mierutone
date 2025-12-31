@@ -66,7 +66,7 @@ def test_lookup_unidic_fallback_when_db_missing(monkeypatch):
     result = pitch_analyzer.lookup_pitch(surface="surface", reading_hira="read")
 
     assert result.accent_type == 2
-    assert result.source == "dictionary_reading"
+    assert result.source == "dictionary_unidic"  # UniDic-only when no Kanjium match
     assert result.sources_agree is None
 
 
@@ -103,6 +103,7 @@ def test_confidence_rules():
     assert pitch_analyzer.get_confidence_for_source("dictionary_reading") == "low"
     assert pitch_analyzer.get_confidence_for_source("rule") == "low"
     assert pitch_analyzer.get_confidence_for_source("particle") == "high"
+    assert pitch_analyzer.get_confidence_for_source("auxiliary") == "high"
 
     assert pitch_analyzer.get_confidence_for_source("dictionary_lemma", True) == "high"
     assert pitch_analyzer.get_confidence_for_source("dictionary_reading", True) == "medium"
@@ -120,11 +121,14 @@ def test_warning_rules():
 def test_proper_noun_warning_fallbacks():
     warnings = pitch_analyzer.WARNINGS
 
-    assert pitch_analyzer.get_proper_noun_warning("unknown", True) == warnings["proper_other_dict"]
-    assert pitch_analyzer.get_proper_noun_warning("unknown", False) == warnings["proper_other_unknown"]
+    # Test with source types (function signature: noun_type, source)
+    assert pitch_analyzer.get_proper_noun_warning("unknown", "dictionary_proper") == warnings["proper_other_dict"]
+    assert pitch_analyzer.get_proper_noun_warning("unknown", "unidic_proper") == warnings["proper_other_unidic"]
+    assert pitch_analyzer.get_proper_noun_warning("unknown", "proper_noun") == warnings["proper_other_unknown"]
 
 
 def test_should_generate_pitch_pattern():
     assert pitch_analyzer.should_generate_pitch_pattern("dictionary") is True
     assert pitch_analyzer.should_generate_pitch_pattern("particle") is False
+    assert pitch_analyzer.should_generate_pitch_pattern("auxiliary") is False
     assert pitch_analyzer.should_generate_pitch_pattern("proper_noun") is False

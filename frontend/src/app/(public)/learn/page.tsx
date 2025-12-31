@@ -45,7 +45,7 @@ const learnTopics: LearnTopic[] = [
     description: "How particles inherit pitch from the words they follow.",
     Icon: LinkIcon,
     color: "bg-accent-300",
-    available: false, // Coming soon
+    available: true,
   },
   {
     id: "compounds",
@@ -54,7 +54,7 @@ const learnTopics: LearnTopic[] = [
     description: "How pitch changes when words combine - McCawley's rules explained.",
     Icon: PuzzleIcon,
     color: "bg-energy-300",
-    available: false, // Coming soon
+    available: true,
   },
 ];
 

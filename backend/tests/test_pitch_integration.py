@@ -431,14 +431,14 @@ class TestParticleInheritance:
             f"橋 should be odaka (accent={hashi.mora_count}), got {hashi.accent_type}"
         assert wo.source == "particle"
 
-    def test_auxiliary_verb_as_particle(self):
-        """Auxiliary verbs (助動詞) should be treated like particles."""
+    def test_auxiliary_verb_source(self):
+        """Auxiliary verbs (助動詞) should have source='auxiliary'."""
         result = analyze_text("食べます")
 
         # ます is auxiliary verb
         masu = next((w for w in result if w.part_of_speech == "助動詞"), None)
         if masu:
-            assert masu.source == "particle", f"Auxiliary verb should have source='particle', got {masu.source}"
+            assert masu.source == "auxiliary", f"Auxiliary verb should have source='auxiliary', got {masu.source}"
             assert masu.pitch_pattern == [], "Auxiliary verb should have empty pitch_pattern"
 
 

@@ -29,6 +29,9 @@ def test_extract_phonemes_with_stubbed_labels(monkeypatch):
             ]
 
     monkeypatch.setattr(phoneme_service, "PYOPENJTALK_AVAILABLE", True)
+    # Create the attribute if it doesn't exist (pyopenjtalk not installed)
+    if not hasattr(phoneme_service, "pyopenjtalk"):
+        phoneme_service.pyopenjtalk = None
     monkeypatch.setattr(phoneme_service, "pyopenjtalk", StubOpenJTalk)
     phoneme_service.extract_phonemes.cache_clear()
 

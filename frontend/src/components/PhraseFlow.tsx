@@ -45,7 +45,8 @@ function getParticlePitch(prevWord: WordPitch | null): "H" | "L" | "?" {
   return "L";
 }
 
-function isParticle(word: WordPitch): boolean {
+/** Check if word is particle (助詞) or auxiliary (助動詞) - both inherit pitch from context */
+function isParticleLike(word: WordPitch): boolean {
   return word.part_of_speech === "助詞" || word.part_of_speech === "助動詞";
 }
 
@@ -56,7 +57,7 @@ function isParticle(word: WordPitch): boolean {
  */
 function findLastContentWord(words: WordPitch[], beforeIndex: number): WordPitch | null {
   for (let i = beforeIndex - 1; i >= 0; i--) {
-    if (!isParticle(words[i])) {
+    if (!isParticleLike(words[i])) {
       return words[i];
     }
   }
@@ -67,9 +68,9 @@ function buildPhrasePoints(words: WordPitch[]): MoraPoint[] {
   const points: MoraPoint[] = [];
 
   words.forEach((word, wordIndex) => {
-    const particle = isParticle(word);
+    const particleLike = isParticleLike(word);
 
-    if (particle && wordIndex > 0) {
+    if (particleLike && wordIndex > 0) {
       // Find the last CONTENT word (not particle) to inherit pitch from
       const contentWord = findLastContentWord(words, wordIndex);
       const pitch = getParticlePitch(contentWord);

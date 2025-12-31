@@ -36,7 +36,7 @@ export default function MorasPage() {
         </header>
 
         {/* Content */}
-        <article className="prose-custom space-y-8">
+        <article className="space-y-8">
           <section className="riso-card p-6">
             <h2 className="font-display text-xl font-bold text-ink-black mb-4">
               The Rhythmic Unit of Japanese

@@ -213,7 +213,9 @@ def test_tts_with_pitch_compare_error(client, monkeypatch):
 
 
 def test_tts_with_timings(client, monkeypatch):
-    audio_bytes = make_wav_bytes(payload_len=32000)
+    # duration_ms = (audio_size - 44) / 96000 * 1000
+    # For 1000ms: payload_len = 96000 bytes (48kHz 16-bit mono = 96000 bytes/sec)
+    audio_bytes = make_wav_bytes(payload_len=96000)
     timings = [{"text": "hello", "offset_ms": 0.0, "duration_ms": 500.0}]
 
     def fake_synthesize_speech_with_timings(text, voice, rate):
