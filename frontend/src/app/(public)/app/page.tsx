@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { TextInput } from "@/components/TextInput";
 import { PitchVisualizer } from "@/components/PitchVisualizer";
@@ -8,7 +8,10 @@ import { Legend } from "@/components/Legend";
 import { RecordCompare } from "@/components/RecordCompare";
 import { QuickExamples } from "@/components/QuickExamples";
 import { analyzeText } from "@/lib/api";
+import { useAchievements } from "@/hooks/useAchievements";
+import { usePreferences } from "@/hooks/usePreferences";
 import type { WordPitch } from "@/types/pitch";
+import type { DisplayPreferences } from "@/components/WordCard";
 
 function AppContent() {
   const searchParams = useSearchParams();
@@ -20,6 +23,17 @@ function AppContent() {
   const [initialText, setInitialText] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const copiedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { checkForAchievements } = useAchievements();
+  const { preferences } = usePreferences();
+
+  // Map user preferences to display preferences
+  const displayPrefs: DisplayPreferences = useMemo(() => ({
+    showAccentNumbers: preferences.show_accent_numbers,
+    showPartOfSpeech: preferences.show_part_of_speech,
+    showConfidence: preferences.show_confidence,
+    voice: preferences.default_voice,
+    rate: preferences.playback_speed,
+  }), [preferences]);
 
   useEffect(() => {
     return () => {
@@ -43,13 +57,16 @@ function AppContent() {
       const url = new URL(window.location.href);
       url.searchParams.set("text", text);
       window.history.replaceState({}, "", url.toString());
+
+      // Check for achievements after successful analysis
+      checkForAchievements();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to analyze text");
       setWords([]);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [checkForAchievements]);
 
   // Check for text query parameter
   useEffect(() => {
@@ -132,7 +149,7 @@ function AppContent() {
             ) : (
               <div className="space-y-6">
                 <div className="riso-card min-h-[280px]">
-                  <PitchVisualizer words={words} />
+                  <PitchVisualizer words={words} displayPrefs={displayPrefs} />
                 </div>
 
                 {words.length > 0 && !showRecordCompare && (

@@ -1,14 +1,15 @@
 "use client";
 
 import type { WordPitch } from "@/types/pitch";
-import { WordCard } from "./WordCard";
+import { WordCard, type DisplayPreferences } from "./WordCard";
 import { PhraseFlow } from "./PhraseFlow";
 
 interface PitchVisualizerProps {
   words: WordPitch[];
+  displayPrefs?: DisplayPreferences;
 }
 
-export function PitchVisualizer({ words }: PitchVisualizerProps) {
+export function PitchVisualizer({ words, displayPrefs }: PitchVisualizerProps) {
   if (!words.length) {
     return (
       <div className="text-center py-16 text-ink-black/50 font-medium">
@@ -26,7 +27,7 @@ export function PitchVisualizer({ words }: PitchVisualizerProps) {
       {/* Individual word cards */}
       <div className="flex flex-wrap gap-4">
         {words.map((word, index) => (
-          <WordCard key={`${word.surface}-${index}`} word={word} />
+          <WordCard key={`${word.surface}-${index}`} word={word} displayPrefs={displayPrefs} />
         ))}
       </div>
     </div>

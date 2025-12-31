@@ -3,10 +3,12 @@
 import base64
 import binascii
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
+from app.core.auth import get_current_user, TokenData
+from app.core.supabase import get_supabase_client
 from app.services.audio_compare import compare_audio, get_score_feedback, CompareError
 from app.services.tts import synthesize_speech, TTSError
 
@@ -49,7 +51,10 @@ class CompareResponse(BaseModel):
 
 
 @router.post("", response_model=CompareResponse)
-async def compare_pronunciation(request: CompareRequest) -> CompareResponse:
+async def compare_pronunciation(
+    request: CompareRequest,
+    user: TokenData | None = Depends(get_current_user),
+) -> CompareResponse:
     """Compare user's pronunciation with native TTS.
 
     1. Generates native audio using TTS
@@ -94,6 +99,20 @@ async def compare_pronunciation(request: CompareRequest) -> CompareResponse:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
 
+    # Auto-save score if user is authenticated (BE-5)
+    if user:
+        try:
+            supabase = get_supabase_client(user.access_token)
+            supabase.table("comparison_scores").insert(
+                {
+                    "user_id": user.user_id,
+                    "text": request.text,
+                    "score": result.score,
+                }
+            ).execute()
+        except Exception:
+            pass  # Don't fail comparison if history save fails
+
     return CompareResponse(
         score=result.score,
         feedback=get_score_feedback(result.score),
@@ -104,10 +123,11 @@ async def compare_pronunciation(request: CompareRequest) -> CompareResponse:
     )
 
 
-@router.post("/upload")
+@router.post("/upload", response_model=CompareResponse)
 async def compare_with_upload(
     text: str = Form(...),
     user_audio: UploadFile = File(...),
+    user: TokenData | None = Depends(get_current_user),
 ) -> CompareResponse:
     """Compare using file upload instead of base64.
 
@@ -137,6 +157,20 @@ async def compare_with_upload(
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
+
+    # Auto-save score if user is authenticated (BE-5)
+    if user:
+        try:
+            supabase = get_supabase_client(user.access_token)
+            supabase.table("comparison_scores").insert(
+                {
+                    "user_id": user.user_id,
+                    "text": text,
+                    "score": result.score,
+                }
+            ).execute()
+        except Exception:
+            pass  # Don't fail comparison if history save fails
 
     return CompareResponse(
         score=result.score,

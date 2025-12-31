@@ -5,6 +5,8 @@ import { Recorder } from "./Recorder";
 import { PitchComparison } from "./PitchComparison";
 import { PlayButton } from "./PlayButton";
 import { comparePronunciation, type CompareResponse } from "@/lib/api";
+import { useAchievements } from "@/hooks/useAchievements";
+import { usePreferences } from "@/hooks/usePreferences";
 
 interface RecordCompareProps {
   text: string;
@@ -17,6 +19,8 @@ export function RecordCompare({ text }: RecordCompareProps) {
   const [result, setResult] = useState<CompareResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const { checkForAchievements } = useAchievements();
+  const { preferences } = usePreferences();
 
   const handleRecordingComplete = useCallback((blob: Blob) => {
     setAudioBlob(blob);
@@ -34,11 +38,13 @@ export function RecordCompare({ text }: RecordCompareProps) {
       const compareResult = await comparePronunciation(text, audioBlob);
       setResult(compareResult);
       setState("done");
+      // Check for achievements after successful comparison
+      checkForAchievements();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Comparison failed");
       setState("recorded");
     }
-  }, [audioBlob, text]);
+  }, [audioBlob, text, checkForAchievements]);
 
   const handleReset = useCallback(() => {
     setState("ready");
@@ -60,7 +66,12 @@ export function RecordCompare({ text }: RecordCompareProps) {
       {/* Listen first */}
       <div className="flex justify-center items-center gap-3">
         <span className="text-sm text-ink-black/50 font-medium">Listen first:</span>
-        <PlayButton text={text} size="md" />
+        <PlayButton
+          text={text}
+          size="md"
+          voice={preferences.default_voice}
+          rate={preferences.playback_speed}
+        />
       </div>
 
       {/* Recorder */}

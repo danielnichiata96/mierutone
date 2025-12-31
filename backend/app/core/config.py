@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     supabase_anon_key: str = ""
     supabase_jwt_secret: str = ""
     supabase_jwt_public_key: str = ""
+    supabase_service_role_key: str = ""  # For admin operations (delete account)
 
     class Config:
         env_file = BACKEND_DIR / ".env"

@@ -144,6 +144,28 @@ Create a separated "workspace" experience for authenticated users that provides:
 - "Start Practicing" button → /app
 - "View Progress" button → /progress (if implemented)
 
+#### FR-3.2.4 Achievements & Milestones (MVP)
+
+**Implementation**: In-app only (no email in MVP).
+
+**Milestone Toasts** (shown once when achieved):
+
+| Milestone | Message | Badge |
+|-----------|---------|-------|
+| First Analysis | "Welcome! You analyzed your first word!" | 🎯 |
+| 10 Analyses | "Getting started! 10 analyses complete." | 📚 |
+| 100 Analyses | "Dedicated learner! 100 analyses!" | 🌟 |
+| First Comparison | "Great work recording your first comparison!" | 🎤 |
+| Score 90%+ | "Excellent pronunciation! 90%+ score!" | 🏆 |
+| 7-Day Streak | "One week streak! Keep it up!" | 🔥 |
+
+**Display**:
+- Toast notification on achievement (auto-dismiss 5s)
+- Badge collection shown on Dashboard (earned badges only)
+- Badges stored in `public.user_achievements` table
+
+**Phase 2 (Future)**: Email notifications with opt-in, max 1/week frequency.
+
 ---
 
 ### 3.3 History Page (/history)
@@ -189,6 +211,31 @@ Create a separated "workspace" experience for authenticated users that provides:
 - Friendly illustration or icon
 - Message: "No history yet"
 - CTA: "Start practicing" → /app
+
+#### FR-3.3.4 Data Retention Policy
+
+**Tier Limits**:
+
+| Tier | Time Limit | Record Limit | Aggregate Stats |
+|------|------------|--------------|-----------------|
+| Free | 12 months | 10,000 records | Always preserved |
+| Pro | Unlimited | Unlimited | Always preserved |
+
+**Enforcement**:
+- Limits apply to `analysis_history` + `comparison_scores` combined
+- Cleanup runs via scheduled job (daily at 3 AM UTC)
+- Oldest records deleted first when limit exceeded
+- Aggregate stats (totals, averages) preserved in `user_stats_snapshot` before deletion
+
+**User Notifications**:
+
+| Threshold | Action |
+|-----------|--------|
+| 80% of limit | In-app banner: "You're approaching your history limit" |
+| 95% of limit | Email + banner: "Export your data before oldest records are removed" |
+| At limit | Toast on each new record: "Oldest record removed to make space" |
+
+**Export CTA**: All limit warnings include prominent "Export Data" button.
 
 ---
 
@@ -246,7 +293,7 @@ function isValidVoice(voice: string): voice is VoiceOption {
 **Storage Strategy**:
 - **Source of truth**: Server (public.user_preferences table)
 - **Flow**: On page load, fetch from server → cache in memory. On change, update server first → update local state on success.
-- **Offline**: No offline support for preferences (requires auth anyway)
+- **Offline**: No offline support. On unstable connection, show warning banner and disable preference controls until reconnected.
 - **Multi-device**: Server always wins; no client-side persistence to avoid stale overwrites.
 
 #### FR-3.4.3 Data & Privacy Section
@@ -425,6 +472,54 @@ CREATE POLICY "Users can delete own scores"
 
 **Note**: Both tables use `ON DELETE CASCADE` on `user_id` FK, so deleting the auth user automatically removes all history.
 
+#### Table: public.user_achievements
+
+```sql
+CREATE TABLE public.user_achievements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  achievement_type TEXT NOT NULL,  -- 'first_analysis', '10_analyses', '100_analyses', etc.
+  achieved_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, achievement_type)
+);
+
+CREATE INDEX idx_user_achievements_user
+  ON public.user_achievements(user_id);
+
+-- RLS Policy
+ALTER TABLE public.user_achievements ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own achievements"
+  ON public.user_achievements FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own achievements"
+  ON public.user_achievements FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+```
+
+#### Table: public.user_stats_snapshot
+
+```sql
+-- Preserves aggregate stats before data retention cleanup
+CREATE TABLE public.user_stats_snapshot (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  total_analyses_archived INTEGER DEFAULT 0,
+  total_comparisons_archived INTEGER DEFAULT 0,
+  sum_scores_archived DECIMAL DEFAULT 0,  -- For recalculating average
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS Policy
+ALTER TABLE public.user_stats_snapshot ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own stats snapshot"
+  ON public.user_stats_snapshot FOR SELECT
+  USING (auth.uid() = id);
+```
+
+**Note**: When cleanup job removes old records, it first adds their counts to `user_stats_snapshot` so lifetime totals remain accurate.
+
 ### 4.3 API Endpoints
 
 #### Backend (FastAPI)
@@ -436,9 +531,11 @@ CREATE POLICY "Users can delete own scores"
 | GET | /api/preferences | JWT | anon + RLS | Get user preferences |
 | PATCH | /api/preferences | JWT | anon + RLS | Update preferences |
 | GET | /api/history | JWT | anon + RLS | Get paginated history (`?type=analysis&limit=20&cursor=...`) |
-| GET | /api/history/stats | JWT | anon + RLS | Get aggregate statistics |
+| GET | /api/history/stats | JWT | anon + RLS | Get aggregate statistics (includes retention limit info) |
 | POST | /api/history/export | JWT | anon + RLS | Generate data export |
 | DELETE | /api/history | JWT | anon + RLS | Clear all history |
+| GET | /api/achievements | JWT | anon + RLS | Get user's earned achievements |
+| POST | /api/achievements/check | JWT | anon + RLS | Check & grant new achievements (called after actions) |
 | DELETE | /api/account | JWT | **service role** | Delete account (requires admin API) |
 
 ### 4.4 Row Level Security
@@ -507,35 +604,64 @@ For users with large history (1000+ records), real-time `COUNT`/`AVG` queries ca
 **Recommended: PostgreSQL RPC Function** (single round-trip, uses actual tables)
 
 ```sql
--- RPC Function joining both history tables
-CREATE OR REPLACE FUNCTION get_user_stats(p_user_id UUID)
-RETURNS JSON AS $$
+-- RPC Function using auth.uid() - no user_id parameter to prevent IDOR
+-- Includes archived stats from user_stats_snapshot for accurate lifetime totals
+CREATE OR REPLACE FUNCTION get_user_stats()
+RETURNS JSON
+LANGUAGE SQL
+SECURITY INVOKER  -- Uses caller's permissions, RLS applies
+SET search_path = public
+AS $$
   SELECT json_build_object(
     'total_analyses', (
-      SELECT COUNT(*) FROM public.analysis_history WHERE user_id = p_user_id
-    ),
+      SELECT COUNT(*) FROM public.analysis_history WHERE user_id = auth.uid()
+    ) + COALESCE((
+      SELECT total_analyses_archived FROM public.user_stats_snapshot WHERE id = auth.uid()
+    ), 0),
     'total_comparisons', (
-      SELECT COUNT(*) FROM public.comparison_scores WHERE user_id = p_user_id
-    ),
+      SELECT COUNT(*) FROM public.comparison_scores WHERE user_id = auth.uid()
+    ) + COALESCE((
+      SELECT total_comparisons_archived FROM public.user_stats_snapshot WHERE id = auth.uid()
+    ), 0),
     'avg_score', (
-      SELECT ROUND(AVG(score)::numeric, 1)
-      FROM public.comparison_scores WHERE user_id = p_user_id
+      -- Weighted average including archived scores
+      SELECT ROUND(
+        (COALESCE(SUM(score), 0) + COALESCE(s.sum_scores_archived, 0)) /
+        NULLIF(COUNT(*) + COALESCE(s.total_comparisons_archived, 0), 0)
+      ::numeric, 1)
+      FROM public.comparison_scores c
+      LEFT JOIN public.user_stats_snapshot s ON s.id = auth.uid()
+      WHERE c.user_id = auth.uid()
     ),
     'unique_texts', (
+      -- Note: archived unique texts not tracked (would require storing all texts)
       SELECT COUNT(DISTINCT text) FROM (
-        SELECT text FROM public.analysis_history WHERE user_id = p_user_id
+        SELECT text FROM public.analysis_history WHERE user_id = auth.uid()
         UNION
-        SELECT text FROM public.comparison_scores WHERE user_id = p_user_id
+        SELECT text FROM public.comparison_scores WHERE user_id = auth.uid()
       ) t
+    ),
+    'current_record_count', (
+      -- For retention limit warnings
+      SELECT (
+        SELECT COUNT(*) FROM public.analysis_history WHERE user_id = auth.uid()
+      ) + (
+        SELECT COUNT(*) FROM public.comparison_scores WHERE user_id = auth.uid()
+      )
     )
   );
-$$ LANGUAGE SQL SECURITY DEFINER;
+$$;
 ```
+
+**Security Notes**:
+- Uses `SECURITY INVOKER` (not DEFINER) so RLS policies apply
+- Uses `auth.uid()` directly - no user_id parameter to prevent IDOR attacks
+- Explicit `search_path` prevents schema hijacking
 
 **API Call**:
 ```python
-# Single RPC call instead of multiple queries
-result = client.rpc('get_user_stats', {'p_user_id': user_id}).execute()
+# Single RPC call - no params needed, uses auth.uid() from JWT
+result = client.rpc('get_user_stats').execute()
 ```
 
 **Alternative: Materialized View** (for very large datasets, refresh on schedule)
@@ -649,13 +775,13 @@ Data export should be compatible with popular SRS tools:
 
 ---
 
-## 7. Open Questions
+## 7. Resolved Questions
 
-| # | Question | Owner | Status |
-|---|----------|-------|--------|
-| 1 | Should preferences sync across devices or be local-only? | Product | Pending |
-| 2 | What's the data retention policy for history? | Product | Pending |
-| 3 | Should we add email notifications for milestones? | Product | Pending |
+| # | Question | Decision |
+|---|----------|----------|
+| 1 | What's the data retention policy for history? | **Free**: 12 months OR 10k records (whichever first). **Pro**: Indefinite. Always preserve aggregate stats. Warn user near limit + offer export. |
+| 2 | Should we add email notifications for milestones? | **Not in MVP**. Phase 2: opt-in only, max 1/week, key events (7-day streak, 100 analyses). MVP uses in-app toasts/badges. |
+| 3 | Should preferences support offline caching? | **No**. Server-only to avoid sync conflicts. Show warning on unstable connection, block changes until reconnect. |
 
 ---
 

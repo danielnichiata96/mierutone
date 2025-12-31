@@ -1,4 +1,11 @@
 import type { AnalyzeResponse } from "@/types/pitch";
+import type {
+  ProfileResponse,
+  PreferencesResponse,
+  StatsResponse as DashboardStatsResponse,
+  AchievementsResponse,
+  PaginatedHistoryResponse,
+} from "@/types/user";
 import { getSupabase } from "./supabase";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -302,4 +309,139 @@ export async function getStats(): Promise<StatsResponse> {
   }
 
   return response.json();
+}
+
+// ============================================================================
+// User Profile & Preferences API
+// ============================================================================
+
+export async function getProfile(): Promise<ProfileResponse> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/user/profile`, { headers });
+  if (!response.ok) throw new Error(`Failed to get profile: ${response.status}`);
+  return response.json();
+}
+
+export async function updateProfile(displayName: string): Promise<void> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/user/profile`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify({ display_name: displayName }),
+  });
+  if (!response.ok) throw new Error(`Failed to update profile: ${response.status}`);
+}
+
+export async function getPreferences(): Promise<PreferencesResponse> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/user/preferences`, { headers });
+  if (!response.ok) throw new Error(`Failed to get preferences: ${response.status}`);
+  return response.json();
+}
+
+export async function updatePreferences(prefs: Partial<PreferencesResponse>): Promise<void> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/user/preferences`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(prefs),
+  });
+  if (!response.ok) throw new Error(`Failed to update preferences: ${response.status}`);
+}
+
+// ============================================================================
+// Dashboard Stats (enhanced)
+// ============================================================================
+
+export async function getDashboardStats(): Promise<DashboardStatsResponse> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/history/stats`, { headers });
+  if (!response.ok) throw new Error(`Failed to get stats: ${response.status}`);
+  return response.json();
+}
+
+// ============================================================================
+// Paginated History API
+// ============================================================================
+
+export interface PaginatedHistoryParams {
+  type: "analysis" | "comparison";
+  limit?: number;
+  cursor?: string;
+  direction?: "next" | "prev";
+}
+
+export async function getPaginatedHistory(
+  params: PaginatedHistoryParams
+): Promise<PaginatedHistoryResponse> {
+  const headers = await getAuthHeaders();
+  const searchParams = new URLSearchParams({
+    type: params.type,
+    limit: String(params.limit || 20),
+    direction: params.direction || "next",
+  });
+  if (params.cursor) {
+    searchParams.set("cursor", params.cursor);
+  }
+
+  const response = await fetch(`${API_URL}/history/paginated?${searchParams}`, { headers });
+  if (!response.ok) throw new Error(`Failed to get history: ${response.status}`);
+  return response.json();
+}
+
+export async function clearHistory(): Promise<void> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/history`, {
+    method: "DELETE",
+    headers,
+  });
+  if (!response.ok) throw new Error(`Failed to clear history: ${response.status}`);
+}
+
+export async function exportData(format: "json" | "csv" = "json"): Promise<Blob | object> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/history/export?format=${format}`, {
+    method: "POST",
+    headers,
+  });
+  if (!response.ok) throw new Error(`Failed to export data: ${response.status}`);
+
+  if (format === "csv") {
+    return response.blob();
+  }
+  return response.json();
+}
+
+// ============================================================================
+// Achievements API
+// ============================================================================
+
+export async function getAchievements(): Promise<AchievementsResponse> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/achievements`, { headers });
+  if (!response.ok) throw new Error(`Failed to get achievements: ${response.status}`);
+  return response.json();
+}
+
+export async function checkAchievements(): Promise<{ new_achievements: string[] }> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/achievements/check`, {
+    method: "POST",
+    headers,
+  });
+  if (!response.ok) throw new Error(`Failed to check achievements: ${response.status}`);
+  return response.json();
+}
+
+// ============================================================================
+// Account Management
+// ============================================================================
+
+export async function deleteAccount(): Promise<void> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/user/account`, {
+    method: "DELETE",
+    headers,
+  });
+  if (!response.ok) throw new Error(`Failed to delete account: ${response.status}`);
 }

@@ -27,8 +27,17 @@ function CompoundComponent({ component }: { component: ComponentPitch }) {
   );
 }
 
+export interface DisplayPreferences {
+  showAccentNumbers?: boolean;
+  showPartOfSpeech?: boolean;
+  showConfidence?: boolean;
+  voice?: string;
+  rate?: number;
+}
+
 interface WordCardProps {
   word: WordPitch;
+  displayPrefs?: DisplayPreferences;
 }
 
 // Riso palette only - origin shown via text, not background color
@@ -47,7 +56,15 @@ const ORIGIN_LABELS: Record<string, string> = {
 // Confidence shown via border style, not color/icon
 // high = solid, medium = dashed, low = dotted
 
-export function WordCard({ word }: WordCardProps) {
+export function WordCard({ word, displayPrefs = {} }: WordCardProps) {
+  const {
+    showAccentNumbers = true,
+    showPartOfSpeech = false,
+    showConfidence = true,
+    voice,
+    rate,
+  } = displayPrefs;
+
   const { morae, pitch_pattern, surface, reading, accent_type, mora_count, origin, origin_jp, lemma, source, confidence, warning } = word;
 
   // Skip words with no morae (shouldn't happen normally)
@@ -75,14 +92,14 @@ export function WordCard({ word }: WordCardProps) {
     <div className="riso-card-interactive flex flex-col items-center min-w-[120px] relative group p-4">
       {/* Play button - top right */}
       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <PlayButton text={surface} size="sm" />
+        <PlayButton text={surface} size="sm" voice={voice} rate={rate} />
       </div>
 
       {/* SVG Pitch Visualization - mt-4 creates space for play button */}
       <svg width={svgWidth} height={svgHeight + 25} className="mb-2 mt-4">
         {hasPitchData ? (
           <>
-            {/* Pitch line - styled by confidence */}
+            {/* Pitch line - styled by confidence (when enabled) */}
             <polyline
               points={points}
               fill="none"
@@ -90,8 +107,8 @@ export function WordCard({ word }: WordCardProps) {
               strokeWidth="2.4"
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeDasharray={getConfidenceStroke(confidence).strokeDasharray}
-              opacity={getConfidenceStroke(confidence).opacity}
+              strokeDasharray={showConfidence ? getConfidenceStroke(confidence).strokeDasharray : undefined}
+              opacity={showConfidence ? getConfidenceStroke(confidence).opacity : 1}
             />
 
             {/* Pitch dots - using shared PitchDot component */}
@@ -156,16 +173,20 @@ export function WordCard({ word }: WordCardProps) {
             ? <span className="text-ink-black/50 italic">Follows context</span>
             : <span className="text-ink-black/50 italic">Pitch unknown</span>}
       </div>
-      <div className="text-xs text-ink-black/50 mt-1.5 text-center font-medium">
-        {hasPitchData
-          ? getAccentLabel(accent_type, mora_count, word.part_of_speech)
-          : isParticle
-            ? "See Phrase Flow"
-            : "Unknown"}
-      </div>
-      <div className="text-[10px] text-ink-black/40 mt-0.5 font-mono tracking-wide">
-        {word.part_of_speech}
-      </div>
+      {showAccentNumbers && (
+        <div className="text-xs text-ink-black/50 mt-1.5 text-center font-medium">
+          {hasPitchData
+            ? getAccentLabel(accent_type, mora_count, word.part_of_speech)
+            : isParticle
+              ? "See Phrase Flow"
+              : "Unknown"}
+        </div>
+      )}
+      {showPartOfSpeech && (
+        <div className="text-[10px] text-ink-black/40 mt-0.5 font-mono tracking-wide">
+          {word.part_of_speech}
+        </div>
+      )}
 
       {/* Origin label and Jisho link - Riso colors only */}
       <div className="flex items-center gap-2 mt-2">
@@ -188,14 +209,16 @@ export function WordCard({ word }: WordCardProps) {
       </div>
 
       {/* Source indicator - Riso style with border for confidence */}
-      <div
-        className={`flex items-center gap-1.5 mt-2 px-2 py-0.5 border border-ink-black/30 rounded text-ink-black/60 ${getConfidenceBorderClass(confidence)}`}
-        title={`Source: ${getSourceLabel(source)} | Confidence: ${confidence}`}
-      >
-        <span className="text-[10px] font-medium">
-          {getSourceLabel(source)}
-        </span>
-      </div>
+      {showConfidence && (
+        <div
+          className={`flex items-center gap-1.5 mt-2 px-2 py-0.5 border border-ink-black/30 rounded text-ink-black/60 ${getConfidenceBorderClass(confidence)}`}
+          title={`Source: ${getSourceLabel(source)} | Confidence: ${confidence}`}
+        >
+          <span className="text-[10px] font-medium">
+            {getSourceLabel(source)}
+          </span>
+        </div>
+      )}
 
       {/* Warning indicator - ink-black with dotted border */}
       {warning && (

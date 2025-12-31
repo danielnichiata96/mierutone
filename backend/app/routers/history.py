@@ -1,12 +1,25 @@
 """User history endpoints for analyses and comparison scores."""
 
-from fastapi import APIRouter, Depends
+import base64
+import csv
+import io
+import json
+from datetime import datetime, timezone
+from typing import Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.core.auth import require_auth, TokenData
 from app.core.supabase import get_supabase_client
 
 router = APIRouter(prefix="/history", tags=["history"])
+
+
+# ============================================================================
+# Schemas
+# ============================================================================
 
 
 class AnalysisCreate(BaseModel):
@@ -28,6 +41,19 @@ class HistoryResponse(BaseModel):
 
     analyses: list[dict]
     scores: list[dict]
+
+
+class PaginatedResponse(BaseModel):
+    """Response with cursor-based pagination."""
+
+    items: list[dict]
+    next_cursor: str | None
+    has_more: bool
+
+
+# ============================================================================
+# Basic History Endpoints (existing)
+# ============================================================================
 
 
 @router.post("/analysis")
@@ -102,25 +128,194 @@ async def get_history(
     }
 
 
+# ============================================================================
+# Paginated History (BE-3)
+# ============================================================================
+
+
+@router.get("/paginated", response_model=PaginatedResponse)
+async def get_history_paginated(
+    type: Literal["analysis", "comparison"],
+    limit: int = Query(20, le=100),
+    cursor: str | None = None,
+    direction: Literal["next", "prev"] = "next",
+    user: TokenData = Depends(require_auth),
+):
+    """Get paginated history with cursor-based pagination."""
+    supabase = get_supabase_client(user.access_token)
+    table = "analysis_history" if type == "analysis" else "comparison_scores"
+
+    # Build base query - RLS handles user filtering
+    query = supabase.table(table).select("*")
+
+    if cursor:
+        try:
+            decoded = json.loads(base64.b64decode(cursor))
+            cursor_ts = decoded["created_at"]
+            cursor_id = decoded["id"]
+        except Exception as e:
+            raise HTTPException(400, f"Invalid cursor: {e}")
+
+        if direction == "next":
+            # Items older than cursor
+            query = query.or_(
+                f"created_at.lt.{cursor_ts},"
+                f"and(created_at.eq.{cursor_ts},id.lt.{cursor_id})"
+            )
+        else:
+            # Items newer than cursor
+            query = query.or_(
+                f"created_at.gt.{cursor_ts},"
+                f"and(created_at.eq.{cursor_ts},id.gt.{cursor_id})"
+            )
+
+    # Order by (created_at, id) for stable pagination
+    desc = direction == "next"
+    query = query.order("created_at", desc=desc).order("id", desc=desc).limit(limit + 1)
+    result = query.execute()
+
+    items = result.data[:limit]
+    has_more = len(result.data) > limit
+
+    next_cursor = None
+    if has_more and items:
+        last = items[-1]
+        next_cursor = base64.b64encode(
+            json.dumps({"created_at": last["created_at"], "id": last["id"]}).encode()
+        ).decode()
+
+    return {"items": items, "next_cursor": next_cursor, "has_more": has_more}
+
+
+# ============================================================================
+# Stats (existing, improved)
+# ============================================================================
+
+
 @router.get("/stats")
 async def get_stats(user: TokenData = Depends(require_auth)):
-    """Get user statistics."""
+    """Get user statistics via RPC function."""
     supabase = get_supabase_client(user.access_token)
 
-    analysis_count = (
-        supabase.table("analysis_history")
-        .select("id", count="exact")
-        .execute()
-    )  # RLS filters by user
+    try:
+        result = supabase.rpc("get_user_stats").execute()
+        if result.data:
+            return result.data
+    except Exception:
+        pass
 
-    scores = supabase.table("comparison_scores").select("score").execute()
+    # Fallback to manual calculation if RPC fails
+    analyses = supabase.table("analysis_history").select("id, text").execute()
+    scores = supabase.table("comparison_scores").select("score, text").execute()
 
     avg_score = (
-        sum(s["score"] for s in scores.data) / len(scores.data) if scores.data else 0
+        sum(s["score"] for s in scores.data) / len(scores.data) if scores.data else None
+    )
+
+    # Calculate unique texts across both tables
+    unique_texts = len(
+        {a["text"] for a in analyses.data} | {s["text"] for s in scores.data}
     )
 
     return {
-        "total_analyses": analysis_count.count,
+        "total_analyses": len(analyses.data),
         "total_comparisons": len(scores.data),
-        "average_score": round(avg_score, 1),
+        "avg_score": round(avg_score, 1) if avg_score else None,
+        "unique_texts": unique_texts,
+        "current_record_count": len(analyses.data) + len(scores.data),
     }
+
+
+# ============================================================================
+# Clear History (BE-3)
+# ============================================================================
+
+
+@router.delete("")
+async def clear_history(user: TokenData = Depends(require_auth)):
+    """Clear all user history."""
+    supabase = get_supabase_client(user.access_token)
+
+    # RLS ensures only user's own records are deleted
+    # Supabase requires a filter for DELETE, use neq with impossible UUID
+    supabase.table("analysis_history").delete().neq(
+        "id", "00000000-0000-0000-0000-000000000000"
+    ).execute()
+    supabase.table("comparison_scores").delete().neq(
+        "id", "00000000-0000-0000-0000-000000000000"
+    ).execute()
+
+    return {"success": True}
+
+
+# ============================================================================
+# Export Data (BE-8)
+# ============================================================================
+
+
+@router.post("/export")
+async def export_data(
+    format: Literal["json", "csv"] = "json",
+    user: TokenData = Depends(require_auth),
+):
+    """Export user data in JSON or CSV format."""
+    supabase = get_supabase_client(user.access_token)
+
+    # RLS filters automatically by user
+    analyses = supabase.table("analysis_history").select("*").limit(10000).execute()
+    scores = supabase.table("comparison_scores").select("*").limit(10000).execute()
+    profile = (
+        supabase.table("profiles")
+        .select("*")
+        .eq("id", user.user_id)
+        .single()
+        .execute()
+    )
+
+    if format == "json":
+        return {
+            "profile": profile.data,
+            "analyses": analyses.data,
+            "comparison_scores": scores.data,
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    # CSV format - unified table with type column
+    output = io.StringIO()
+
+    rows = []
+    for a in analyses.data:
+        rows.append(
+            {
+                "type": "analysis",
+                "id": a["id"],
+                "text": a["text"],
+                "value": a["word_count"],
+                "created_at": a["created_at"],
+            }
+        )
+    for s in scores.data:
+        rows.append(
+            {
+                "type": "comparison",
+                "id": s["id"],
+                "text": s["text"],
+                "value": s["score"],
+                "created_at": s["created_at"],
+            }
+        )
+
+    # Sort by date descending
+    rows.sort(key=lambda x: x["created_at"], reverse=True)
+
+    writer = csv.DictWriter(
+        output, fieldnames=["type", "id", "text", "value", "created_at"]
+    )
+    writer.writeheader()
+    writer.writerows(rows)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=mierutone_export.csv"},
+    )

@@ -7,9 +7,11 @@ interface PlayButtonProps {
   text: string;
   size?: "sm" | "md";
   className?: string;
+  voice?: string;
+  rate?: number;
 }
 
-export function PlayButton({ text, size = "sm", className = "" }: PlayButtonProps) {
+export function PlayButton({ text, size = "sm", className = "", voice, rate }: PlayButtonProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export function PlayButton({ text, size = "sm", className = "" }: PlayButtonProp
     setError(null);
 
     try {
-      const blob = await textToSpeech(text);
+      const blob = await textToSpeech(text, { voice, rate });
       const url = createAudioUrl(blob);
       urlRef.current = url;
 
