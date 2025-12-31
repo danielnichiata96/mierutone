@@ -23,7 +23,7 @@ try:
 except ImportError:
     UNIDIC_AVAILABLE = False
 
-from app.models.schemas import WordPitch, ComponentPitch, SourceType, ConfidenceType
+from app.models.schemas import WordPitch, ComponentPitch, HomophoneCandidate, SourceType, ConfidenceType
 
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "pitch.db"
 
@@ -806,6 +806,156 @@ def lookup_pitch(
         unidic_accent=unidic_accent,
         sources_agree=sources_agree,
     )
+
+
+def is_pure_hiragana(text: str) -> bool:
+    """Check if text contains only hiragana characters.
+
+    Returns True for inputs like "はし", "にほん", "おはよう".
+    Returns False for inputs containing kanji, katakana, romaji, or punctuation.
+
+    Note: This is strict - no punctuation or whitespace allowed.
+    Use normalize_for_homophone_lookup() to clean input first.
+    """
+    if not text:
+        return False
+
+    # Hiragana Unicode range: U+3040 to U+309F
+    for char in text:
+        if not ('\u3040' <= char <= '\u309f'):
+            return False
+
+    return True
+
+
+def normalize_for_homophone_lookup(text: str) -> str:
+    """Strip punctuation and whitespace from text for homophone lookup.
+
+    Removes common Japanese and ASCII punctuation, whitespace, and
+    special characters that might surround a word in user input.
+
+    Args:
+        text: Raw input text
+
+    Returns:
+        Cleaned text with non-punctuation characters preserved
+    """
+    # Common punctuation to strip (Japanese + ASCII)
+    # Note: ー (long vowel) is NOT stripped as it's part of words like ラーメン
+    strip_chars = set(
+        # Whitespace (including full-width space U+3000)
+        " \t\n\r\u3000"
+        # Japanese punctuation (excluding ー which is part of words)
+        "。、！？「」『』（）【】〈〉《》〔〕｛｝・…―～〜"
+        # ASCII punctuation
+        ".,!?()[]{}\"'`-_:;/\\@#$%^&*+=<>|"
+    )
+    return "".join(c for c in text if c not in strip_chars)
+
+
+# Maximum length for homophone lookup (longer inputs are likely sentences)
+MAX_HOMOPHONE_LENGTH = 10
+
+
+def is_homophone_lookup_candidate(text: str) -> tuple[bool, str]:
+    """Check if text should trigger homophone lookup mode.
+
+    Homophone lookup is for short, single-word hiragana inputs where
+    the user wants to see all possible kanji representations.
+
+    Args:
+        text: Raw input text
+
+    Returns:
+        Tuple of (should_lookup, normalized_text)
+        - should_lookup: True if this should be a homophone lookup
+        - normalized_text: Cleaned text for the lookup
+    """
+    # Normalize first
+    normalized = normalize_for_homophone_lookup(text.strip())
+
+    # Must have content after normalization
+    if not normalized:
+        return False, ""
+
+    # Must be short (likely a single word, not a sentence)
+    if len(normalized) > MAX_HOMOPHONE_LENGTH:
+        return False, ""
+
+    # Must be pure hiragana
+    if not is_pure_hiragana(normalized):
+        return False, ""
+
+    return True, normalized
+
+
+def lookup_homophones(reading: str) -> list[HomophoneCandidate]:
+    """Look up all homophones (words with same reading) in the database.
+
+    Used when user enters pure hiragana input to show all possible
+    kanji representations with their pitch accents.
+
+    Args:
+        reading: Hiragana reading to search for (e.g., "はし")
+
+    Returns:
+        List of HomophoneCandidate with different kanji and pitch patterns.
+    """
+    try:
+        conn = get_db_connection()
+    except FileNotFoundError:
+        return []
+
+    cursor = conn.cursor()
+
+    # Get all entries with this reading, ordered by accent pattern
+    cursor.execute(
+        """SELECT DISTINCT surface, reading, accent_pattern, goshu, goshu_jp
+           FROM pitch_accents
+           WHERE reading = ?
+           ORDER BY accent_pattern, surface""",
+        (reading,)
+    )
+
+    rows = cursor.fetchall()
+
+    if not rows:
+        return []
+
+    candidates: list[HomophoneCandidate] = []
+    seen_surfaces: set[str] = set()
+
+    for row in rows:
+        surface = row["surface"]
+
+        # Skip duplicates (same kanji)
+        if surface in seen_surfaces:
+            continue
+        seen_surfaces.add(surface)
+
+        # Parse accent pattern (take first if multiple like "0,2")
+        pattern_str = row["accent_pattern"]
+        try:
+            accent_type = int(pattern_str.split(",")[0].strip())
+        except ValueError:
+            accent_type = None
+
+        mora_count = count_morae(reading)
+        morae = split_into_morae(reading)
+        pitch_pattern = get_pitch_pattern(accent_type, mora_count) if accent_type is not None else []
+
+        candidates.append(HomophoneCandidate(
+            surface=surface,
+            reading=reading,
+            accent_type=accent_type,
+            mora_count=mora_count,
+            morae=morae,
+            pitch_pattern=pitch_pattern,
+            origin=row["goshu"],
+            origin_jp=row["goshu_jp"],
+        ))
+
+    return candidates
 
 
 def get_pos(token) -> str:

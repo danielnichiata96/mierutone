@@ -73,9 +73,23 @@ export function getConfidenceBorderClass(confidence: WordPitch["confidence"]): s
   }
 }
 
+export interface HomophoneCandidate {
+  surface: string;      // Kanji form (e.g., 箸, 橋, 端)
+  reading: string;      // Hiragana reading (e.g., はし)
+  accent_type: number | null;
+  mora_count: number;
+  morae: string[];
+  pitch_pattern: string[];
+  origin: string | null;
+  origin_jp: string | null;
+}
+
 export interface AnalyzeResponse {
   text: string;
   words: WordPitch[];
+  // Homophone mode: when input is pure hiragana
+  is_homophone_lookup: boolean;
+  homophones: HomophoneCandidate[] | null;
 }
 
 export type AccentType = "heiban" | "atamadaka" | "nakadaka" | "odaka" | "unknown";

@@ -11,12 +11,14 @@ import { QuickExamples } from "@/components/QuickExamples";
 import { analyzeText } from "@/lib/api";
 import { useAchievements } from "@/hooks/useAchievements";
 import { usePreferences } from "@/hooks/usePreferences";
-import type { WordPitch } from "@/types/pitch";
+import type { WordPitch, HomophoneCandidate } from "@/types/pitch";
 import type { DisplayPreferences } from "@/components/WordCard";
 
 function AppContent() {
   const searchParams = useSearchParams();
   const [words, setWords] = useState<WordPitch[]>([]);
+  const [isHomophoneLookup, setIsHomophoneLookup] = useState(false);
+  const [homophones, setHomophones] = useState<HomophoneCandidate[] | null>(null);
   const [currentText, setCurrentText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +54,17 @@ function AppContent() {
 
     try {
       const response = await analyzeText(text);
-      setWords(response.words);
+
+      // Handle homophone lookup mode vs standard mode
+      if (response.is_homophone_lookup) {
+        setIsHomophoneLookup(true);
+        setHomophones(response.homophones);
+        setWords([]);
+      } else {
+        setIsHomophoneLookup(false);
+        setHomophones(null);
+        setWords(response.words);
+      }
 
       // Update URL with text param
       const url = new URL(window.location.href);
@@ -64,6 +76,8 @@ function AppContent() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to analyze text");
       setWords([]);
+      setIsHomophoneLookup(false);
+      setHomophones(null);
     } finally {
       setIsLoading(false);
     }
@@ -154,10 +168,16 @@ function AppContent() {
             ) : (
               <div className="space-y-6">
                 <div className="riso-card min-h-[280px]">
-                  <PitchVisualizer words={words} displayPrefs={displayPrefs} />
+                  <PitchVisualizer
+                    words={words}
+                    displayPrefs={displayPrefs}
+                    isHomophoneLookup={isHomophoneLookup}
+                    homophones={homophones}
+                    searchReading={currentText}
+                  />
                 </div>
 
-                {words.length > 0 && !showRecordCompare && (
+                {(words.length > 0 || (isHomophoneLookup && homophones?.length)) && !showRecordCompare && (
                   <div className="flex flex-wrap justify-center gap-3">
                     <button
                       onClick={() => setShowRecordCompare(true)}

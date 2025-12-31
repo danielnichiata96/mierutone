@@ -66,7 +66,22 @@ class WordPitch(BaseModel):
     components: list[ComponentPitch] | None = None  # Component parts if compound
 
 
+class HomophoneCandidate(BaseModel):
+    """A homophone candidate with kanji and pitch info."""
+    surface: str  # Kanji form (e.g., 箸, 橋, 端)
+    reading: str  # Hiragana reading (e.g., はし)
+    accent_type: int | None  # Pitch accent type
+    mora_count: int
+    morae: list[str]  # Individual morae
+    pitch_pattern: list[str]  # ["H", "L"] per mora
+    origin: str | None = None  # Word origin (goshu)
+    origin_jp: str | None = None  # Japanese label
+
+
 class AnalyzeResponse(BaseModel):
     """Response body for /analyze endpoint."""
     text: str
     words: list[WordPitch]
+    # Homophone mode: when input is pure hiragana, show all kanji options
+    is_homophone_lookup: bool = False
+    homophones: list[HomophoneCandidate] | None = None
