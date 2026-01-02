@@ -21,13 +21,37 @@ Problema: Por que pagar?            Solução: Pago pelo progresso
 
 ### Proposta de Valor
 
-| Aspecto | Grátis | Pro (Assinatura) |
-|---------|--------|------------------|
-| **Analyzer** | 5 análises/dia | Ilimitado |
-| **Decks** | 2 introdutórios | Biblioteca completa |
-| **Progresso** | Preview | Tracking completo |
-| **Prática** | Quiz básico | Shadowing, SRS, feedback |
-| **Mastery** | - | Certificados de domínio |
+| Aspecto | Grátis (sem conta) | Grátis (com conta) | Pro ($9/mês) |
+|---------|--------------------|--------------------|--------------|
+| **Fase 1** | ✅ Completa | ✅ Completa | ✅ Completa |
+| **Fase 2+** | ❌ | ❌ | ✅ |
+| **Decks** | 2 (sem salvar) | 2 (progresso salvo) | Todos (12+) |
+| **Analyzer** | 3/dia | 5/dia | Ilimitado |
+| **Quiz** | ✅ Básico | ✅ Básico | ✅ Avançado |
+| **Shadowing** | ❌ | 3/dia | Ilimitado |
+| **SRS** | ❌ | ❌ | ✅ |
+
+### Gates (O que trava o quê)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         GATES                                   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  SIGNUP GATE (pede email - Magic Link)                         │
+│  ─────────────────────────────────────                          │
+│  Quando: Usuário completa Fase 1                               │
+│  Por quê: Salvar progresso para continuar                      │
+│  Resultado: Conta grátis criada                                │
+│                                                                 │
+│  UPGRADE GATE (pede pagamento)                                 │
+│  ─────────────────────────────                                  │
+│  Quando: Tenta acessar Fase 2+ ou deck Pro                     │
+│  Por quê: Conteúdo avançado é pago                             │
+│  Resultado: Assinatura Pro                                     │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -40,37 +64,43 @@ Problema: Por que pagar?            Solução: Pago pelo progresso
 │                    JORNADA DE PITCH ACCENT                      │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  FASE 1: FUNDAÇÃO (Grátis)                                     │
+│  FASE 1: FUNDAÇÃO (Grátis)                          🆓         │
 │  ─────────────────────────                                      │
-│  Semana 1-2: O que é pitch accent?                             │
+│  O que é pitch accent?                                         │
 │  • Conceito H/L (alto/baixo)                                   │
 │  • Os 4 padrões básicos (平板/頭高/中高/尾高)                    │
 │  • Minimal pairs (箸/橋, 雨/飴)                                 │
 │  • Quiz: Identifique o padrão                                  │
 │  → Deck "Primeiros Passos" (30 palavras)                       │
+│  → Deck "Minimal Pairs" (50 palavras)                          │
 │                                                                 │
-│  FASE 2: VOCABULÁRIO CORE (Grátis → Pro)                       │
-│  ────────────────────────────────────────                       │
-│  Semana 3-6: Palavras essenciais                               │
+│  ══════════════ SIGNUP GATE (Magic Link) ══════════════        │
+│                                                                 │
+│  ══════════════ UPGRADE GATE (Pro) ════════════════════        │
+│                                                                 │
+│  FASE 2: VOCABULÁRIO CORE (Pro)                     💎         │
+│  ──────────────────────────────                                 │
+│  Palavras essenciais                                           │
 │  • Números e contadores                                        │
 │  • Dias, meses, tempo                                          │
 │  • Cumprimentos e expressões                                   │
 │  • Verbos básicos (て-form, ます-form)                          │
 │  → Deck "N5 Essencial" (200 palavras)                          │
 │  → Deck "Verbos Básicos" (100 palavras)                        │
+│  → Deck "Cumprimentos" (80 palavras)                           │
 │                                                                 │
-│  FASE 3: PARTÍCULAS E COMPOSTOS (Pro)                          │
-│  ─────────────────────────────────────                          │
-│  Semana 7-10: Como pitch flui na frase                         │
+│  FASE 3: ESTRUTURA (Pro)                            💎         │
+│  ───────────────────────                                        │
+│  Como pitch flui na frase                                      │
 │  • Partículas (は, が, を, に, で, と)                          │
 │  • Compostos e regras McCawley                                 │
 │  • Pitch em verbos conjugados                                  │
 │  → Deck "Partículas" (50 padrões)                              │
 │  → Deck "Compostos" (150 palavras)                             │
 │                                                                 │
-│  FASE 4: FLUÊNCIA (Pro)                                        │
+│  FASE 4: FLUÊNCIA (Pro)                             💎         │
 │  ──────────────────────                                         │
-│  Semana 11+: Produção ativa                                    │
+│  Produção ativa                                                │
 │  • Shadowing com TTS                                           │
 │  • Record & Compare                                            │
 │  • Frases completas                                            │
@@ -84,14 +114,16 @@ Problema: Por que pagar?            Solução: Pago pelo progresso
 ### Progressão do Usuário
 
 ```
-Visitante → Estudante → Praticante → Fluente
+Visitante → Estudante → Assinante → Fluente
     │           │            │           │
     ▼           ▼            ▼           ▼
- Landing    Fase 1-2      Fase 3-4    Domínio
- (grátis)   (grátis)      (Pro)       (Pro)
-    │           │            │           │
-    └─── Soft-lock ──► Signup ──► Assinatura
-         (após Fase 1)
+ Landing     Fase 1       Fase 2-4    Domínio
+ (anônimo)   (grátis)     (Pro)       (Pro)
+    │           │            │
+    │      SIGNUP GATE   UPGRADE GATE
+    │      (email)       (pagamento)
+    │           │            │
+    └───────────┴────────────┘
 ```
 
 ---
@@ -109,22 +141,22 @@ Cada deck contém:
 
 ### Biblioteca de Decks
 
-| Deck | Palavras | Nível | Acesso |
-|------|----------|-------|--------|
-| Primeiros Passos | 30 | Iniciante | Grátis |
-| Minimal Pairs | 50 | Iniciante | Grátis |
-| N5 Essencial | 200 | Iniciante | Pro |
-| N4 Vocabulário | 300 | Intermediário | Pro |
-| Verbos (て/ます) | 100 | Iniciante | Pro |
-| Partículas | 50 | Intermediário | Pro |
-| Compostos | 150 | Intermediário | Pro |
-| Cumprimentos | 80 | Iniciante | Pro |
-| Números/Contadores | 100 | Iniciante | Pro |
-| Frases Naturais | 200 | Avançado | Pro |
-| Anime Popular | 150 | Intermediário | Pro |
-| Business Japanese | 100 | Avançado | Pro |
+| Deck | Palavras | Fase | Acesso |
+|------|----------|------|--------|
+| **Primeiros Passos** | 30 | 1 | 🆓 Grátis |
+| **Minimal Pairs** | 50 | 1 | 🆓 Grátis |
+| N5 Essencial | 200 | 2 | 💎 Pro |
+| Verbos Básicos | 100 | 2 | 💎 Pro |
+| Cumprimentos | 80 | 2 | 💎 Pro |
+| Números/Contadores | 100 | 2 | 💎 Pro |
+| Partículas | 50 | 3 | 💎 Pro |
+| Compostos | 150 | 3 | 💎 Pro |
+| N4 Vocabulário | 300 | 3 | 💎 Pro |
+| Frases Naturais | 200 | 4 | 💎 Pro |
+| Anime Popular | 150 | 4 | 💎 Pro |
+| Business Japanese | 100 | 4 | 💎 Pro |
 
-**Total:** ~1500 itens de estudo
+**Total:** ~1510 itens (80 grátis / 1430 Pro)
 
 ### Formato de Card (Deck Item)
 
@@ -221,19 +253,21 @@ Qual é o padrão?
 
 ### Gatilhos de Conversão
 
-| Momento | Gatilho | Mensagem |
-|---------|---------|----------|
-| Fase 1 completa | Soft paywall | "Você dominou os básicos! Continue sua jornada." |
-| 5ª análise/dia | Limit hit | "Quer analisar mais? Upgrade para Pro." |
-| Deck Pro clicado | Preview lock | "Este deck é Pro. Veja o que você vai aprender..." |
-| Shadowing #6 | Feature lock | "Shadowing ilimitado no Pro." |
-| 7 dias de uso | Retention offer | "Você está consistente! 50% off no primeiro mês." |
+| Momento | Gate | Ação | Mensagem |
+|---------|------|------|----------|
+| Fase 1 completa | SIGNUP | Pede email | "Salve seu progresso para continuar!" |
+| Tenta Fase 2+ | UPGRADE | Pede pagamento | "Desbloqueie o currículo completo" |
+| Deck Pro clicado | UPGRADE | Preview + paywall | "Este deck é Pro. Veja 3 cards grátis..." |
+| 4ª análise/dia (anon) | SIGNUP | Pede email | "Crie conta grátis para mais análises" |
+| 6ª análise/dia (free) | UPGRADE | Pede pagamento | "Análises ilimitadas no Pro" |
+| Shadowing #4 | UPGRADE | Pede pagamento | "Shadowing ilimitado no Pro" |
+| 7 dias streak | UPGRADE | Oferta | "Você está consistente! 50% off" |
 
 ---
 
 ## 6. User Flows
 
-### Flow 1: Novo Usuário (Grátis → Pro)
+### Flow 1: Novo Usuário (Anônimo → Free → Pro)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -255,54 +289,48 @@ Qual é o padrão?
                               │
                               ▼
               ┌───────────────────────────────┐
-              │         FASE 1                │
+              │         FASE 1 🆓             │
               │  • O que é pitch?             │
               │  • 4 padrões básicos          │
               │  • Deck "Primeiros Passos"    │
+              │  • Deck "Minimal Pairs"       │
               │  • Quiz introdutório          │
               └───────────────┬───────────────┘
                               │
                               ▼
-                    ┌─────────────────┐
-                    │  "Fase 1 completa!│
-                    │   Salve seu      │
-                    │   progresso"     │
-                    └────────┬────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │  Magic Link     │
-                    │  (email only)   │
-                    └────────┬────────┘
-                              │
-                              ▼
               ┌───────────────────────────────┐
-              │         FASE 2                │
-              │  • Vocabulário N5             │
-              │  • Deck "N5 Essencial"        │
-              │  • Mais quizzes               │
-              │  • Preview de shadowing       │
+              │       ══ SIGNUP GATE ══       │
+              │  "Fase 1 completa!            │
+              │   Salve seu progresso"        │
+              │                               │
+              │  [seu@email.com         ]     │
+              │  [   Enviar Magic Link  ]     │
               └───────────────┬───────────────┘
                               │
                               ▼
                     ┌─────────────────┐
-                    │  "Quer continuar │
-                    │   sua jornada?"  │
-                    │                  │
-                    │  [Ver Pro →]     │
+                    │  Conta Grátis   │
+                    │  criada!        │
                     └────────┬────────┘
                               │
                               ▼
-                    ┌─────────────────┐
-                    │  Checkout       │
-                    │  (Stripe)       │
-                    └────────┬────────┘
+              ┌───────────────────────────────┐
+              │      ══ UPGRADE GATE ══       │
+              │  "Desbloqueie a jornada       │
+              │   completa"                   │
+              │                               │
+              │  Fase 2: Vocabulário Core     │
+              │  Fase 3: Partículas           │
+              │  Fase 4: Fluência             │
+              │  + Shadowing + SRS            │
+              │                               │
+              │  [$9/mês]  [$69/ano]  [$149]  │
+              └───────────────┬───────────────┘
                               │
                               ▼
                     ┌─────────────────┐
                     │  Pro Ativo!     │
-                    │  Jornada        │
-                    │  completa       │
+                    │  Acesso total   │
                     └─────────────────┘
 ```
 
@@ -415,10 +443,11 @@ Qual é o padrão?
 |----|-----------|------------|--------|
 | RF-7.1 | Magic Link (email only) | P0 | 🔲 |
 | RF-7.2 | Google OAuth (alternativa) | P1 | 🔲 |
-| RF-7.3 | Soft-lock após Fase 1 completa | P0 | 🔲 |
-| RF-7.4 | Stripe subscription (mensal/anual) | P0 | 🔲 |
-| RF-7.5 | Stripe one-time (Lifetime) | P1 | 🔲 |
-| RF-7.6 | Webhook → user.subscription_tier | P0 | 🔲 |
+| RF-7.3 | SIGNUP GATE após Fase 1 completa | P0 | 🔲 |
+| RF-7.4 | UPGRADE GATE para Fase 2+ e decks Pro | P0 | 🔲 |
+| RF-7.5 | Stripe subscription (mensal/anual) | P0 | 🔲 |
+| RF-7.6 | Stripe one-time (Lifetime) | P1 | 🔲 |
+| RF-7.7 | Webhook → user.subscription_tier | P0 | 🔲 |
 
 ---
 
