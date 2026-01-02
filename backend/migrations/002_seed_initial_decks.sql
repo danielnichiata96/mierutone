@@ -102,10 +102,10 @@ BEGIN
   (minimal_pairs_id, '型', 'かた', 'form, mold', 2, 'odaka', 'LH', 15, '肩', 'Tail-high pattern'),
   (minimal_pairs_id, '肩', 'かた', 'shoulder', 1, 'atamadaka', 'HL', 16, '型', 'Head-high pattern');
 
-  -- Pair 9: 日 vs 火
+  -- Pair 9: 日が vs 火が (1-mora words with particle)
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
-  (minimal_pairs_id, '日', 'ひ', 'day, sun', 0, 'heiban', 'H', 17, '火', 'Flat (one mora)'),
-  (minimal_pairs_id, '火', 'ひ', 'fire', 1, 'atamadaka', 'H', 18, '日', 'Head-high (drops on particle)');
+  (minimal_pairs_id, '日が', 'ひが', 'day (subject)', 0, 'heiban', 'LH', 17, '火が', 'Flat with particle: hi-GA'),
+  (minimal_pairs_id, '火が', 'ひが', 'fire (subject)', 1, 'atamadaka', 'HL', 18, '日が', 'Head-high with particle: HI-ga');
 
   -- Pair 10: 白 vs 城
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
@@ -127,10 +127,10 @@ BEGIN
   (minimal_pairs_id, '息', 'いき', 'breath', 1, 'atamadaka', 'HL', 25, '意気', 'Head-high: I-ki'),
   (minimal_pairs_id, '意気', 'いき', 'spirit', 0, 'heiban', 'LH', 26, '息', 'Flat: i-KI');
 
-  -- Pair 14: 音 vs 鬼
+  -- Pair 14: 秋 vs 空き
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
-  (minimal_pairs_id, '音', 'おと', 'sound', 2, 'odaka', 'LH', 27, '鬼', 'Tail-high pattern'),
-  (minimal_pairs_id, '鬼', 'おに', 'demon', 2, 'odaka', 'LH', 28, '音', 'Tail-high pattern');
+  (minimal_pairs_id, '秋', 'あき', 'autumn', 1, 'atamadaka', 'HL', 27, '空き', 'Head-high: A-ki'),
+  (minimal_pairs_id, '空き', 'あき', 'vacancy, free space', 0, 'heiban', 'LH', 28, '秋', 'Flat: a-KI');
 
   -- Pair 15: 価値 vs 勝ち
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
@@ -138,35 +138,35 @@ BEGIN
   (minimal_pairs_id, '勝ち', 'かち', 'victory', 0, 'heiban', 'LH', 30, '価値', 'Flat: ka-CHI');
 
   -- More pairs for 50 total...
-  -- Pair 16: 歯 vs 葉
+  -- Pair 16: 歯が vs 葉が (1-mora words with particle)
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
-  (minimal_pairs_id, '歯', 'は', 'tooth', 1, 'atamadaka', 'H', 31, '葉', 'Head-high'),
-  (minimal_pairs_id, '葉', 'は', 'leaf', 0, 'heiban', 'H', 32, '歯', 'Flat');
+  (minimal_pairs_id, '歯が', 'はが', 'tooth (subject)', 1, 'atamadaka', 'HL', 31, '葉が', 'Head-high with particle: HA-ga'),
+  (minimal_pairs_id, '葉が', 'はが', 'leaf (subject)', 0, 'heiban', 'LH', 32, '歯が', 'Flat with particle: ha-GA');
 
-  -- Pair 17: 気 vs 木
+  -- Pair 17: 気が vs 木が (1-mora words with particle)
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
-  (minimal_pairs_id, '気', 'き', 'spirit, mind', 0, 'heiban', 'H', 33, '木', 'Flat'),
-  (minimal_pairs_id, '木', 'き', 'tree', 1, 'atamadaka', 'H', 34, '気', 'Head-high (drops on particle)');
+  (minimal_pairs_id, '気が', 'きが', 'spirit, mind (subject)', 0, 'heiban', 'LH', 33, '木が', 'Flat with particle: ki-GA'),
+  (minimal_pairs_id, '木が', 'きが', 'tree (subject)', 1, 'atamadaka', 'HL', 34, '気が', 'Head-high with particle: KI-ga');
 
-  -- Pair 18: 目 vs 芽
+  -- Pair 18: 目が vs 芽が (1-mora words with particle)
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
-  (minimal_pairs_id, '目', 'め', 'eye', 1, 'atamadaka', 'H', 35, '芽', 'Head-high'),
-  (minimal_pairs_id, '芽', 'め', 'bud, sprout', 0, 'heiban', 'H', 36, '目', 'Flat');
+  (minimal_pairs_id, '目が', 'めが', 'eye (subject)', 1, 'atamadaka', 'HL', 35, '芽が', 'Head-high with particle: ME-ga'),
+  (minimal_pairs_id, '芽が', 'めが', 'bud, sprout (subject)', 0, 'heiban', 'LH', 36, '目が', 'Flat with particle: me-GA');
 
-  -- Pair 19: 手 vs 寺
+  -- Pair 19: 朝 vs 麻
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
-  (minimal_pairs_id, '手', 'て', 'hand', 1, 'atamadaka', 'H', 37, NULL, 'Head-high - single mora'),
-  (minimal_pairs_id, '寺', 'てら', 'temple', 2, 'odaka', 'LH', 38, NULL, 'Tail-high: te-RA');
+  (minimal_pairs_id, '朝', 'あさ', 'morning', 1, 'atamadaka', 'HL', 37, '麻', 'Head-high: A-sa'),
+  (minimal_pairs_id, '麻', 'あさ', 'hemp', 2, 'odaka', 'LH', 38, '朝', 'Tail-high: a-SA (drops on particle)');
 
-  -- Pair 20: 端 vs 恥
+  -- Pair 20: 春 vs 張る
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
-  (minimal_pairs_id, '端', 'はし', 'edge', 0, 'heiban', 'LH', 39, '恥', 'Flat pattern'),
-  (minimal_pairs_id, '恥', 'はじ', 'shame', 2, 'odaka', 'LH', 40, '端', 'Tail-high pattern');
+  (minimal_pairs_id, '春', 'はる', 'spring', 1, 'atamadaka', 'HL', 39, '張る', 'Head-high: HA-ru'),
+  (minimal_pairs_id, '張る', 'はる', 'to stretch', 0, 'heiban', 'LH', 40, '春', 'Flat: ha-RU');
 
-  -- Pair 21: 風 vs 蓋
+  -- Pair 21: 紙 vs 神
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
-  (minimal_pairs_id, '風', 'かぜ', 'wind', 0, 'heiban', 'LH', 41, '蓋', 'Flat: ka-ZE'),
-  (minimal_pairs_id, '蓋', 'ふた', 'lid', 0, 'heiban', 'LH', 42, '風', 'Flat: fu-TA');
+  (minimal_pairs_id, '紙', 'かみ', 'paper', 2, 'odaka', 'LH', 41, '神', 'Tail-high: ka-MI (drops on particle)'),
+  (minimal_pairs_id, '神', 'かみ', 'god', 1, 'atamadaka', 'HL', 42, '紙', 'Head-high: KA-mi');
 
   -- Pair 22: 中 vs 仲
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
@@ -183,10 +183,10 @@ BEGIN
   (minimal_pairs_id, '買う', 'かう', 'to buy', 0, 'heiban', 'LH', 47, '飼う', 'Flat: ka-U'),
   (minimal_pairs_id, '飼う', 'かう', 'to keep (pet)', 1, 'atamadaka', 'HL', 48, '買う', 'Head-high: KA-u');
 
-  -- Pair 25: 来る vs 切る
+  -- Pair 25: 切る vs 着る
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, pair_word, notes) VALUES
-  (minimal_pairs_id, '来る', 'くる', 'to come', 1, 'atamadaka', 'HL', 49, '切る', 'Head-high: KU-ru'),
-  (minimal_pairs_id, '切る', 'きる', 'to cut', 1, 'atamadaka', 'HL', 50, '来る', 'Head-high: KI-ru');
+  (minimal_pairs_id, '切る', 'きる', 'to cut', 1, 'atamadaka', 'HL', 49, '着る', 'Head-high: KI-ru'),
+  (minimal_pairs_id, '着る', 'きる', 'to wear', 0, 'heiban', 'LH', 50, '切る', 'Flat: ki-RU');
 
 END $$;
 
