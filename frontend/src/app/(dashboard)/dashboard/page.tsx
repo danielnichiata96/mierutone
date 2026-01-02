@@ -12,6 +12,13 @@ import {
 import type { StatsResponse } from "@/types/user";
 import { RetentionWarningBanner } from "@/components/RetentionWarningBanner";
 import Link from "next/link";
+import {
+  CalendarIcon,
+  DocumentIcon,
+  MicrophoneIcon,
+  AnalyticsIcon,
+  ChatIcon,
+} from "@/components/icons/DoodleIcons";
 
 function Skeleton({ className = "" }: { className?: string }) {
   return (
@@ -135,9 +142,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-primary-300/20 rounded-xl flex items-center justify-center">
-                <svg className="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+                <CalendarIcon className="text-primary-600" size={28} />
               </div>
               <div>
                 {loadingStats ? (
@@ -179,41 +184,25 @@ export default function DashboardPage() {
           label="Analyses"
           value={stats?.total_analyses ?? 0}
           loading={loadingStats}
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          }
+          icon={<DocumentIcon size={24} />}
         />
         <StatCard
           label="Comparisons"
           value={stats?.total_comparisons ?? 0}
           loading={loadingStats}
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-            </svg>
-          }
+          icon={<MicrophoneIcon size={24} />}
         />
         <StatCard
           label="Avg Score"
           value={stats?.avg_score != null ? `${Math.round(stats.avg_score)}%` : "-"}
           loading={loadingStats}
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          }
+          icon={<AnalyticsIcon size={24} />}
         />
         <StatCard
           label="Unique Texts"
           value={stats?.unique_texts ?? 0}
           loading={loadingStats}
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-            </svg>
-          }
+          icon={<ChatIcon size={24} />}
         />
       </section>
 
