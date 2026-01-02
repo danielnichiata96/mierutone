@@ -2,6 +2,7 @@
 
 import base64
 import binascii
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.concurrency import run_in_threadpool
@@ -11,6 +12,8 @@ from app.core.auth import get_current_user, TokenData
 from app.core.supabase import get_supabase_client
 from app.services.audio_compare import compare_audio, get_score_feedback, CompareError
 from app.services.tts import synthesize_speech, TTSError
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/compare", tags=["compare"])
 
@@ -89,15 +92,18 @@ async def compare_pronunciation(
     try:
         native_audio, _ = await run_in_threadpool(synthesize_speech, request.text)
     except TTSError as e:
-        raise HTTPException(status_code=503, detail=f"TTS failed: {str(e)}")
+        logger.error(f"TTS failed for compare: {e}")
+        raise HTTPException(status_code=503, detail="Speech synthesis temporarily unavailable")
 
     # 3. Compare (run in threadpool - CPU-bound)
     try:
         result = await run_in_threadpool(compare_audio, native_audio, user_audio)
     except CompareError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        logger.warning(f"Compare error (user input issue): {e}")
+        raise HTTPException(status_code=422, detail="Could not process audio - please try recording again")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
+        logger.exception(f"Unexpected comparison error: {e}")
+        raise HTTPException(status_code=500, detail="Comparison failed - please try again")
 
     # Auto-save score if user is authenticated (BE-5)
     if user:
@@ -137,7 +143,8 @@ async def compare_with_upload(
     try:
         native_audio, _ = await run_in_threadpool(synthesize_speech, text)
     except TTSError as e:
-        raise HTTPException(status_code=503, detail=f"TTS failed: {str(e)}")
+        logger.error(f"TTS failed for compare upload: {e}")
+        raise HTTPException(status_code=503, detail="Speech synthesis temporarily unavailable")
 
     # 2. Read and validate uploaded file
     try:
@@ -154,9 +161,11 @@ async def compare_with_upload(
     try:
         result = await run_in_threadpool(compare_audio, native_audio, user_audio_bytes)
     except CompareError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        logger.warning(f"Compare error (upload): {e}")
+        raise HTTPException(status_code=422, detail="Could not process audio - please try recording again")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
+        logger.exception(f"Unexpected comparison error (upload): {e}")
+        raise HTTPException(status_code=500, detail="Comparison failed - please try again")
 
     # Auto-save score if user is authenticated (BE-5)
     if user:

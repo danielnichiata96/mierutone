@@ -296,7 +296,7 @@ export default function StudyDeckPage() {
     if (isLast) {
       // Deck completed
       toast.success("Deck completed!");
-      router.push("/learn");
+      router.push("/decks");
     } else {
       setCurrentIndex((prev) => prev + 1);
     }
@@ -328,7 +328,7 @@ export default function StudyDeckPage() {
       <div className="container mx-auto px-6 py-8 pt-16 lg:pt-8 max-w-4xl">
         <div className="riso-card p-8 text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <Link href="/learn" className="riso-button-primary">
+          <Link href="/decks" className="riso-button-primary">
             Back to Library
           </Link>
         </div>
@@ -341,7 +341,7 @@ export default function StudyDeckPage() {
       <div className="container mx-auto px-6 py-8 pt-16 lg:pt-8 max-w-4xl">
         <div className="riso-card p-8 text-center">
           <p className="text-ink-black/60 mb-4">This deck has no cards yet.</p>
-          <Link href="/learn" className="riso-button-primary">
+          <Link href="/decks" className="riso-button-primary">
             Back to Library
           </Link>
         </div>
@@ -356,7 +356,7 @@ export default function StudyDeckPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <Link
-          href="/learn"
+          href="/decks"
           className="flex items-center gap-1 text-ink-black/60 hover:text-ink-black transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

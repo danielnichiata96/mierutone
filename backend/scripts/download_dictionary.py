@@ -3,9 +3,11 @@
 Downloads the pre-built pitch.db from mierutone-dictionary releases.
 
 Usage:
-    python scripts/download_dictionary.py
+    python scripts/download_dictionary.py [--force]
 """
 
+import argparse
+import hashlib
 import urllib.request
 import urllib.error
 import time
@@ -17,12 +19,21 @@ VERSION = "v1.0.0"
 ASSET_NAME = "pitch.db"
 DOWNLOAD_URL = f"https://github.com/{REPO}/releases/download/{VERSION}/{ASSET_NAME}"
 
+# SHA256 checksum for integrity verification (v1.0.0)
+EXPECTED_SHA256 = "1cc86429e3bc825e4a273fd40be5a612ab3d995cbb44f03a5e29d0110e04e04b"
+
 DB_PATH = Path(__file__).parent.parent / "data" / "pitch.db"
 
 # Network settings
 REQUEST_TIMEOUT = 60  # seconds (larger file)
 MAX_RETRIES = 3
 RETRY_DELAY = 2  # seconds
+
+
+def verify_checksum(content: bytes, expected: str) -> bool:
+    """Verify SHA256 checksum of downloaded content."""
+    actual = hashlib.sha256(content).hexdigest()
+    return actual == expected
 
 
 def download_database() -> bytes:
@@ -61,17 +72,30 @@ def download_database() -> bytes:
 
 
 def main():
-    print("=== Mierutone Dictionary Downloader ===\n")
+    parser = argparse.ArgumentParser(description="Download Mierutone pitch dictionary")
+    parser.add_argument("--force", action="store_true", help="Overwrite existing database")
+    args = parser.parse_args()
 
-    if DB_PATH.exists():
+    print("=== Mierutone Dictionary Downloader ===\n")
+    print(f"Version: {VERSION}")
+    print(f"Expected SHA256: {EXPECTED_SHA256[:16]}...\n")
+
+    if DB_PATH.exists() and not args.force:
         print(f"Database already exists at {DB_PATH}")
-        response = input("Overwrite? [y/N]: ").strip().lower()
-        if response != "y":
-            print("Aborted.")
-            return
+        print("Use --force to overwrite.")
+        return
 
     # Download
     content = download_database()
+
+    # Verify checksum
+    print("\nVerifying checksum...")
+    if not verify_checksum(content, EXPECTED_SHA256):
+        raise RuntimeError(
+            f"Checksum mismatch! Expected {EXPECTED_SHA256[:16]}..., "
+            f"got {hashlib.sha256(content).hexdigest()[:16]}..."
+        )
+    print("Checksum OK")
 
     # Save
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)

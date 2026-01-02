@@ -29,7 +29,7 @@ function DeckCard({ deck }: { deck: DeckSummary }) {
 
   return (
     <Link
-      href={`/learn/${deck.slug}`}
+      href={`/decks/${deck.slug}`}
       className="riso-card p-5 hover:border-primary-400 transition-colors group"
     >
       <div className="flex items-start justify-between mb-3">
@@ -97,7 +97,7 @@ function DeckCardSkeleton() {
   );
 }
 
-export default function LearnPage() {
+export default function DecksPage() {
   const [data, setData] = useState<DeckListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPhase, setSelectedPhase] = useState<number | null>(null);
@@ -126,7 +126,7 @@ export default function LearnPage() {
       {/* Header */}
       <section className="mb-8">
         <h1 className="font-display text-3xl font-bold text-ink-black mb-2">
-          Learn
+          Flashcard Decks
         </h1>
         <p className="text-ink-black/60">
           Master pitch accent with guided practice

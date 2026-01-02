@@ -2,11 +2,14 @@
 
 import asyncio
 import base64
+import logging
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 # Timeout for Azure TTS synthesis (seconds)
 TTS_TIMEOUT_SECONDS = 30
@@ -73,11 +76,14 @@ async def text_to_speech(request: TTSRequest) -> Response:
             },
         )
     except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail=f"TTS timed out after {TTS_TIMEOUT_SECONDS}s")
+        logger.error(f"TTS timeout after {TTS_TIMEOUT_SECONDS}s")
+        raise HTTPException(status_code=504, detail="Speech synthesis timed out - please try again")
     except TTSError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        logger.error(f"TTS error: {e}")
+        raise HTTPException(status_code=503, detail="Speech synthesis temporarily unavailable")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"TTS failed: {str(e)}")
+        logger.exception(f"Unexpected TTS error: {e}")
+        raise HTTPException(status_code=500, detail="Speech synthesis failed - please try again")
 
 
 @router.get("/voices")
@@ -212,11 +218,14 @@ async def didactic_speech(request: DidacticRequest) -> Response:
             },
         )
     except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail=f"TTS timed out after {TTS_TIMEOUT_SECONDS}s")
+        logger.error(f"Didactic TTS timeout after {TTS_TIMEOUT_SECONDS}s")
+        raise HTTPException(status_code=504, detail="Speech synthesis timed out - please try again")
     except TTSError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        logger.error(f"Didactic TTS error: {e}")
+        raise HTTPException(status_code=503, detail="Speech synthesis temporarily unavailable")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Didactic TTS failed: {str(e)}")
+        logger.exception(f"Unexpected didactic TTS error: {e}")
+        raise HTTPException(status_code=500, detail="Speech synthesis failed - please try again")
 
 
 class TTSWithPitchResponse(BaseModel):
@@ -257,17 +266,21 @@ async def tts_with_pitch(
             timeout=TTS_TIMEOUT_SECONDS,
         )
     except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail=f"TTS timed out after {TTS_TIMEOUT_SECONDS}s")
+        logger.error(f"TTS with pitch timeout after {TTS_TIMEOUT_SECONDS}s")
+        raise HTTPException(status_code=504, detail="Speech synthesis timed out - please try again")
     except TTSError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        logger.error(f"TTS with pitch error: {e}")
+        raise HTTPException(status_code=503, detail="Speech synthesis temporarily unavailable")
 
     # 2. Extract pitch curve with timing info
     try:
         timed_pitch = await run_in_threadpool(extract_pitch_timed, audio_bytes)
     except CompareError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        logger.warning(f"Pitch extraction error: {e}")
+        raise HTTPException(status_code=422, detail="Could not extract pitch data")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Pitch extraction failed: {str(e)}")
+        logger.exception(f"Unexpected pitch extraction error: {e}")
+        raise HTTPException(status_code=500, detail="Pitch extraction failed - please try again")
 
     # 3. Encode audio as base64
     audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
@@ -319,11 +332,14 @@ async def tts_with_timings(
             timeout=TTS_TIMEOUT_SECONDS,
         )
     except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail=f"TTS timed out after {TTS_TIMEOUT_SECONDS}s")
+        logger.error(f"TTS with timings timeout after {TTS_TIMEOUT_SECONDS}s")
+        raise HTTPException(status_code=504, detail="Speech synthesis timed out - please try again")
     except TTSError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        logger.error(f"TTS with timings error: {e}")
+        raise HTTPException(status_code=503, detail="Speech synthesis temporarily unavailable")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"TTS with timings failed: {str(e)}")
+        logger.exception(f"Unexpected TTS with timings error: {e}")
+        raise HTTPException(status_code=500, detail="Speech synthesis failed - please try again")
 
     # Calculate total duration from audio (WAV header: bytes 4-8 = file size)
     # For 48kHz 16-bit mono: duration = (file_size - 44) / (48000 * 2) * 1000

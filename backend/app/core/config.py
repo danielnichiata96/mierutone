@@ -33,8 +33,9 @@ class Settings(BaseSettings):
     azure_speech_region: str = "eastus"
 
     # Redis Cache (hot)
-    redis_url: str = "redis://localhost:6379"
-    redis_enabled: bool = True
+    # redis_enabled defaults to False; set REDIS_ENABLED=true or provide REDIS_URL to enable
+    redis_url: str = ""
+    redis_enabled: bool = False
     redis_ttl_seconds: int = 86400  # 1 day in Redis
 
     # Cloudflare R2 (cold storage)

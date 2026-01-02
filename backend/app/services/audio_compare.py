@@ -1,6 +1,7 @@
 """Audio comparison service using Parselmouth + DTW."""
 
 import io
+import logging
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,8 @@ import parselmouth
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 from scipy.stats import zscore
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -151,7 +154,8 @@ def compare_audio(native_audio: bytes, user_audio: bytes) -> ComparisonResult:
         pitch_native = extract_pitch(native_audio)
         pitch_user = extract_pitch(user_audio)
     except Exception as e:
-        raise CompareError(f"Failed to extract pitch: {str(e)}")
+        logger.exception(f"Pitch extraction failed: {e}")
+        raise CompareError("Could not analyze audio - please ensure clear recording")
 
     # 2. Normalize using Z-Score (compare shape, not absolute Hz)
     norm_native = normalize_pitch(pitch_native)

@@ -1,7 +1,15 @@
 import { MetadataRoute } from "next";
+import { seoWordList } from "@/data/seoWords";
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = "https://mierutone.com";
+
+    const dictUrls = seoWordList.map((word) => ({
+        url: `${baseUrl}/dict/${encodeURIComponent(word)}`,
+        lastModified: new Date(),
+        changeFrequency: "monthly" as const,
+        priority: 0.6,
+    }));
 
     return [
         {
@@ -10,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
             changeFrequency: "weekly",
             priority: 1,
         },
+        ...dictUrls,
         {
             url: `${baseUrl}/learn`,
             lastModified: new Date(),

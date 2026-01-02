@@ -8,6 +8,7 @@ pytest.importorskip("sudachipy", reason="sudachipy is required for pitch analyze
 pytest.importorskip("jaconv", reason="jaconv is required for pitch analyzer")
 
 from app.services import pitch_analyzer
+from app.services.pitch import lookup as lookup_module
 
 
 def make_db(rows: list[tuple[str, str, str, str | None, str | None]]):
@@ -30,8 +31,8 @@ def test_lookup_prefers_lemma_before_normalized(monkeypatch):
         ("lemma", "read", "3", None, None),
         ("normalized", "read", "4", None, None),
     ])
-    monkeypatch.setattr(pitch_analyzer, "get_db_connection", lambda: conn)
-    monkeypatch.setattr(pitch_analyzer, "lookup_unidic_accent", lambda *_: None)
+    monkeypatch.setattr(lookup_module, "get_db_connection", lambda: conn)
+    monkeypatch.setattr(lookup_module, "lookup_unidic_accent", lambda *_: None)
 
     result = pitch_analyzer.lookup_pitch(
         surface="surface",
@@ -49,8 +50,8 @@ def test_lookup_reading_fallback_prefers_shorter_surface(monkeypatch):
         ("longer", "read", "6", None, None),
         ("short", "read", "5", None, None),
     ])
-    monkeypatch.setattr(pitch_analyzer, "get_db_connection", lambda: conn)
-    monkeypatch.setattr(pitch_analyzer, "lookup_unidic_accent", lambda *_: None)
+    monkeypatch.setattr(lookup_module, "get_db_connection", lambda: conn)
+    monkeypatch.setattr(lookup_module, "lookup_unidic_accent", lambda *_: None)
 
     result = pitch_analyzer.lookup_pitch(surface="unknown", reading_hira="read")
 
@@ -60,8 +61,8 @@ def test_lookup_reading_fallback_prefers_shorter_surface(monkeypatch):
 
 def test_lookup_unidic_fallback_when_db_missing(monkeypatch):
     conn = make_db([])
-    monkeypatch.setattr(pitch_analyzer, "get_db_connection", lambda: conn)
-    monkeypatch.setattr(pitch_analyzer, "lookup_unidic_accent", lambda *_: 2)
+    monkeypatch.setattr(lookup_module, "get_db_connection", lambda: conn)
+    monkeypatch.setattr(lookup_module, "lookup_unidic_accent", lambda *_: 2)
 
     result = pitch_analyzer.lookup_pitch(surface="surface", reading_hira="read")
 
@@ -74,13 +75,13 @@ def test_sources_agree_true_and_false(monkeypatch):
     conn = make_db([
         ("word", "read", "2", None, None),
     ])
-    monkeypatch.setattr(pitch_analyzer, "get_db_connection", lambda: conn)
+    monkeypatch.setattr(lookup_module, "get_db_connection", lambda: conn)
 
-    monkeypatch.setattr(pitch_analyzer, "lookup_unidic_accent", lambda *_: 2)
+    monkeypatch.setattr(lookup_module, "lookup_unidic_accent", lambda *_: 2)
     result = pitch_analyzer.lookup_pitch(surface="word", reading_hira="read")
     assert result.sources_agree is True
 
-    monkeypatch.setattr(pitch_analyzer, "lookup_unidic_accent", lambda *_: 3)
+    monkeypatch.setattr(lookup_module, "lookup_unidic_accent", lambda *_: 3)
     result = pitch_analyzer.lookup_pitch(surface="word", reading_hira="read")
     assert result.sources_agree is False
 
@@ -89,8 +90,8 @@ def test_multiple_patterns_flag(monkeypatch):
     conn = make_db([
         ("word", "read", "1,2", None, None),
     ])
-    monkeypatch.setattr(pitch_analyzer, "get_db_connection", lambda: conn)
-    monkeypatch.setattr(pitch_analyzer, "lookup_unidic_accent", lambda *_: None)
+    monkeypatch.setattr(lookup_module, "get_db_connection", lambda: conn)
+    monkeypatch.setattr(lookup_module, "lookup_unidic_accent", lambda *_: None)
 
     result = pitch_analyzer.lookup_pitch(surface="word", reading_hira="read")
 

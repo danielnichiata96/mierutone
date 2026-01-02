@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, Suspense, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { TextInput } from "@/components/TextInput";
 import { normalizeInput } from "@/lib/normalizeInput";
 import { PitchVisualizer } from "@/components/PitchVisualizer";
@@ -46,6 +46,7 @@ function HomeContent() {
   const copiedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { checkForAchievements } = useAchievements();
   const { preferences } = usePreferences();
+  const router = useRouter();
 
   // Map user preferences to display preferences
   const displayPrefs: DisplayPreferences = useMemo(() => ({
@@ -65,14 +66,16 @@ function HomeContent() {
   }, []);
 
   const handleAnalyze = useCallback(async (text: string, isAutoLoad = false) => {
+    // If user manually searches (non-autoload), redirect to the discoverable dictionary route
+    if (!isAutoLoad) {
+      router.push(`/dict/${encodeURIComponent(text)}`);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setCurrentText(text);
     setShowRecordCompare(false);
-
-    if (!isAutoLoad) {
-      setHasInteracted(true);
-    }
 
     try {
       const response = await analyzeText(text);

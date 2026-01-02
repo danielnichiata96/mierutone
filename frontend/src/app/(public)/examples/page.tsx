@@ -116,12 +116,15 @@ export default function ExamplesPage() {
     router.push(`/?text=${encodeURIComponent(text)}`);
   };
 
-  // Filter categories and items based on search term
-  const filteredCategories = useMemo(() => {
-    if (!searchTerm.trim()) return exampleCategories;
+  // Filter categories and items based on search term (memoized)
+  const { filteredCategories, totalFilteredExamples } = useMemo(() => {
+    if (!searchTerm.trim()) {
+      const total = exampleCategories.reduce((sum, cat) => sum + cat.items.length, 0);
+      return { filteredCategories: exampleCategories, totalFilteredExamples: total };
+    }
 
     const term = searchTerm.toLowerCase();
-    return exampleCategories
+    const filtered = exampleCategories
       .map((category) => ({
         ...category,
         items: category.items.filter(
@@ -131,12 +134,10 @@ export default function ExamplesPage() {
         ),
       }))
       .filter((category) => category.items.length > 0);
-  }, [searchTerm]);
 
-  const totalFilteredExamples = filteredCategories.reduce(
-    (sum, cat) => sum + cat.items.length,
-    0
-  );
+    const total = filtered.reduce((sum, cat) => sum + cat.items.length, 0);
+    return { filteredCategories: filtered, totalFilteredExamples: total };
+  }, [searchTerm]);
 
   return (
     <main className="min-h-screen bg-paper-white">

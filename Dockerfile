@@ -15,11 +15,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
 COPY backend/scripts ./scripts
 
-# Download UniDic dictionary for goshu classification (~770MB)
-RUN python -m unidic download
+# Download pitch database from GitHub release (pre-built with goshu, ~16MB)
+# Checksum verified for v1.0.0
+RUN mkdir -p data && python scripts/download_dictionary.py --force
 
-# Create data directory and import pitch database with goshu
-RUN mkdir -p data && python scripts/import_kanjium.py && python scripts/import_goshu.py
+# Download UniDic dictionary for runtime cross-validation (~770MB)
+# This is optional but improves accuracy. Remove this line for smaller images.
+RUN python -m unidic download
 
 # Expose port
 EXPOSE 8000

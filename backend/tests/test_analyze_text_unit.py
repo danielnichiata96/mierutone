@@ -6,6 +6,9 @@ pytest.importorskip("sudachipy", reason="sudachipy is required for pitch analyze
 pytest.importorskip("jaconv", reason="jaconv is required for pitch analyzer")
 
 from app.services import pitch_analyzer
+from app.services.pitch import analyzer as pitch_analyzer_module
+from app.services.pitch import tokenizer as tokenizer_module
+from app.services.pitch import lookup as lookup_module
 
 
 class StubToken:
@@ -52,7 +55,7 @@ class StubTokenizer:
 @pytest.fixture()
 def default_lookup(monkeypatch):
     monkeypatch.setattr(
-        pitch_analyzer,
+        pitch_analyzer_module,
         "lookup_pitch",
         lambda *_args, **_kwargs: pitch_analyzer.PitchLookupResult(0, None, None, source="dictionary"),
     )
@@ -65,18 +68,18 @@ def stub_tokenizer(monkeypatch):
         StubToken("!", "!", "punct"),
         StubToken("world", "world", "noun"),
     ]
-    monkeypatch.setattr(pitch_analyzer, "get_tokenizer", lambda: StubTokenizer(tokens))
+    monkeypatch.setattr(pitch_analyzer_module, "get_tokenizer", lambda: StubTokenizer(tokens))
 
 
 @pytest.fixture()
 def stub_proper(monkeypatch):
-    monkeypatch.setattr(pitch_analyzer, "is_proper_noun", lambda token: token.is_proper)
-    monkeypatch.setattr(pitch_analyzer, "get_proper_noun_type", lambda _token: "unknown")
+    monkeypatch.setattr(pitch_analyzer_module, "is_proper_noun", lambda token: token.is_proper)
+    monkeypatch.setattr(pitch_analyzer_module, "get_proper_noun_type", lambda _token: "unknown")
 
 
 @pytest.fixture()
 def stub_particle(monkeypatch):
-    monkeypatch.setattr(pitch_analyzer, "is_particle", lambda _pos: False)
+    monkeypatch.setattr(pitch_analyzer_module, "is_particle", lambda _pos: False)
 
 
 def test_analyze_text_filters_punctuation(stub_tokenizer, default_lookup, stub_particle, stub_proper):
@@ -88,9 +91,9 @@ def test_analyze_text_filters_punctuation(stub_tokenizer, default_lookup, stub_p
 
 def test_analyze_text_particle_has_no_pattern(monkeypatch):
     tokens = [StubToken("particle", "pa", "p")]
-    monkeypatch.setattr(pitch_analyzer, "get_tokenizer", lambda: StubTokenizer(tokens))
-    monkeypatch.setattr(pitch_analyzer, "is_particle", lambda _pos: True)
-    monkeypatch.setattr(pitch_analyzer, "is_proper_noun", lambda _token: False)
+    monkeypatch.setattr(pitch_analyzer_module, "get_tokenizer", lambda: StubTokenizer(tokens))
+    monkeypatch.setattr(pitch_analyzer_module, "is_particle", lambda _pos: True)
+    monkeypatch.setattr(pitch_analyzer_module, "is_proper_noun", lambda _token: False)
 
     result = pitch_analyzer.analyze_text("ignored")
 
@@ -101,12 +104,12 @@ def test_analyze_text_particle_has_no_pattern(monkeypatch):
 
 def test_analyze_text_proper_noun_unknown(monkeypatch):
     tokens = [StubToken("name", "na", "n", proper=True)]
-    monkeypatch.setattr(pitch_analyzer, "get_tokenizer", lambda: StubTokenizer(tokens))
-    monkeypatch.setattr(pitch_analyzer, "is_particle", lambda _pos: False)
-    monkeypatch.setattr(pitch_analyzer, "is_proper_noun", lambda token: token.is_proper)
-    monkeypatch.setattr(pitch_analyzer, "get_proper_noun_type", lambda _token: "unknown")
+    monkeypatch.setattr(pitch_analyzer_module, "get_tokenizer", lambda: StubTokenizer(tokens))
+    monkeypatch.setattr(pitch_analyzer_module, "is_particle", lambda _pos: False)
+    monkeypatch.setattr(pitch_analyzer_module, "is_proper_noun", lambda token: token.is_proper)
+    monkeypatch.setattr(pitch_analyzer_module, "get_proper_noun_type", lambda _token: "unknown")
     monkeypatch.setattr(
-        pitch_analyzer,
+        pitch_analyzer_module,
         "lookup_pitch",
         lambda *_args, **_kwargs: pitch_analyzer.PitchLookupResult(None, None, None, source="unknown"),
     )
@@ -120,12 +123,12 @@ def test_analyze_text_proper_noun_unknown(monkeypatch):
 
 def test_analyze_text_proper_noun_in_dictionary(monkeypatch):
     tokens = [StubToken("name", "na", "n", proper=True)]
-    monkeypatch.setattr(pitch_analyzer, "get_tokenizer", lambda: StubTokenizer(tokens))
-    monkeypatch.setattr(pitch_analyzer, "is_particle", lambda _pos: False)
-    monkeypatch.setattr(pitch_analyzer, "is_proper_noun", lambda token: token.is_proper)
-    monkeypatch.setattr(pitch_analyzer, "get_proper_noun_type", lambda _token: "unknown")
+    monkeypatch.setattr(pitch_analyzer_module, "get_tokenizer", lambda: StubTokenizer(tokens))
+    monkeypatch.setattr(pitch_analyzer_module, "is_particle", lambda _pos: False)
+    monkeypatch.setattr(pitch_analyzer_module, "is_proper_noun", lambda token: token.is_proper)
+    monkeypatch.setattr(pitch_analyzer_module, "get_proper_noun_type", lambda _token: "unknown")
     monkeypatch.setattr(
-        pitch_analyzer,
+        pitch_analyzer_module,
         "lookup_pitch",
         lambda *_args, **_kwargs: pitch_analyzer.PitchLookupResult(
             1,

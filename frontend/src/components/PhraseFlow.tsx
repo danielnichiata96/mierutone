@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import type { WordPitch } from "@/types/pitch";
 import { getAccentTypeName } from "@/types/pitch";
 import { getTTSWithTimings, type WordTiming } from "@/lib/api";
@@ -161,6 +161,26 @@ function buildMoraTimings(
   return moraTimings;
 }
 
+/**
+ * Binary search to find the mora at a given time.
+ * O(log n) instead of O(n) with .find().
+ */
+function findMoraAtTime(
+  timings: { moraIndex: number; startMs: number; endMs: number }[],
+  timeMs: number
+): { moraIndex: number; startMs: number; endMs: number } | null {
+  let lo = 0;
+  let hi = timings.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    const t = timings[mid];
+    if (timeMs >= t.startMs && timeMs < t.endMs) return t;
+    if (timeMs < t.startMs) hi = mid - 1;
+    else lo = mid + 1;
+  }
+  return null;
+}
+
 export function PhraseFlow({ words }: PhraseFlowProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -171,7 +191,7 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
   const animationRef = useRef<number | null>(null);
   const moraTimingsRef = useRef<{ moraIndex: number; startMs: number; endMs: number }[]>([]);
 
-  const points = buildPhrasePoints(words);
+  const points = useMemo(() => buildPhrasePoints(words), [words]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -197,10 +217,8 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
 
     const currentTimeMs = audioRef.current.currentTime * 1000;
 
-    // Find which mora should be highlighted
-    const currentMora = moraTimingsRef.current.find(
-      (t) => currentTimeMs >= t.startMs && currentTimeMs < t.endMs
-    );
+    // Find which mora should be highlighted (binary search O(log n))
+    const currentMora = findMoraAtTime(moraTimingsRef.current, currentTimeMs);
 
     if (currentMora) {
       setCurrentMoraIndex(currentMora.moraIndex);
@@ -359,68 +377,68 @@ export function PhraseFlow({ words }: PhraseFlowProps) {
             );
           })}
 
-        {/* Pitch dots and mora labels - using shared components */}
-        {points.map((point, i) => {
-          const x = i * moraWidth + moraWidth / 2 + 10;
-          // Use shared Y position function (adjusted for PhraseFlow's different scale)
-          const y = point.isUncertain ? 35 : (point.pitch === "H" ? 20 : 50);
-          const isActive = currentMoraIndex === i;
+          {/* Pitch dots and mora labels - using shared components */}
+          {points.map((point, i) => {
+            const x = i * moraWidth + moraWidth / 2 + 10;
+            // Use shared Y position function (adjusted for PhraseFlow's different scale)
+            const y = point.isUncertain ? 35 : (point.pitch === "H" ? 20 : 50);
+            const isActive = currentMoraIndex === i;
 
-          return (
-            <g key={i}>
-              {/* Active glow effect - using shared PitchGlow */}
-              {isActive && <PitchGlow x={x} y={y} />}
-
-              {/* Pitch dot - using shared PitchDot */}
-              <PitchDot
-                x={x}
-                y={y}
-                pitch={point.pitch}
-                isUncertain={point.isUncertain}
-                isParticle={point.isParticle}
-                isDictionaryProper={point.isDictionaryProper}
-                isActive={isActive}
-              />
-
-              {/* Mora label */}
-              <text
-                x={x}
-                y={72}
-                textAnchor="middle"
-                fontSize={isActive ? "16" : "14"}
-                fontWeight={isActive ? "700" : "500"}
-                fill={RISO.black}
-                opacity={isActive ? 1 : point.isParticle ? 0.6 : 0.9}
-                className="font-sans transition-all"
-              >
-                {point.mora}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Word boundary markers */}
-        {points.map((point, i) => {
-          if (i === 0) return null;
-          const prevPoint = points[i - 1];
-          if (prevPoint.wordIndex !== point.wordIndex) {
-            const x = i * moraWidth + 10;
             return (
-              <line
-                key={`boundary-${i}`}
-                x1={x}
-                y1={12}
-                x2={x}
-                y2={58}
-                stroke={RISO.black}
-                strokeWidth="1"
-                strokeDasharray="3,3"
-                opacity={0.2}
-              />
+              <g key={i}>
+                {/* Active glow effect - using shared PitchGlow */}
+                {isActive && <PitchGlow x={x} y={y} />}
+
+                {/* Pitch dot - using shared PitchDot */}
+                <PitchDot
+                  x={x}
+                  y={y}
+                  pitch={point.pitch}
+                  isUncertain={point.isUncertain}
+                  isParticle={point.isParticle}
+                  isDictionaryProper={point.isDictionaryProper}
+                  isActive={isActive}
+                />
+
+                {/* Mora label */}
+                <text
+                  x={x}
+                  y={72}
+                  textAnchor="middle"
+                  fontSize={isActive ? "16" : "14"}
+                  fontWeight={isActive ? "700" : "500"}
+                  fill={RISO.black}
+                  opacity={isActive ? 1 : point.isParticle ? 0.6 : 0.9}
+                  className="font-sans transition-all"
+                >
+                  {point.mora}
+                </text>
+              </g>
             );
-          }
-          return null;
-        })}
+          })}
+
+          {/* Word boundary markers */}
+          {points.map((point, i) => {
+            if (i === 0) return null;
+            const prevPoint = points[i - 1];
+            if (prevPoint.wordIndex !== point.wordIndex) {
+              const x = i * moraWidth + 10;
+              return (
+                <line
+                  key={`boundary-${i}`}
+                  x1={x}
+                  y1={12}
+                  x2={x}
+                  y2={58}
+                  stroke={RISO.black}
+                  strokeWidth="1"
+                  strokeDasharray="3,3"
+                  opacity={0.2}
+                />
+              );
+            }
+            return null;
+          })}
         </svg>
       </div>
 
