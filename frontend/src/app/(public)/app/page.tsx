@@ -9,12 +9,9 @@ function RedirectHandler() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const textParam = searchParams.get("text");
-    if (textParam) {
-      router.replace(`/?text=${encodeURIComponent(textParam)}`);
-    } else {
-      router.replace("/");
-    }
+    // Preserve all query params when redirecting
+    const params = searchParams.toString();
+    router.replace(params ? `/?${params}` : "/");
   }, [router, searchParams]);
 
   return (

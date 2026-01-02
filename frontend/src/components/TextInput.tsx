@@ -9,9 +9,10 @@ interface TextInputProps {
   onAnalyze: (text: string) => void;
   isLoading: boolean;
   initialValue?: string | null;
+  onInputStart?: () => void;
 }
 
-export function TextInput({ onAnalyze, isLoading, initialValue }: TextInputProps) {
+export function TextInput({ onAnalyze, isLoading, initialValue, onInputStart }: TextInputProps) {
   const [text, setText] = useState("昨日は橋を渡って箸でご飯を食べました");
   const [showHistory, setShowHistory] = useState(false);
   const { history, addToHistory } = useSearchHistory();
@@ -90,7 +91,10 @@ export function TextInput({ onAnalyze, isLoading, initialValue }: TextInputProps
         <textarea
           ref={textareaRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            onInputStart?.();
+          }}
           onKeyDown={handleKeyDown}
           placeholder="日本語のテキストを入力... (type romaji for auto-conversion)"
           rows={6}

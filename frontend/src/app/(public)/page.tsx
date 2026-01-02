@@ -189,6 +189,7 @@ function HomeContent() {
               onAnalyze={(text) => handleAnalyze(text)}
               isLoading={isLoading}
               initialValue={initialText}
+              onInputStart={() => setHasInteracted(true)}
             />
             <Legend />
           </section>
