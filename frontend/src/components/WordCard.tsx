@@ -2,8 +2,7 @@
 
 import type { WordPitch, ComponentPitch } from "@/types/pitch";
 import { getAccentLabel, getSourceLabel, getConfidenceBorderClass } from "@/types/pitch";
-import { PitchDot, RISO, getConfidenceStroke, PITCH_Y_HIGH, PITCH_Y_LOW, PITCH_Y_UNCERTAIN } from "./pitch";
-import { PlayButton } from "./PlayButton";
+import { PitchDot, PitchCard, RISO, getConfidenceStroke, PITCH_Y_HIGH, PITCH_Y_LOW, PITCH_Y_UNCERTAIN } from "./pitch";
 
 /**
  * Renders a single compound component in neutral/grey style.
@@ -90,12 +89,7 @@ export function WordCard({ word, displayPrefs = {} }: WordCardProps) {
     : "";
 
   return (
-    <div className="riso-card-interactive flex flex-col items-center min-w-[120px] relative group p-4">
-      {/* Play button - top right */}
-      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <PlayButton text={surface} size="sm" voice={voice} rate={rate} />
-      </div>
-
+    <PitchCard surface={surface} size="sm" voice={voice} rate={rate}>
       {/* SVG Pitch Visualization - mt-4 creates space for play button */}
       <svg width={svgWidth} height={svgHeight + 25} className="mb-2 mt-4">
         {hasPitchData ? (
@@ -261,6 +255,6 @@ export function WordCard({ word, displayPrefs = {} }: WordCardProps) {
           ) : null}
         </div>
       )}
-    </div>
+    </PitchCard>
   );
 }

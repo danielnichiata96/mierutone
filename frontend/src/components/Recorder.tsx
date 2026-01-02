@@ -107,6 +107,7 @@ export function Recorder({ onRecordingComplete, onError, disabled }: RecorderPro
         className={`
           w-20 h-20 rounded-full flex items-center justify-center
           text-3xl transition-all duration-300 border-2
+          shadow-[4px_4px_0_rgba(0,0,0,0.1)]
           ${state === "recording"
             ? "bg-accent-500 border-accent-500 animate-pulse scale-110"
             : state === "recorded"
@@ -115,7 +116,6 @@ export function Recorder({ onRecordingComplete, onError, disabled }: RecorderPro
           }
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
         `}
-        style={{ boxShadow: "4px 4px 0 rgba(0, 0, 0, 0.1)" }}
       >
         {state === "recording" ? (
           <StopIcon size={32} className="text-white" />

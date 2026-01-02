@@ -1,9 +1,10 @@
 """JWT authentication for Supabase."""
 
 import logging
+import secrets
 import jwt as pyjwt
 from jwt import PyJWKClient, PyJWKClientError
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
@@ -11,6 +12,7 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 security = HTTPBearer(auto_error=False)
+ALLOWED_JWT_ALGS = {"RS256", "ES256", "HS256"}
 
 # JWKS client (caches keys automatically)
 _jwks_client: PyJWKClient | None = None
@@ -47,7 +49,7 @@ async def get_current_user(
     # Check the algorithm from token header
     try:
         unverified_header = pyjwt.get_unverified_header(token)
-        token_alg = unverified_header.get("alg", "HS256")
+        token_alg = unverified_header.get("alg")
     except Exception as e:
         logger.error(f"Could not read JWT header: {e}")
         raise HTTPException(
@@ -56,6 +58,12 @@ async def get_current_user(
         )
 
     try:
+        if not token_alg or token_alg not in ALLOWED_JWT_ALGS:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unsupported token algorithm",
+            )
+
         if token_alg in {"RS256", "ES256"}:
             if settings.supabase_jwt_public_key:
                 verification_key = settings.supabase_jwt_public_key
@@ -73,6 +81,11 @@ async def get_current_user(
             )
         else:
             # HS256 with symmetric secret
+            if not settings.supabase_jwt_secret:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="JWT secret not configured",
+                )
             payload = pyjwt.decode(
                 token,
                 settings.supabase_jwt_secret,
@@ -98,7 +111,7 @@ async def get_current_user(
         logger.error(f"JWT validation failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Could not validate credentials: {e}",
+            detail="Invalid token",
         )
     except PyJWKClientError as e:
         logger.error(f"JWKS fetch failed: {e}")
@@ -110,8 +123,29 @@ async def get_current_user(
         logger.error(str(e))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
+            detail="Authentication unavailable",
         )
+
+
+async def require_admin_key(
+    x_admin_key: str | None = Header(default=None, alias="X-Admin-Key"),
+) -> None:
+    """Require admin key for sensitive operations."""
+    if settings.admin_api_key:
+        if not secrets.compare_digest(x_admin_key or "", settings.admin_api_key):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid admin key",
+            )
+        return
+
+    if settings.debug:
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Admin key not configured",
+    )
 
 
 async def require_auth(

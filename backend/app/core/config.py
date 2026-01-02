@@ -35,7 +35,8 @@ class Settings(BaseSettings):
     def parse_cors_origins(cls, v):
         """Parse CORS origins from env var (JSON or comma-separated)."""
         if isinstance(v, list):
-            return v
+            origins = [origin for origin in v if origin != "*"]
+            return origins or DEFAULT_CORS_ORIGINS
         if isinstance(v, str):
             v = v.strip()
             if not v:
@@ -43,15 +44,20 @@ class Settings(BaseSettings):
             # Try JSON first
             if v.startswith("["):
                 try:
-                    return json.loads(v)
+                    origins = json.loads(v)
+                    if isinstance(origins, list):
+                        origins = [origin for origin in origins if origin != "*"]
+                        return origins or DEFAULT_CORS_ORIGINS
                 except json.JSONDecodeError:
                     pass
             # Fall back to comma-separated
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
+            origins = [origin.strip() for origin in v.split(",") if origin.strip() and origin.strip() != "*"]
+            return origins or DEFAULT_CORS_ORIGINS
         return DEFAULT_CORS_ORIGINS
 
     # API
     api_prefix: str = "/api"
+    admin_api_key: str = ""
 
     # Azure Speech AI (TTS)
     azure_speech_key: str = ""

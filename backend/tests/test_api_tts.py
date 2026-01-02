@@ -118,6 +118,9 @@ def test_tts_health_unavailable(client, monkeypatch):
 
 
 def test_cache_stats(client, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "debug", True)
+
     stats = SimpleNamespace(
         hits=2,
         misses=1,
@@ -143,6 +146,8 @@ def test_cache_stats(client, monkeypatch):
 
 
 def test_clear_cache(client, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "debug", True)
     monkeypatch.setattr(tts_router, "clear_cache", lambda: {"redis_keys": 3})
 
     response = client.delete("/api/tts/cache")
@@ -155,6 +160,9 @@ def test_clear_cache(client, monkeypatch):
 
 
 def test_cache_health(client, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "debug", True)
+
     payload = {
         "redis": {"enabled": True, "connected": True},
         "r2": {"enabled": False, "connected": None},

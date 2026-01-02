@@ -2,8 +2,7 @@
 
 import type { HomophoneCandidate } from "@/types/pitch";
 import { getAccentLabel } from "@/types/pitch";
-import { PitchDot, RISO, PITCH_Y_HIGH, PITCH_Y_LOW } from "./pitch";
-import { PlayButton } from "./PlayButton";
+import { PitchDot, PitchCard, RISO, PITCH_Y_HIGH, PITCH_Y_LOW } from "./pitch";
 
 interface HomophoneCardProps {
   candidate: HomophoneCandidate;
@@ -44,14 +43,9 @@ export function HomophoneCard({ candidate, voice, rate }: HomophoneCardProps) {
     : "";
 
   return (
-    <div className="riso-card-interactive flex flex-col items-center min-w-[140px] relative group p-5">
-      {/* Play button - top right */}
-      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <PlayButton text={surface} size="sm" voice={voice} rate={rate} />
-      </div>
-
+    <PitchCard surface={surface} size="md" voice={voice} rate={rate}>
       {/* Large Kanji display - prominent */}
-      <div className="text-3xl font-bold text-ink-black font-sans mb-1">{surface}</div>
+      <div className="text-3xl font-bold text-ink-black font-sans mb-1 mt-4">{surface}</div>
 
       {/* Furigana reading */}
       <div className="text-sm text-ink-black/60 font-sans font-medium mb-3">{reading}</div>
@@ -126,6 +120,6 @@ export function HomophoneCard({ candidate, voice, rate }: HomophoneCardProps) {
           Jisho
         </a>
       </div>
-    </div>
+    </PitchCard>
   );
 }

@@ -98,8 +98,7 @@ export function TextInput({ onAnalyze, isLoading, initialValue, onInputStart }: 
           onKeyDown={handleKeyDown}
           placeholder="日本語のテキストを入力... (type romaji for auto-conversion)"
           rows={6}
-          className="w-full bg-transparent border-0 resize-none focus:ring-0 text-lg leading-relaxed text-ink-black placeholder:text-ink-black/30 font-sans p-0 focus:outline-none"
-          style={{ minHeight: "150px" }}
+          className="w-full min-h-[150px] bg-transparent border-0 resize-none text-lg leading-relaxed text-ink-black placeholder:text-ink-black/30 font-sans p-0 focus:outline-none focus:ring-0"
         />
         <div className="absolute bottom-0 right-0 text-xs text-ink-black/30 font-mono pointer-events-none">
           {text.length} chars

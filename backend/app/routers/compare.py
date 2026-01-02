@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app.core.auth import get_current_user, TokenData
 from app.core.supabase import get_supabase_client
-from app.services.audio_compare import compare_audio, get_score_feedback, CompareError
+from app.services.audio_compare import compare_audio, get_score_feedback, CompareError, MAX_AUDIO_SIZE
 from app.services.tts import synthesize_speech, TTSError
 
 logger = logging.getLogger(__name__)
@@ -77,13 +77,18 @@ async def compare_pronunciation(
         audio_data = request.user_audio_base64
         if "," in audio_data and audio_data.startswith("data:"):
             audio_data = audio_data.split(",", 1)[1]
-        user_audio = base64.b64decode(audio_data)
+        max_base64_size = int(MAX_AUDIO_SIZE * 4 / 3) + 4
+        if len(audio_data) > max_base64_size:
+            raise HTTPException(status_code=413, detail="Audio data too large")
+        user_audio = base64.b64decode(audio_data, validate=True)
     except (binascii.Error, ValueError):
         raise HTTPException(status_code=400, detail="Invalid base64 audio data")
 
     # Validate decoded audio has minimum size and looks like audio
     if len(user_audio) < 44:  # WAV header alone is 44 bytes
         raise HTTPException(status_code=400, detail="Audio data too small - recording may have failed")
+    if len(user_audio) > MAX_AUDIO_SIZE:
+        raise HTTPException(status_code=413, detail="Audio data too large")
     # Check for common audio file signatures
     if not _is_valid_audio(user_audio):
         raise HTTPException(status_code=400, detail="Invalid audio format - expected WAV, WebM, MP4, or OGG")
@@ -154,6 +159,8 @@ async def compare_with_upload(
 
     if len(user_audio_bytes) < 44:
         raise HTTPException(status_code=400, detail="Audio file too small - upload may have failed")
+    if len(user_audio_bytes) > MAX_AUDIO_SIZE:
+        raise HTTPException(status_code=413, detail="Audio file too large")
     if not _is_valid_audio(user_audio_bytes):
         raise HTTPException(status_code=400, detail="Invalid audio format - expected WAV, WebM, MP4, or OGG")
 

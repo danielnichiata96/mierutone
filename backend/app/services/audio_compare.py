@@ -55,7 +55,7 @@ def extract_pitch(audio_data: bytes) -> np.ndarray:
 
 
 MIN_AUDIO_SIZE = 100  # Minimum bytes for valid WAV header
-MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB max to prevent memory issues
+MAX_AUDIO_SIZE = 5 * 1024 * 1024  # 5MB max to prevent memory issues
 MIN_VOICED_FRAMES = 5  # Minimum voiced frames for meaningful analysis
 
 

@@ -4,7 +4,7 @@ import asyncio
 import base64
 import logging
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
@@ -26,6 +26,7 @@ from app.services.tts import (
 )
 from app.services.cache import get_cache_stats, clear_cache, health_check as cache_health_check
 from app.services.audio_compare import extract_pitch_timed, CompareError
+from app.core.auth import require_admin_key
 
 router = APIRouter(prefix="/tts", tags=["tts"])
 
@@ -116,7 +117,7 @@ async def tts_health() -> dict:
 
 
 @router.get("/cache/stats")
-async def cache_stats() -> dict:
+async def cache_stats(_: None = Depends(require_admin_key)) -> dict:
     """Get cache statistics (Redis hot + R2 cold)."""
     stats = get_cache_stats()
     total_requests = stats.hits + stats.misses
@@ -138,7 +139,7 @@ async def cache_stats() -> dict:
 
 
 @router.delete("/cache")
-async def clear_audio_cache() -> dict:
+async def clear_audio_cache(_: None = Depends(require_admin_key)) -> dict:
     """Clear Redis cache (R2 is permanent storage)."""
     result = clear_cache()
     return {
@@ -148,7 +149,7 @@ async def clear_audio_cache() -> dict:
 
 
 @router.get("/cache/health")
-async def cache_health() -> dict:
+async def cache_health(_: None = Depends(require_admin_key)) -> dict:
     """Check health of cache layers."""
     return cache_health_check()
 

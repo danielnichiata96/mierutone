@@ -6,6 +6,7 @@
 
 export { PitchDot, type PitchDotProps } from "./PitchDot";
 export { PitchGlow, type PitchGlowProps } from "./PitchGlow";
+export { PitchCard } from "./PitchCard";
 
 // Re-export color utilities for convenience
 export {

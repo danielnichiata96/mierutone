@@ -1,11 +1,14 @@
 """User achievements endpoints."""
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.auth import require_auth, TokenData
 from app.core.supabase import get_supabase_client
 
 router = APIRouter(prefix="/achievements", tags=["achievements"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("")
@@ -28,7 +31,8 @@ async def check_achievements(user: TokenData = Depends(require_auth)):
             raise HTTPException(500, "Failed to fetch user stats")
         stats = stats_result.data
     except Exception as e:
-        raise HTTPException(500, f"Stats RPC failed: {e}")
+        logger.exception(f"Stats RPC failed: {e}")
+        raise HTTPException(500, "Failed to fetch user stats")
 
     # Get existing achievements (RLS filters by user)
     existing = supabase.table("user_achievements").select("achievement_type").execute()
