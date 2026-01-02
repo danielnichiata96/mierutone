@@ -1,795 +1,532 @@
 # Mierutone - User Journey & Software Requirements
 
-> Documento de evolução do produto: personas, jornadas e requisitos.
+> **Versão 2.0** - Modelo centrado em aprendizado, não em análises.
 
 ---
 
-## 1. Estado Atual (v1.0)
+## 1. Modelo de Produto
 
-### O que existe hoje
+### Antes vs Depois
+
+```
+MODELO ANTIGO (Ferramenta)          MODELO NOVO (Aprendizado)
+═══════════════════════════         ═══════════════════════════
+
+Analyzer = Produto                  Jornada = Produto
+Decks = Feature opcional            Analyzer = Ferramenta de apoio
+Valor = "análises ilimitadas"       Valor = "dominar pitch accent"
+
+Problema: Por que pagar?            Solução: Pago pelo progresso
+```
+
+### Proposta de Valor
+
+| Aspecto | Grátis | Pro (Assinatura) |
+|---------|--------|------------------|
+| **Analyzer** | 5 análises/dia | Ilimitado |
+| **Decks** | 2 introdutórios | Biblioteca completa |
+| **Progresso** | Preview | Tracking completo |
+| **Prática** | Quiz básico | Shadowing, SRS, feedback |
+| **Mastery** | - | Certificados de domínio |
+
+---
+
+## 2. Jornada de Aprendizado
+
+### Visão Geral
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        MIERUTONE v1.0                           │
+│                    JORNADA DE PITCH ACCENT                      │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  PÚBLICAS                         PROTEGIDAS                    │
-│  ════════                         ══════════                    │
+│  FASE 1: FUNDAÇÃO (Grátis)                                     │
+│  ─────────────────────────                                      │
+│  Semana 1-2: O que é pitch accent?                             │
+│  • Conceito H/L (alto/baixo)                                   │
+│  • Os 4 padrões básicos (平板/頭高/中高/尾高)                    │
+│  • Minimal pairs (箸/橋, 雨/飴)                                 │
+│  • Quiz: Identifique o padrão                                  │
+│  → Deck "Primeiros Passos" (30 palavras)                       │
 │                                                                 │
-│  /              Landing + Analyzer  /dashboard  → Redireciona   │
-│                 (mesma página)                    para /        │
-│  /learn/*       Conteúdo educativo                              │
-│  /examples      Biblioteca                                      │
-│  /pricing       Preços                                          │
+│  FASE 2: VOCABULÁRIO CORE (Grátis → Pro)                       │
+│  ────────────────────────────────────────                       │
+│  Semana 3-6: Palavras essenciais                               │
+│  • Números e contadores                                        │
+│  • Dias, meses, tempo                                          │
+│  • Cumprimentos e expressões                                   │
+│  • Verbos básicos (て-form, ます-form)                          │
+│  → Deck "N5 Essencial" (200 palavras)                          │
+│  → Deck "Verbos Básicos" (100 palavras)                        │
 │                                                                 │
-│  FEATURES CORE                                                  │
-│  ─────────────                                                  │
-│  ✓ Análise de pitch em tempo real                              │
-│  ✓ TTS com Azure Neural                                         │
-│  ✓ Record & Compare (comparação de pronúncia)                  │
-│  ✓ Histórico local (localStorage)                              │
-│  ✓ /learn pages (moras, patterns, particles, compounds)        │
-│  ✓ Romaji → Hiragana auto-conversion                           │
+│  FASE 3: PARTÍCULAS E COMPOSTOS (Pro)                          │
+│  ─────────────────────────────────────                          │
+│  Semana 7-10: Como pitch flui na frase                         │
+│  • Partículas (は, が, を, に, で, と)                          │
+│  • Compostos e regras McCawley                                 │
+│  • Pitch em verbos conjugados                                  │
+│  → Deck "Partículas" (50 padrões)                              │
+│  → Deck "Compostos" (150 palavras)                             │
 │                                                                 │
-│  O QUE FALTA                                                    │
-│  ───────────                                                    │
-│  ○ Auth (Supabase ready, não implementado)                     │
-│  ○ Dashboard funcional                                          │
-│  ○ Histórico persistente                                        │
-│  ○ Gamificação / streaks                                        │
-│  ○ Practice mode guiado                                         │
-│  ○ Export (Anki)                                                │
+│  FASE 4: FLUÊNCIA (Pro)                                        │
+│  ──────────────────────                                         │
+│  Semana 11+: Produção ativa                                    │
+│  • Shadowing com TTS                                           │
+│  • Record & Compare                                            │
+│  • Frases completas                                            │
+│  • Conteúdo real (anime, drama, NHK)                           │
+│  → Deck "Frases Naturais" (200 frases)                         │
+│  → Deck temáticos (Anime, Negócios, etc.)                      │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
----
+### Progressão do Usuário
 
-## 2. Personas
-
-### Persona 1: "O Iniciante Curioso" (Hiro)
-
-| Atributo | Descrição |
-|----------|-----------|
-| **Quem** | Estudante N5-N4, 3-6 meses de estudo |
-| **Motivação** | Quer soar "mais japonês", ouviu falar de pitch accent |
-| **Comportamento** | Usa Duolingo/Anki, assiste anime, começou a notar "algo diferente" na pronúncia |
-| **Dor** | Não sabe o que é pitch accent, recursos parecem complexos |
-| **Objetivo** | Entender o básico, testar algumas palavras |
-| **Frequência** | Esporádica (1-2x/semana) |
-| **Paga?** | Improvável no início, potencial após ver valor |
-
-**Jornada atual:**
 ```
-Google "japanese pitch accent"
-    → Encontra OJAD (confuso)
-    → Desiste ou encontra Mierutone
-    → Testa uma frase
-    → "Ah, interessante!"
-    → Fecha e esquece
-```
-
-**Jornada desejada (Soft-Lock):**
-```
-Encontra Mierutone
-    → Testa 1ª frase (valor imediato!)
-    → Testa 2ª frase (explorando)
-    → Testa 3ª frase (engajado)
-    → 4ª análise: "Digite seu email para continuar"
-    → Magic Link (zero atrito, sem senha)
-    → Continua usando
-    → Streak de 7 dias
-    → Considera Pro
+Visitante → Estudante → Praticante → Fluente
+    │           │            │           │
+    ▼           ▼            ▼           ▼
+ Landing    Fase 1-2      Fase 3-4    Domínio
+ (grátis)   (grátis)      (Pro)       (Pro)
+    │           │            │           │
+    └─── Soft-lock ──► Signup ──► Assinatura
+         (após Fase 1)
 ```
 
 ---
 
-### Persona 2: "O Estudante Sério" (Yuki)
+## 3. Estrutura de Decks
 
-| Atributo | Descrição |
-|----------|-----------|
-| **Quem** | N3-N2, 1-3 anos de estudo, quer fluência |
-| **Motivação** | Mora/quer morar no Japão, trabalho ou relacionamento |
-| **Comportamento** | Usa Anki diariamente, assiste conteúdo sem legenda, lê NHK |
-| **Dor** | Japoneses "entendem mas estranham" sua pronúncia |
-| **Objetivo** | Eliminar sotaque estrangeiro, soar natural |
-| **Frequência** | Diária (15-30min) |
-| **Paga?** | Sim, se o valor for claro (economiza tempo) |
+### Deck = Unidade de Aprendizado
 
-**Jornada atual:**
+Cada deck contém:
+- **Palavras/Frases** com pitch pattern
+- **Áudio TTS** nativo
+- **Quiz** de identificação (ouvir → escolher padrão)
+- **Shadowing** (ouvir → repetir → comparar)
+- **SRS** (espaçamento para palavras difíceis)
+
+### Biblioteca de Decks
+
+| Deck | Palavras | Nível | Acesso |
+|------|----------|-------|--------|
+| Primeiros Passos | 30 | Iniciante | Grátis |
+| Minimal Pairs | 50 | Iniciante | Grátis |
+| N5 Essencial | 200 | Iniciante | Pro |
+| N4 Vocabulário | 300 | Intermediário | Pro |
+| Verbos (て/ます) | 100 | Iniciante | Pro |
+| Partículas | 50 | Intermediário | Pro |
+| Compostos | 150 | Intermediário | Pro |
+| Cumprimentos | 80 | Iniciante | Pro |
+| Números/Contadores | 100 | Iniciante | Pro |
+| Frases Naturais | 200 | Avançado | Pro |
+| Anime Popular | 150 | Intermediário | Pro |
+| Business Japanese | 100 | Avançado | Pro |
+
+**Total:** ~1500 itens de estudo
+
+### Formato de Card (Deck Item)
+
 ```
-Precisa checar pitch de frase nova
-    → Abre Mierutone
-    → Analisa
-    → Ouve TTS
-    → Fecha
-    → (Repete processo N vezes sem tracking)
-```
-
-**Jornada desejada:**
-```
-Abre app (logado)
-    → Vê "Streak: 14 dias 🔥"
-    → Pratica palavras do histórico
-    → Analisa frase nova
-    → Grava pronúncia
-    → Score 87% "Melhoria de 12%!"
-    → Exporta para Anki
-    → Recebe badge "100 palavras dominadas"
-```
-
----
-
-### Persona 3: "O Professor/Criador" (Kenji)
-
-| Atributo | Descrição |
-|----------|-----------|
-| **Quem** | Professor de japonês ou YouTuber/criador de conteúdo |
-| **Motivação** | Criar material didático de qualidade |
-| **Comportamento** | Precisa de visualizações claras para explicar |
-| **Dor** | OJAD gera imagens feias, sem customização |
-| **Objetivo** | Exportar visuais bonitos, integrar em material |
-| **Frequência** | Semanal (criação de conteúdo) |
-| **Paga?** | Sim, Pro tier com export e API |
-
-**Jornada desejada:**
-```
-Prepara aula sobre pitch
-    → Abre Mierutone
-    → Analisa frases do material
-    → Exporta PNG de cada padrão
-    → Gera áudio TTS
-    → Integra no slide/vídeo
-    → Compartilha link com alunos
+┌─────────────────────────────────────┐
+│  橋  (はし)                         │
+│  ─────────────────                  │
+│  Padrão: 頭高型 (2)                 │
+│                                     │
+│  [H─L]  は↘し                       │
+│   ●━━●                              │
+│                                     │
+│  🔊 Ouvir    🎤 Gravar    ➡️ Próximo │
+└─────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Fases de Evolução
+## 4. Tipos de Prática
 
-### Fase 1: Foundation (Atual → v1.1)
-**Objetivo:** Transformar visitante em usuário recorrente
+### 4.1 Quiz de Identificação
+
+```
+🔊 [Áudio toca: "はし"]
+
+Qual é o padrão?
+
+[ ] 平板 (LHHH...)    [ ] 頭高 (HLLL...)
+[●] 中高 (LHHL...)    [ ] 尾高 (LHHH↘)
+
+✅ Correto! Este é 橋 (ponte) - padrão 頭高
+   Compare com 箸 (hashi) que é 平板
+```
+
+### 4.2 Shadowing
+
+```
+┌─────────────────────────────────────┐
+│  "東京に行きたい"                    │
+│                                     │
+│  1. 🔊 Ouça o nativo                │
+│     [████████████] 2.3s             │
+│                                     │
+│  2. 🎤 Repita                       │
+│     [████████░░░░] 1.8s             │
+│                                     │
+│  3. 📊 Comparação                   │
+│     Timing: 78%                     │
+│     Pitch: 85%                      │
+│     Overall: 82% ⭐⭐⭐⭐             │
+│                                     │
+│  [Tentar novamente] [Próximo]       │
+└─────────────────────────────────────┘
+```
+
+### 4.3 SRS (Spaced Repetition)
+
+- Palavras erradas aparecem mais frequentemente
+- Palavras dominadas espaçam (1d → 3d → 7d → 14d → 30d)
+- Score de "domínio" por palavra
+- Dashboard mostra palavras para revisar hoje
+
+---
+
+## 5. Monetização
+
+### Modelo: Freemium → Assinatura
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         FASE 1                                  │
-│                   "Do Visitante ao Usuário"                     │
+│                         PRICING                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  AUTH & PERSISTENCE                                             │
-│  ──────────────────                                             │
-│  [ ] Login com Google/GitHub (Supabase)                        │
-│  [ ] Persistir histórico de análises                           │
-│  [ ] Sincronizar preferências (voz TTS, tema)                  │
+│  GRÁTIS                           PRO ($9/mês ou $69/ano)      │
+│  ══════                           ═══════════════════════       │
 │                                                                 │
-│  DASHBOARD FUNCIONAL                                            │
-│  ───────────────────                                            │
-│  [ ] Estatísticas reais: palavras analisadas, tempo total      │
-│  [ ] Histórico com busca/filtro                                │
-│  [ ] "Continue de onde parou"                                  │
+│  ✓ Analyzer (5/dia)               ✓ Analyzer ilimitado         │
+│  ✓ 2 decks introdutórios          ✓ Biblioteca completa        │
+│  ✓ Quiz básico                    ✓ Todos os modos de prática  │
+│  ✓ Preview de progresso           ✓ Tracking completo          │
+│  ✗ Shadowing limitado             ✓ Shadowing ilimitado        │
+│  ✗ SRS                            ✓ SRS personalizado          │
+│  ✗ Certificados                   ✓ Certificados de domínio    │
+│  ✗ Decks temáticos                ✓ Todos os decks             │
 │                                                                 │
-│  RETENTION                                                      │
-│  ─────────                                                      │
-│  [ ] Email de boas-vindas                                      │
-│  [ ] Streak counter (dias consecutivos)                        │
-│  [ ] Push notification web (PWA)                               │
-│                                                                 │
-│  MÉTRICAS ALVO (base: quem fez primeira análise)               │
-│  ───────────────────────────────────────────────               │
-│  • D1 retention: 30% → 50%                                     │
-│  • D7 retention: 10% → 25%                                     │
-│  • Signup rate: 5% → 15% (dos que analisaram)                  │
+│  LIFETIME ($149 - Lançamento)                                  │
+│  ═════════════════════════════                                  │
+│  ✓ Tudo do Pro, para sempre                                    │
+│  ✓ Acesso a decks futuros                                      │
+│  ✓ Badge "Early Supporter"                                     │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
----
+### Gatilhos de Conversão
 
-### Fase 2: Engagement (v1.2)
-**Objetivo:** Criar hábito de uso diário
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         FASE 2                                  │
-│                    "Do Usuário ao Hábito"                       │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  GAMIFICAÇÃO                                                    │
-│  ───────────                                                    │
-│  [ ] Sistema de XP e níveis                                    │
-│  [ ] Achievements (primeira análise, streak 7 dias, etc)       │
-│  [ ] Leaderboard opcional                                      │
-│  [ ] Daily challenge: "Palavra do dia"                         │
-│                                                                 │
-│  PRACTICE MODE                                                  │
-│  ────────────                                                   │
-│  [ ] Flashcards de pitch (visual quiz)                         │
-│  [ ] "Ouça e identifique o padrão"                             │
-│  [ ] Spaced repetition para palavras erradas                   │
-│  [ ] Decks temáticos: cumprimentos, verbos, contadores         │
-│                                                                 │
-│  PROGRESS TRACKING                                              │
-│  ────────────────                                               │
-│  [ ] Gráficos de evolução (palavras/semana)                    │
-│  [ ] "Palavras problemáticas" (ML simples)                     │
-│  [ ] Relatório semanal por email                               │
-│                                                                 │
-│  MÉTRICAS ALVO                                                  │
-│  ─────────────                                                  │
-│  • DAU/MAU: 10% → 25%                                          │
-│  • Session duration: 3min → 8min                               │
-│  • D30 retention: 5% → 15%                                     │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+| Momento | Gatilho | Mensagem |
+|---------|---------|----------|
+| Fase 1 completa | Soft paywall | "Você dominou os básicos! Continue sua jornada." |
+| 5ª análise/dia | Limit hit | "Quer analisar mais? Upgrade para Pro." |
+| Deck Pro clicado | Preview lock | "Este deck é Pro. Veja o que você vai aprender..." |
+| Shadowing #6 | Feature lock | "Shadowing ilimitado no Pro." |
+| 7 dias de uso | Retention offer | "Você está consistente! 50% off no primeiro mês." |
 
 ---
 
-### Fase 3: Monetization (v1.3)
-**Objetivo:** Converter usuários ativos em pagantes
+## 6. User Flows
+
+### Flow 1: Novo Usuário (Grátis → Pro)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         FASE 3                                  │
-│                  "Do Hábito à Conversão"                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  FREE TIER (manter generoso para SEO/viral)                    │
-│  ─────────────────────────────────────────                     │
-│  ✓ Análise ilimitada                                           │
-│  ✓ TTS playback (cache + fallback browser)                     │
-│  ✓ Histórico (últimos 50)                                      │
-│  ✓ /learn content                                              │
-│  ○ Record & Compare: 5/dia                                     │
-│  ○ Sem export                                                  │
-│                                                                 │
-│  LIFETIME PRO ($29-49 Single Pay)                              │
-│  ─────────────────────────────────                             │
-│  [ ] Record & Compare ilimitado                                │
-│  [ ] Export Anki (client-side .apkg)                           │
-│  [ ] Export PNG/SVG das visualizações                          │
-│  [ ] Histórico ilimitado                                       │
-│  [ ] Múltiplas vozes TTS (limite diário: 100 req Azure)        │
-│  [ ] Early access a novas features                             │
-│  [ ] Badge "Lifetime Supporter"                                │
-│                                                                 │
-│  PAYMENT (Stripe - Single Pay)                                 │
-│  ─────────────────────────────                                 │
-│  [ ] Stripe Checkout (pagamento único)                         │
-│  [ ] Webhook atualiza user.is_lifetime = true                  │
-│  [ ] Sem billing portal (não há recorrência)                   │
-│  [ ] Cupons de lançamento (50% off primeiros 100)              │
-│                                                                 │
-│  MÉTRICAS ALVO                                                  │
-│  ─────────────                                                  │
-│  • Free → Upgrade page: 15%                                    │
-│  • Upgrade page → Paid: 5%                                     │
-│  • Revenue inicial: $2,000 (primeiros 60 LTD)                  │
-│                                                                 │
-│  ⚠️  TTS COST MITIGATION                                       │
-│  ────────────────────────                                       │
-│  1. Cache agressivo: N5-N3 vocab pré-gerado em R2              │
-│  2. Browser TTS fallback: window.speechSynthesis               │
-│  3. Rate limit: 100 Azure req/dia por Lifetime user            │
-│  4. Abuse detection: block bulk generation scripts             │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### Fase 4: Expansion (v2.0)
-**Objetivo:** Novos canais e plataformas
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         FASE 4                                  │
-│                      "Expansão"                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  BROWSER EXTENSION                                              │
-│  ─────────────────                                              │
-│  [ ] Chrome/Firefox extension                                  │
-│  [ ] Hover sobre texto japonês → popup com pitch               │
-│  [ ] Integração Netflix/Crunchyroll (legendas)                 │
-│  [ ] NHK News reader mode                                      │
-│                                                                 │
-│  MOBILE                                                         │
-│  ──────                                                         │
-│  [ ] PWA otimizada                                             │
-│  [ ] React Native app (ou Flutter)                             │
-│  [ ] Offline mode (subset de dados)                            │
-│                                                                 │
-│  API PÚBLICA                                                    │
-│  ───────────                                                    │
-│  [ ] API para desenvolvedores                                  │
-│  [ ] Documentação                                              │
-│  [ ] Rate limiting + billing por uso                           │
-│                                                                 │
-│  INTEGRAÇÕES                                                    │
-│  ───────────                                                    │
-│  [ ] Anki add-on oficial                                       │
-│  [ ] Obsidian plugin                                           │
-│  [ ] Discord bot                                               │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 4. User Flows Detalhados
-
-### Flow 1: Primeiro Acesso (Soft-Lock Model)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SOFT-LOCK ONBOARDING                         │
-│         "Gere valor primeiro, peça email depois"                │
+│                    ONBOARDING JOURNEY                           │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
                     ┌─────────────────┐
-                    │  Landing = App  │
-                    │ (analyzer hero) │
+                    │   Landing       │
+                    │  "Aprenda       │
+                    │  pitch accent"  │
                     └────────┬────────┘
                               │
                               ▼
                     ┌─────────────────┐
-                    │  Análise #1     │
-                    │  "Wow, legal!"  │◄──── Valor imediato
-                    └────────┬────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │  Análise #2     │
-                    │  "Testando..."  │◄──── Explorando
-                    └────────┬────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │  Análise #3     │
-                    │  "Isso é útil!" │◄──── Engajado
+                    │  Começar Grátis │
+                    │  (sem signup)   │
                     └────────┬────────┘
                               │
                               ▼
               ┌───────────────────────────────┐
-              │         SOFT-LOCK             │
-              │  ┌─────────────────────────┐  │
-              │  │  "Você usou 3 análises  │  │
-              │  │   Digite seu email      │  │
-              │  │   para continuar"       │  │
-              │  │                         │  │
-              │  │  [_________________]    │  │
-              │  │  [  Enviar Link   ]     │  │
-              │  │                         │  │
-              │  │  Sem senha, só email!   │  │
-              │  └─────────────────────────┘  │
+              │         FASE 1                │
+              │  • O que é pitch?             │
+              │  • 4 padrões básicos          │
+              │  • Deck "Primeiros Passos"    │
+              │  • Quiz introdutório          │
               └───────────────┬───────────────┘
                               │
                               ▼
                     ┌─────────────────┐
-                    │  Magic Link     │
-                    │  (email inbox)  │
+                    │  "Fase 1 completa!│
+                    │   Salve seu      │
+                    │   progresso"     │
                     └────────┬────────┘
                               │
                               ▼
                     ┌─────────────────┐
-                    │  Usuário Logado │
-                    │  Uso ilimitado  │
-                    │  + Dashboard    │
+                    │  Magic Link     │
+                    │  (email only)   │
+                    └────────┬────────┘
+                              │
+                              ▼
+              ┌───────────────────────────────┐
+              │         FASE 2                │
+              │  • Vocabulário N5             │
+              │  • Deck "N5 Essencial"        │
+              │  • Mais quizzes               │
+              │  • Preview de shadowing       │
+              └───────────────┬───────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │  "Quer continuar │
+                    │   sua jornada?"  │
+                    │                  │
+                    │  [Ver Pro →]     │
+                    └────────┬────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │  Checkout       │
+                    │  (Stripe)       │
+                    └────────┬────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │  Pro Ativo!     │
+                    │  Jornada        │
+                    │  completa       │
                     └─────────────────┘
 ```
 
-**Por que Soft-Lock funciona:**
-- ✅ Usuário experimenta valor ANTES de dar qualquer dado
-- ✅ 3 análises = prova de utilidade, investimento emocional
-- ✅ Magic Link = zero atrito (sem senha para lembrar)
-- ✅ Conversão maior que "signup first" tradicional
-
----
-
-### Flow 2: Sessão de Estudo (Usuário Logado)
+### Flow 2: Sessão de Estudo (Pro)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SESSÃO DE ESTUDO                             │
+│                    SESSÃO DIÁRIA                                │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
                     ┌─────────────────┐
                     │   Dashboard     │
-                    │  "Streak: 5🔥"  │
-                    │  "Continue..."  │
+                    │  "Streak: 14🔥" │
+                    │  "12 para       │
+                    │   revisar hoje" │
                     └────────┬────────┘
                               │
               ┌───────────────┼───────────────┐
               ▼               ▼               ▼
         ┌──────────┐   ┌──────────┐   ┌──────────┐
-        │ Continue │   │  Nova    │   │ Practice │
-        │ Histórico│   │ Análise  │   │   Mode   │
+        │ Revisar  │   │ Continuar│   │ Analisar │
+        │ (SRS)    │   │ Deck     │   │ Texto    │
         └────┬─────┘   └────┬─────┘   └────┬─────┘
               │               │               │
               ▼               ▼               ▼
         ┌──────────┐   ┌──────────┐   ┌──────────┐
-        │ WordCard │   │ Analyzer │   │ Flashcard│
-        │ Review   │   │ + TTS    │   │  Quiz    │
+        │ Quiz +   │   │ Novos    │   │ Analyzer │
+        │ Shadowing│   │ cards    │   │ (apoio)  │
         └────┬─────┘   └────┬─────┘   └────┬─────┘
               │               │               │
               └───────────────┼───────────────┘
                               │
                               ▼
                     ┌─────────────────┐
-                    │  Record & Comp  │
-                    │   (optional)    │
-                    └────────┬────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │  Session End    │
-                    │  +15 XP, Badge? │
+                    │  Sessão fim     │
+                    │  "+25 palavras" │
                     │  "Volte amanhã" │
                     └─────────────────┘
 ```
 
 ---
 
-### Flow 3: Upgrade para Pro
+## 7. Requisitos Funcionais
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    UPGRADE FLOW                                 │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │  Trigger Event  │
-                    │ • 6º Record do dia│
-                    │ • Tentar Export │
-                    │ • Histórico cheio│
-                    └────────┬────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │   Soft Paywall  │
-                    │ "Limite Free:   │
-                    │  5 records/dia" │
-                    └────────┬────────┘
-                              │
-              ┌───────────────┴───────────────┐
-              ▼                               ▼
-      ┌──────────────┐               ┌──────────────┐
-      │   Dismiss    │               │  Ver Planos  │
-      │ (mostrar 1x) │               │              │
-      └──────────────┘               └──────┬───────┘
-                                            │
-                                            ▼
-                                  ┌─────────────────┐
-                                  │  /pricing       │
-                                  │  Free vs Pro    │
-                                  │  Comparativo    │
-                                  └────────┬────────┘
-                                            │
-                                            ▼
-                                  ┌─────────────────┐
-                                  │  Start Trial    │
-                                  │  (7 dias free)  │
-                                  └────────┬────────┘
-                                            │
-                                            ▼
-                                  ┌─────────────────┐
-                                  │  Stripe Checkout│
-                                  │  (cartão agora) │
-                                  └────────┬────────┘
-                                            │
-                                            ▼
-                                  ┌─────────────────┐
-                                  │  Pro Active!    │
-                                  │  Confetti 🎉    │
-                                  └─────────────────┘
-```
+### RF-1: Jornada de Aprendizado
+
+| ID | Requisito | Prioridade | Status |
+|----|-----------|------------|--------|
+| RF-1.1 | Fases de aprendizado (1-4) com progressão | P0 | 🔲 |
+| RF-1.2 | Onboarding guiado (Fase 1 sem signup) | P0 | 🔲 |
+| RF-1.3 | Progresso salvo por fase/deck | P0 | 🔲 |
+| RF-1.4 | "Continue de onde parou" | P0 | 🔲 |
+| RF-1.5 | Certificados de conclusão por fase | P2 | 🔲 |
+
+### RF-2: Sistema de Decks
+
+| ID | Requisito | Prioridade | Status |
+|----|-----------|------------|--------|
+| RF-2.1 | Biblioteca de decks com categorias | P0 | 🔲 |
+| RF-2.2 | Card view (palavra, padrão, áudio) | P0 | 🔲 |
+| RF-2.3 | Navegação entre cards (swipe/arrows) | P0 | 🔲 |
+| RF-2.4 | Progresso por deck (X/Y completados) | P0 | 🔲 |
+| RF-2.5 | Lock/unlock baseado em tier (Free/Pro) | P1 | 🔲 |
+| RF-2.6 | Preview de decks Pro (3 cards grátis) | P1 | 🔲 |
+
+### RF-3: Quiz e Prática
+
+| ID | Requisito | Prioridade | Status |
+|----|-----------|------------|--------|
+| RF-3.1 | Quiz: ouvir áudio → escolher padrão | P0 | 🔲 |
+| RF-3.2 | Quiz: ver palavra → escolher padrão | P0 | 🔲 |
+| RF-3.3 | Feedback imediato (correto/errado + explicação) | P0 | 🔲 |
+| RF-3.4 | Score por sessão de quiz | P1 | 🔲 |
+| RF-3.5 | Shadowing: play → record → compare | P1 | 🔲 |
+| RF-3.6 | Shadowing: score de similaridade | P1 | 🔲 |
+
+### RF-4: SRS (Spaced Repetition)
+
+| ID | Requisito | Prioridade | Status |
+|----|-----------|------------|--------|
+| RF-4.1 | Tracking de acerto/erro por card | P1 | 🔲 |
+| RF-4.2 | Algoritmo de espaçamento (SM-2 ou similar) | P1 | 🔲 |
+| RF-4.3 | "Revisar hoje" com cards pendentes | P1 | 🔲 |
+| RF-4.4 | Domínio por palavra (0-100%) | P2 | 🔲 |
+
+### RF-5: Dashboard de Progresso
+
+| ID | Requisito | Prioridade | Status |
+|----|-----------|------------|--------|
+| RF-5.1 | Streak atual e melhor | P0 | ✅ |
+| RF-5.2 | Palavras aprendidas (total, hoje, semana) | P0 | ✅ |
+| RF-5.3 | Fase atual e % conclusão | P0 | 🔲 |
+| RF-5.4 | Cards para revisar hoje | P1 | 🔲 |
+| RF-5.5 | Gráfico de atividade (heatmap) | P2 | 🔲 |
+
+### RF-6: Analyzer (Ferramenta de Apoio)
+
+| ID | Requisito | Prioridade | Status |
+|----|-----------|------------|--------|
+| RF-6.1 | Análise de texto livre | P0 | ✅ |
+| RF-6.2 | Limite diário (5 Free, ilimitado Pro) | P1 | 🔲 |
+| RF-6.3 | "Adicionar ao meu deck" (salvar palavra) | P1 | 🔲 |
+| RF-6.4 | TTS playback | P0 | ✅ |
+| RF-6.5 | Record & Compare | P0 | ✅ |
+
+### RF-7: Autenticação e Billing
+
+| ID | Requisito | Prioridade | Status |
+|----|-----------|------------|--------|
+| RF-7.1 | Magic Link (email only) | P0 | 🔲 |
+| RF-7.2 | Google OAuth (alternativa) | P1 | 🔲 |
+| RF-7.3 | Soft-lock após Fase 1 completa | P0 | 🔲 |
+| RF-7.4 | Stripe subscription (mensal/anual) | P0 | 🔲 |
+| RF-7.5 | Stripe one-time (Lifetime) | P1 | 🔲 |
+| RF-7.6 | Webhook → user.subscription_tier | P0 | 🔲 |
 
 ---
 
-## 5. Requisitos Funcionais
-
-### RF-1: Autenticação (Soft-Lock + Magic Link)
-
-> **Estratégia:** Magic Link como método principal (zero atrito).
-> OAuth como alternativa para quem prefere 1-click.
-
-| ID | Requisito | Prioridade | Status |
-|----|-----------|------------|--------|
-| RF-1.0 | Soft-lock após 3 análises (localStorage counter) | P0 | 🔲 |
-| RF-1.1 | Login com Magic Link (email only, sem senha) | P0 | 🔲 |
-| RF-1.2 | Login com Google OAuth (alternativa 1-click) | P1 | 🔲 |
-| RF-1.3 | Login com GitHub OAuth | P2 | 🔲 |
-| RF-1.4 | Logout | P0 | 🔲 |
-| RF-1.5 | Sessão persistente (refresh token 30 dias) | P0 | 🔲 |
-| RF-1.6 | Migrar localStorage → DB no signup | P1 | 🔲 |
-
-**Soft-Lock UX:**
-```
-Modal aparece na 4ª análise:
-┌────────────────────────────────────┐
-│  🎉 Você já analisou 3 frases!     │
-│                                    │
-│  Digite seu email para continuar   │
-│  usando o Mierutone gratuitamente  │
-│                                    │
-│  [seu@email.com              ]     │
-│  [    Enviar Magic Link     ]      │
-│                                    │
-│  ─────── ou ───────                │
-│  [G] Continuar com Google          │
-│                                    │
-│  Sem senha. Um link no seu email.  │
-└────────────────────────────────────┘
-```
-
-### RF-2: Dashboard
-| ID | Requisito | Prioridade | Status |
-|----|-----------|------------|--------|
-| RF-2.1 | Exibir streak atual | P0 | ✅ |
-| RF-2.2 | Estatísticas: palavras analisadas (dia/semana/total) | P0 | ✅ |
-| RF-2.3 | Gráfico de atividade (GitHub-style heatmap) | P2 | 🔲 |
-| RF-2.4 | "Continue de onde parou" (última análise) | P1 | 🔲 |
-| RF-2.5 | Quick actions: Nova análise, Practice, Examples | P0 | ✅ |
-
-### RF-3: Histórico
-| ID | Requisito | Prioridade | Status |
-|----|-----------|------------|--------|
-| RF-3.1 | Listar análises passadas (paginado) | P0 | ✅ |
-| RF-3.2 | Busca por texto/palavra | P1 | 🔲 |
-| RF-3.3 | Filtro por data | P2 | 🔲 |
-| RF-3.4 | Deletar item do histórico | P1 | ✅ |
-| RF-3.5 | Re-analisar item salvo | P0 | 🔲 |
-| RF-3.6 | Limite: 50 (Free) / Ilimitado (Pro) | P1 | 🔲 |
-
-### RF-4: Gamificação
-| ID | Requisito | Prioridade | Status |
-|----|-----------|------------|--------|
-| RF-4.1 | Sistema de XP (análise=5xp, record=10xp) | P1 | 🔲 |
-| RF-4.2 | Níveis (1-50) baseados em XP | P2 | 🔲 |
-| RF-4.3 | Achievements (lista definida) | P1 | ✅ |
-| RF-4.4 | Streak tracking (dias consecutivos) | P0 | ✅ |
-| RF-4.5 | Toast notification para achievements | P1 | ✅ |
-
-### RF-5: Practice Mode
-| ID | Requisito | Prioridade | Status |
-|----|-----------|------------|--------|
-| RF-5.1 | Flashcard: mostrar palavra, user identifica padrão | P1 | 🔲 |
-| RF-5.2 | Audio quiz: ouvir TTS, identificar pitch | P2 | 🔲 |
-| RF-5.3 | Spaced repetition para erros | P2 | 🔲 |
-| RF-5.4 | Decks temáticos pré-definidos | P1 | 🔲 |
-| RF-5.5 | Daily challenge (1 palavra nova/dia) | P2 | 🔲 |
-
-### RF-6: Export (Lifetime Pro - Client-Side)
-| ID | Requisito | Prioridade | Status |
-|----|-----------|------------|--------|
-| RF-6.1 | Export Anki (.apkg) - client-side com sql.js + jszip | P1 | 🔲 |
-| RF-6.2 | Export CSV do histórico - client-side | P2 | 🔲 |
-| RF-6.3 | Export PNG da visualização - html2canvas | P1 | 🔲 |
-| RF-6.4 | Export SVG (vetorial) - DOM serialize | P2 | 🔲 |
-
-> **Nota técnica:** Todos exports são client-side para manter arquitetura serverless/barata.
-> Anki .apkg = SQLite DB + media files em ZIP. Usar sql.js para gerar no browser.
-
-### RF-7: Billing (Single Pay / LTD)
-| ID | Requisito | Prioridade | Status |
-|----|-----------|------------|--------|
-| RF-7.1 | Stripe Checkout (payment_mode: 'payment') | P1 | 🔲 |
-| RF-7.2 | Webhook checkout.session.completed → user.is_lifetime = true | P1 | 🔲 |
-| RF-7.3 | Cupons de lançamento (LAUNCH50) | P2 | 🔲 |
-| RF-7.4 | Página /pricing com comparativo Free vs Lifetime | P1 | 🔲 |
-
-> **Sem billing portal:** Não há subscription para gerenciar. Lifetime = forever.
-
----
-
-## 6. Requisitos Não-Funcionais
-
-### RNF-1: Performance
-| ID | Requisito | Target |
-|----|-----------|--------|
-| RNF-1.1 | Tempo de análise < 500ms (p95) | < 500ms |
-| RNF-1.2 | LCP (Largest Contentful Paint) | < 2.5s |
-| RNF-1.3 | TTS latency (first byte) | < 1s |
-| RNF-1.4 | Dashboard load time | < 1s |
-
-### RNF-2: Escalabilidade
-| ID | Requisito | Target |
-|----|-----------|--------|
-| RNF-2.1 | Concurrent users | 1000 |
-| RNF-2.2 | Database queries (p95) | < 100ms |
-| RNF-2.3 | TTS cache hit rate | > 90% |
-| RNF-2.4 | TTS Azure requests/user/day (Lifetime) | ≤ 100 |
-| RNF-2.5 | Browser TTS fallback disponível | Required |
-
-> **TTS Cost Strategy (crítico para LTD):**
-> - Pré-gerar N5-N3 vocab (~3000 palavras) em R2
-> - Cache frases comuns (examples, learn content)
-> - Fallback: window.speechSynthesis (grátis, qualidade ok)
-> - Rate limit: 100 Azure/dia para Lifetime users
-> - Abuse detection: block se > 500 chars/request ou > 50 req/hora
-
-### RNF-3: Segurança
-| ID | Requisito | Target |
-|----|-----------|--------|
-| RNF-3.1 | HTTPS everywhere | Required |
-| RNF-3.2 | JWT access token expiry | 1 hour |
-| RNF-3.3 | Refresh token expiry (sessão) | 30 dias |
-| RNF-3.4 | Rate limiting API | 100/min |
-| RNF-3.5 | Input sanitization | Required |
-| RNF-3.6 | GDPR compliance (delete data) | Required |
-
-### RNF-4: Disponibilidade
-| ID | Requisito | Target |
-|----|-----------|--------|
-| RNF-4.1 | Uptime | 99.5% |
-| RNF-4.2 | Backup frequency | Daily |
-| RNF-4.3 | Recovery time | < 1h |
-
----
-
-## 7. Métricas de Sucesso
+## 8. Métricas de Sucesso
 
 ### North Star Metric
-**Weekly Active Learners (WAL)**: Usuários únicos que completaram ≥3 sessões na semana
+**Weekly Active Learners (WAL)**: Usuários que completaram ≥1 sessão de estudo (deck/quiz) na semana
 
-### Funil de Conversão (LTD Model)
+### Funil de Conversão
+
 ```
-Visitantes     → Primeira Análise    (60%)
-Primeira       → Signup              (15%)
-Signup         → D1 Return           (50%)
-D1             → D7 Active           (25%)
-D7             → D30 Active          (40%)
-D30 Active     → Ver /pricing        (20%)
-/pricing       → Lifetime Purchase   (5%)
+Visitantes     → Começar Fase 1      (40%)
+Fase 1         → Completar Fase 1    (60%)
+Completar      → Signup (Magic Link) (70%)
+Signup         → Iniciar Fase 2      (80%)
+Fase 2         → Ver página Pro      (30%)
+Ver Pro        → Assinar             (15%)
 ```
 
-> **Conversão final:** ~0.09% visitantes → paid
-> **Break-even:** 60 LTDs × $35 avg = $2,100
+**Conversão final:** ~1.0% visitantes → paid (vs 0.09% modelo antigo)
 
 ### KPIs por Fase
 
 | Fase | KPI Principal | Target |
 |------|---------------|--------|
-| 1 - Foundation | D7 Retention | 25% |
-| 2 - Engagement | DAU/MAU | 25% |
-| 3 - Monetization | Lifetime Sales | 100 LTDs |
-| 4 - Expansion | Platform reach | 3+ canais |
+| Onboarding | Fase 1 completion rate | 60% |
+| Retention | D7 return rate | 40% |
+| Engagement | Cards/semana (Pro) | 100 |
+| Revenue | MRR | $5,000 |
 
 ---
 
-## 8. Próximos Passos Imediatos
+## 9. Roadmap
 
-### Sprint 1 (2 semanas): Soft-Lock + Auth + Dashboard
+### Sprint 1 (2 semanas): Fundação de Decks
+
 ```
-[x] Dashboard layout básico
-[x] Histórico persistente (DB)
-[x] Streak counter funcional
-
-[ ] Soft-lock: contador de análises (localStorage)
-[ ] Soft-lock: modal após 3 análises
-[ ] Supabase Magic Link auth (P0)
-[ ] Google OAuth como alternativa (P1)
-[ ] Middleware de proteção de rotas
-[ ] Migrar localStorage → DB no signup
+[ ] Estrutura de dados: Deck, Card, UserProgress
+[ ] UI: Biblioteca de decks
+[ ] UI: Card view com navegação
+[ ] 2 decks iniciais (Primeiros Passos, Minimal Pairs)
+[ ] Quiz básico (identificar padrão)
 ```
 
-### Sprint 2 (2 semanas): Engagement Básico
+### Sprint 2 (2 semanas): Jornada + Auth
+
 ```
-[ ] Sistema de XP
-[ ] 5 achievements iniciais
-[ ] Email de boas-vindas (Resend)
-[ ] "Continue de onde parou"
+[ ] Fases de aprendizado (1-4)
+[ ] Onboarding guiado (Fase 1)
+[ ] Magic Link auth
+[ ] Soft-lock após Fase 1
+[ ] Progresso persistente
 ```
 
-### Sprint 3 (2 semanas): Lifetime + Limites
+### Sprint 3 (2 semanas): Prática Avançada
+
 ```
-[ ] Stripe Checkout (single payment)
-[ ] Webhook → user.is_lifetime = true
-[ ] Free vs Lifetime limits (R&C, export, histórico)
-[ ] /pricing page com comparativo
-[ ] Cupom LAUNCH50
+[ ] Shadowing (play → record → compare)
+[ ] SRS básico (tracking de acertos)
+[ ] Dashboard de progresso
+[ ] Mais 3 decks (N5, Verbos, Cumprimentos)
+```
+
+### Sprint 4 (2 semanas): Monetização
+
+```
+[ ] Stripe subscription
+[ ] Tier gating (Free vs Pro)
+[ ] Limites de uso (analyzer, shadowing)
+[ ] Página /pricing
+[ ] Lifetime option
 ```
 
 ---
 
-## 9. Integrações Futuras
+## 10. Conteúdo dos Decks (MVP)
 
-### Prioridade Alta (Fase 4)
+### Deck 1: Primeiros Passos (30 palavras) - GRÁTIS
 
-| Integração | Descrição | Valor | Complexidade |
-|------------|-----------|-------|--------------|
-| **Chrome Extension** | Hover sobre texto JP → popup com pitch | Maior alcance, "vive onde usuário está" | Média |
-| **Anki Export** | Gerar .apkg com cards visuais + áudio | Altíssimo para estudantes sérios | Média |
-| **WaniKani Sync** | Importar vocab aprendido, mostrar pitch | Comunidade engajada, cross-sell | Média |
+Objetivo: Entender os 4 padrões básicos
 
-### Prioridade Média
+| Palavra | Reading | Padrão | Tipo |
+|---------|---------|--------|------|
+| 箸 | はし | 頭高 [1] | 名詞 |
+| 橋 | はし | 平板 [0] | 名詞 |
+| 雨 | あめ | 頭高 [1] | 名詞 |
+| 飴 | あめ | 平板 [0] | 名詞 |
+| 日本 | にほん | 中高 [2] | 名詞 |
+| 東京 | とうきょう | 中高 [0] | 名詞 |
+| ... (24 mais) |
 
-| Integração | Descrição | Valor | Complexidade |
-|------------|-----------|-------|--------------|
-| **Discord Bot** | /pitch 東京 → retorna imagem + áudio | Comunidades JP no Discord | Baixa |
-| **Obsidian Plugin** | Render pitch inline em notes | PKM users, japonês + Obsidian | Média |
-| **Netflix/Crunchyroll** | Pitch overlay em legendas | Viral, diferencial único | Alta |
+### Deck 2: Minimal Pairs (50 palavras) - GRÁTIS
 
-### Prioridade Baixa (Exploratório)
+Objetivo: Distinguir palavras que só diferem no pitch
 
-| Integração | Descrição | Valor | Complexidade |
-|------------|-----------|-------|--------------|
-| **Bunpro Sync** | Gramática + pitch juntos | Nicho, parceria necessária | Alta |
-| **Todai Reader** | Pitch em artigos NHK | Complementar, não competir | Média |
-| **API Pública** | Devs criam suas integrações | Ecossistema, monetização | Alta |
+| Par | Padrão A | Padrão B |
+|-----|----------|----------|
+| 箸/橋 | 頭高 | 平板 |
+| 雨/飴 | 頭高 | 平板 |
+| 柿/牡蠣 | 平板 | 頭高 |
+| 酒/鮭 | 平板 | 頭高 |
+| ... |
 
-### Chrome Extension - Detalhamento
+### Deck 3: N5 Essencial (200 palavras) - PRO
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    CHROME EXTENSION MVP                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  FASE 1: Popup básico                                          │
-│  ─────────────────────                                          │
-│  [ ] Selecionar texto → botão direito → "Ver pitch"            │
-│  [ ] Popup com WordCards                                       │
-│  [ ] TTS playback                                              │
-│  [ ] Link para app completo                                    │
-│                                                                 │
-│  FASE 2: Hover mode                                            │
-│  ─────────────────                                              │
-│  [ ] Toggle: ativar/desativar hover                            │
-│  [ ] Hover sobre palavra → mini tooltip com pitch              │
-│  [ ] Settings: delay, tamanho, posição                         │
-│                                                                 │
-│  FASE 3: Reader mode                                           │
-│  ─────────────────                                              │
-│  [ ] Ativar em página inteira                                  │
-│  [ ] Underline colorido (H/L) em todo texto JP                 │
-│  [ ] Sidebar com lista de palavras                             │
-│                                                                 │
-│  FASE 4: Netflix/Crunchyroll                                   │
-│  ──────────────────────────                                     │
-│  [ ] Detectar legendas                                         │
-│  [ ] Overlay de pitch sincronizado                             │
-│  [ ] Pausar para ver detalhes                                  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+Objetivo: Vocabulário básico com pitch correto
 
-### WaniKani Integration - Detalhamento
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    WANIKANI INTEGRATION                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  OBJETIVO                                                       │
-│  ────────                                                       │
-│  Usuários WaniKani já estão aprendendo vocab.                  │
-│  Mierutone adiciona a camada de pitch que WK não tem.          │
-│                                                                 │
-│  FEATURES                                                       │
-│  ────────                                                       │
-│  [ ] OAuth com WaniKani API                                    │
-│  [ ] Importar vocab por nível (1-60)                           │
-│  [ ] Dashboard: "Seu progresso WK + Pitch"                     │
-│  [ ] Practice mode com vocab do WK                             │
-│  [ ] Badge: "WK Level 10 + Pitch Master"                       │
-│                                                                 │
-│  API WANIKANI                                                   │
-│  ─────────────                                                  │
-│  GET /subjects?types=vocabulary                                │
-│  → Retorna vocab com readings                                  │
-│  → Mierutone adiciona pitch pattern                            │
-│                                                                 │
-│  MONETIZAÇÃO                                                    │
-│  ───────────                                                    │
-│  Free: Sync níveis 1-10                                        │
-│  Pro: Sync todos os níveis + practice personalizado            │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+Categorias: Números, Tempo, Família, Casa, Comida, Verbos básicos
 
 ---
 
