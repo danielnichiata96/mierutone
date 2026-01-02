@@ -21,8 +21,8 @@ Problema: Por que pagar?            Solução: Pago pelo progresso
 
 ### Proposta de Valor
 
-| Aspecto | Grátis (sem conta) | Grátis (com conta) | Pro ($9/mês) |
-|---------|--------------------|--------------------|--------------|
+| Aspecto | Grátis (sem conta) | Grátis (com conta) | Pro ($29 único) |
+|---------|--------------------|--------------------|-----------------|
 | **Fase 1** | ✅ Completa | ✅ Completa | ✅ Completa |
 | **Fase 2+** | ❌ | ❌ | ✅ |
 | **Decks** | 2 (sem salvar) | 2 (progresso salvo) | Todos (12+) |
@@ -48,7 +48,7 @@ Problema: Por que pagar?            Solução: Pago pelo progresso
 │  ─────────────────────────────                                  │
 │  Quando: Tenta acessar Fase 2+ ou deck Pro                     │
 │  Por quê: Conteúdo avançado é pago                             │
-│  Resultado: Assinatura Pro                                     │
+│  Resultado: Compra única Pro ($29)                             │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -223,29 +223,29 @@ Qual é o padrão?
 
 ## 5. Monetização
 
-### Modelo: Freemium → Assinatura
+### Modelo: Freemium → Compra Única
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         PRICING                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  GRÁTIS (com conta)               PRO ($9/mês ou $69/ano)      │
-│  ═══════════════════              ═══════════════════════       │
+│  GRÁTIS (com conta)               PRO ($29 - pagamento único)  │
+│  ═══════════════════              ═══════════════════════════   │
 │                                                                 │
 │  ✓ Analyzer ilimitado             ✓ Analyzer ilimitado         │
-│  ✓ 2 decks introdutórios          ✓ Biblioteca completa        │
+│  ✓ 2 decks introdutórios          ✓ Biblioteca completa (12+)  │
 │  ✓ Quiz básico                    ✓ Todos os modos de prática  │
 │  ✓ Preview de progresso           ✓ Tracking completo          │
 │  ✓ Shadowing (3/dia)              ✓ Shadowing ilimitado        │
 │  ✗ SRS                            ✓ SRS personalizado          │
 │  ✗ Certificados                   ✓ Certificados de domínio    │
-│  ✗ Decks temáticos                ✓ Todos os decks             │
+│  ✗ Decks avançados                ✓ Todos os decks + futuros   │
 │                                                                 │
-│  LIFETIME ($149 - Lançamento)                                  │
-│  ═════════════════════════════                                  │
+│  LANÇAMENTO ($19 - Early Bird)                                 │
+│  ══════════════════════════════                                 │
 │  ✓ Tudo do Pro, para sempre                                    │
-│  ✓ Acesso a decks futuros                                      │
+│  ✓ Preço promocional (sobe para $29)                           │
 │  ✓ Badge "Early Supporter"                                     │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -323,7 +323,7 @@ Qual é o padrão?
               │  Fase 4: Fluência             │
               │  + Shadowing + SRS            │
               │                               │
-              │  [$9/mês]  [$69/ano]  [$149]  │
+              │  [$19 Early Bird] ou [$29]    │
               └───────────────┬───────────────┘
                               │
                               ▼
@@ -444,9 +444,9 @@ Qual é o padrão?
 | RF-7.2 | Google OAuth (alternativa) | P1 | 🔲 |
 | RF-7.3 | SIGNUP GATE após Fase 1 completa | P0 | 🔲 |
 | RF-7.4 | UPGRADE GATE para Fase 2+ e decks Pro | P0 | 🔲 |
-| RF-7.5 | Stripe subscription (mensal/anual) | P0 | 🔲 |
-| RF-7.6 | Stripe one-time (Lifetime) | P1 | 🔲 |
-| RF-7.7 | Webhook → user.subscription_tier | P0 | 🔲 |
+| RF-7.5 | Stripe one-time payment ($29) | P0 | 🔲 |
+| RF-7.6 | Early Bird pricing ($19) | P1 | 🔲 |
+| RF-7.7 | Webhook → user.is_pro (boolean) | P0 | 🔲 |
 
 ---
 
@@ -475,7 +475,7 @@ Ver Pro        → Assinar             (15%)
 | Onboarding | Fase 1 completion rate | 60% |
 | Retention | D7 return rate | 40% |
 | Engagement | Cards/semana (Pro) | 100 |
-| Revenue | MRR | $5,000 |
+| Revenue | Vendas/mês | 200 ($5,800) |
 
 ---
 
@@ -513,11 +513,11 @@ Ver Pro        → Assinar             (15%)
 ### Sprint 4 (2 semanas): Monetização
 
 ```
-[ ] Stripe subscription
+[ ] Stripe one-time payment ($29)
 [ ] Tier gating (Free vs Pro)
-[ ] Limites de uso (analyzer, shadowing)
+[ ] Early Bird pricing ($19)
 [ ] Página /pricing
-[ ] Lifetime option
+[ ] Webhook → user.is_pro
 ```
 
 ---
