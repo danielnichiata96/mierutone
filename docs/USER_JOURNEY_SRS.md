@@ -69,15 +69,15 @@ Google "japanese pitch accent"
     → Fecha e esquece
 ```
 
-**Jornada desejada:**
+**Jornada desejada (Soft-Lock):**
 ```
 Encontra Mierutone
-    → Testa frase
-    → Entende visualmente
-    → Lê /learn/patterns
-    → Volta dia seguinte
-    → Cria conta para salvar
-    → Recebe email "Pratique hoje"
+    → Testa 1ª frase (valor imediato!)
+    → Testa 2ª frase (explorando)
+    → Testa 3ª frase (engajado)
+    → 4ª análise: "Digite seu email para continuar"
+    → Magic Link (zero atrito, sem senha)
+    → Continua usando
     → Streak de 7 dias
     → Considera Pro
 ```
@@ -319,61 +319,72 @@ Prepara aula sobre pitch
 
 ## 4. User Flows Detalhados
 
-### Flow 1: Primeiro Acesso (Visitante → Usuário)
+### Flow 1: Primeiro Acesso (Soft-Lock Model)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    PRIMEIRO ACESSO                              │
+│                    SOFT-LOCK ONBOARDING                         │
+│         "Gere valor primeiro, peça email depois"                │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
                     ┌─────────────────┐
-                    │  Landing Page   │
-                    │  (valor claro)  │
+                    │  Landing = App  │
+                    │ (analyzer hero) │
                     └────────┬────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              ▼               ▼               ▼
-        ┌──────────┐   ┌──────────┐   ┌──────────┐
-        │  /learn  │   │ Analyzer │   │ Examples │
-        │  (SEO)   │   │  (hero)  │   │  (curated)│
-        └────┬─────┘   └────┬─────┘   └─────┬────┘
-              │               │               │
-              └───────────────┼───────────────┘
                               │
                               ▼
                     ┌─────────────────┐
-                    │ Primeira Análise│
-                    │  "Wow, legal!"  │
+                    │  Análise #1     │
+                    │  "Wow, legal!"  │◄──── Valor imediato
                     └────────┬────────┘
                               │
-              ┌───────────────┴───────────────┐
-              ▼                               ▼
-      ┌──────────────┐               ┌──────────────┐
-      │   Bounce     │               │  Quer mais   │
-      │  (maioria)   │               │  (target)    │
-      └──────────────┘               └──────┬───────┘
-                                            │
-                                            ▼
-                                  ┌─────────────────┐
-                                  │  Prompt Signup  │
-                                  │ "Salvar histórico│
-                                  │  e continuar"   │
-                                  └────────┬────────┘
-                                            │
-                              ┌─────────────┴─────────────┐
-                              ▼                           ▼
-                      ┌──────────────┐           ┌──────────────┐
-                      │  Não agora   │           │   Signup!    │
-                      │ (cookie 7d)  │           │  (Supabase)  │
-                      └──────────────┘           └──────┬───────┘
-                                                        │
-                                                        ▼
-                                              ┌─────────────────┐
-                                              │   Dashboard     │
-                                              │  (user home)    │
-                                              └─────────────────┘
+                              ▼
+                    ┌─────────────────┐
+                    │  Análise #2     │
+                    │  "Testando..."  │◄──── Explorando
+                    └────────┬────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │  Análise #3     │
+                    │  "Isso é útil!" │◄──── Engajado
+                    └────────┬────────┘
+                              │
+                              ▼
+              ┌───────────────────────────────┐
+              │         SOFT-LOCK             │
+              │  ┌─────────────────────────┐  │
+              │  │  "Você usou 3 análises  │  │
+              │  │   Digite seu email      │  │
+              │  │   para continuar"       │  │
+              │  │                         │  │
+              │  │  [_________________]    │  │
+              │  │  [  Enviar Link   ]     │  │
+              │  │                         │  │
+              │  │  Sem senha, só email!   │  │
+              │  └─────────────────────────┘  │
+              └───────────────┬───────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │  Magic Link     │
+                    │  (email inbox)  │
+                    └────────┬────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │  Usuário Logado │
+                    │  Uso ilimitado  │
+                    │  + Dashboard    │
+                    └─────────────────┘
 ```
+
+**Por que Soft-Lock funciona:**
+- ✅ Usuário experimenta valor ANTES de dar qualquer dado
+- ✅ 3 análises = prova de utilidade, investimento emocional
+- ✅ Magic Link = zero atrito (sem senha para lembrar)
+- ✅ Conversão maior que "signup first" tradicional
 
 ---
 
@@ -481,32 +492,56 @@ Prepara aula sobre pitch
 
 ## 5. Requisitos Funcionais
 
-### RF-1: Autenticação
+### RF-1: Autenticação (Soft-Lock + Magic Link)
+
+> **Estratégia:** Magic Link como método principal (zero atrito).
+> OAuth como alternativa para quem prefere 1-click.
+
 | ID | Requisito | Prioridade | Status |
 |----|-----------|------------|--------|
-| RF-1.1 | Login com Google OAuth | P0 | 🔲 |
-| RF-1.2 | Login com GitHub OAuth | P1 | 🔲 |
-| RF-1.3 | Login com Email/Magic Link | P2 | 🔲 |
+| RF-1.0 | Soft-lock após 3 análises (localStorage counter) | P0 | 🔲 |
+| RF-1.1 | Login com Magic Link (email only, sem senha) | P0 | 🔲 |
+| RF-1.2 | Login com Google OAuth (alternativa 1-click) | P1 | 🔲 |
+| RF-1.3 | Login com GitHub OAuth | P2 | 🔲 |
 | RF-1.4 | Logout | P0 | 🔲 |
 | RF-1.5 | Sessão persistente (refresh token 30 dias) | P0 | 🔲 |
 | RF-1.6 | Migrar localStorage → DB no signup | P1 | 🔲 |
 
+**Soft-Lock UX:**
+```
+Modal aparece na 4ª análise:
+┌────────────────────────────────────┐
+│  🎉 Você já analisou 3 frases!     │
+│                                    │
+│  Digite seu email para continuar   │
+│  usando o Mierutone gratuitamente  │
+│                                    │
+│  [seu@email.com              ]     │
+│  [    Enviar Magic Link     ]      │
+│                                    │
+│  ─────── ou ───────                │
+│  [G] Continuar com Google          │
+│                                    │
+│  Sem senha. Um link no seu email.  │
+└────────────────────────────────────┘
+```
+
 ### RF-2: Dashboard
 | ID | Requisito | Prioridade | Status |
 |----|-----------|------------|--------|
-| RF-2.1 | Exibir streak atual | P0 | 🔲 |
-| RF-2.2 | Estatísticas: palavras analisadas (dia/semana/total) | P0 | 🔲 |
+| RF-2.1 | Exibir streak atual | P0 | ✅ |
+| RF-2.2 | Estatísticas: palavras analisadas (dia/semana/total) | P0 | ✅ |
 | RF-2.3 | Gráfico de atividade (GitHub-style heatmap) | P2 | 🔲 |
 | RF-2.4 | "Continue de onde parou" (última análise) | P1 | 🔲 |
-| RF-2.5 | Quick actions: Nova análise, Practice, Examples | P0 | 🔲 |
+| RF-2.5 | Quick actions: Nova análise, Practice, Examples | P0 | ✅ |
 
 ### RF-3: Histórico
 | ID | Requisito | Prioridade | Status |
 |----|-----------|------------|--------|
-| RF-3.1 | Listar análises passadas (paginado) | P0 | 🔲 |
+| RF-3.1 | Listar análises passadas (paginado) | P0 | ✅ |
 | RF-3.2 | Busca por texto/palavra | P1 | 🔲 |
 | RF-3.3 | Filtro por data | P2 | 🔲 |
-| RF-3.4 | Deletar item do histórico | P1 | 🔲 |
+| RF-3.4 | Deletar item do histórico | P1 | ✅ |
 | RF-3.5 | Re-analisar item salvo | P0 | 🔲 |
 | RF-3.6 | Limite: 50 (Free) / Ilimitado (Pro) | P1 | 🔲 |
 
@@ -515,9 +550,9 @@ Prepara aula sobre pitch
 |----|-----------|------------|--------|
 | RF-4.1 | Sistema de XP (análise=5xp, record=10xp) | P1 | 🔲 |
 | RF-4.2 | Níveis (1-50) baseados em XP | P2 | 🔲 |
-| RF-4.3 | Achievements (lista definida) | P1 | 🔲 |
-| RF-4.4 | Streak tracking (dias consecutivos) | P0 | 🔲 |
-| RF-4.5 | Toast notification para achievements | P1 | 🔲 |
+| RF-4.3 | Achievements (lista definida) | P1 | ✅ |
+| RF-4.4 | Streak tracking (dias consecutivos) | P0 | ✅ |
+| RF-4.5 | Toast notification para achievements | P1 | ✅ |
 
 ### RF-5: Practice Mode
 | ID | Requisito | Prioridade | Status |
@@ -628,14 +663,18 @@ D30 Active     → Ver /pricing        (20%)
 
 ## 8. Próximos Passos Imediatos
 
-### Sprint 1 (2 semanas): Auth + Dashboard Base
+### Sprint 1 (2 semanas): Soft-Lock + Auth + Dashboard
 ```
-[ ] Supabase Auth setup (Google OAuth - P0)
-[ ] GitHub OAuth (P1, pode ser Sprint 2)
+[x] Dashboard layout básico
+[x] Histórico persistente (DB)
+[x] Streak counter funcional
+
+[ ] Soft-lock: contador de análises (localStorage)
+[ ] Soft-lock: modal após 3 análises
+[ ] Supabase Magic Link auth (P0)
+[ ] Google OAuth como alternativa (P1)
 [ ] Middleware de proteção de rotas
-[ ] Dashboard layout básico
-[ ] Histórico persistente (DB)
-[ ] Streak counter funcional
+[ ] Migrar localStorage → DB no signup
 ```
 
 ### Sprint 2 (2 semanas): Engagement Básico
