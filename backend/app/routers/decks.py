@@ -153,7 +153,7 @@ async def get_deck(
             auth_supabase.table("user_deck_progress")
             .select("*")
             .eq("deck_id", deck["id"])
-            .maybeSingle()
+            .maybe_single()
             .execute()
         )
         if progress_result.data:
@@ -210,7 +210,7 @@ async def update_progress(
         supabase.table("user_deck_progress")
         .select("id, cards_seen, cards_mastered")
         .eq("deck_id", deck_id)
-        .maybeSingle()
+        .maybe_single()
         .execute()
     )
 
