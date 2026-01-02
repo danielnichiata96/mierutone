@@ -1,11 +1,23 @@
 """Application configuration."""
 
+import json
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 # Get the backend directory (where .env is located)
 BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
+
+# Default CORS origins (used if CORS_ORIGINS env var is not set)
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "https://mierutone.com",
+    "https://www.mierutone.com",
+]
 
 
 class Settings(BaseSettings):
@@ -15,15 +27,28 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
 
-    # CORS
-    cors_origins: list[str] = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "https://mierutone.com",
-        "https://www.mierutone.com",
-    ]
+    # CORS - accepts JSON array or comma-separated string from env var
+    cors_origins: list[str] = DEFAULT_CORS_ORIGINS
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse CORS origins from env var (JSON or comma-separated)."""
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return DEFAULT_CORS_ORIGINS
+            # Try JSON first
+            if v.startswith("["):
+                try:
+                    return json.loads(v)
+                except json.JSONDecodeError:
+                    pass
+            # Fall back to comma-separated
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return DEFAULT_CORS_ORIGINS
 
     # API
     api_prefix: str = "/api"
