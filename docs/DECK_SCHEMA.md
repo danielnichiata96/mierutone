@@ -7,8 +7,8 @@
 ```sql
 CREATE TABLE decks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug TEXT UNIQUE NOT NULL,           -- "primeiros-passos", "minimal-pairs"
-  title TEXT NOT NULL,                  -- "Primeiros Passos"
+  slug TEXT UNIQUE NOT NULL,           -- "first-steps", "minimal-pairs"
+  title TEXT NOT NULL,                  -- "First Steps"
   title_ja TEXT,                        -- "はじめの一歩" (optional)
   description TEXT,
   phase INTEGER NOT NULL DEFAULT 1,     -- 1-4 (learning phase)

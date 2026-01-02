@@ -49,7 +49,7 @@ def test_compare_audio_extract_pitch_error(monkeypatch):
     with pytest.raises(audio_compare.CompareError) as exc:
         audio_compare.compare_audio(b"native", b"user")
 
-    assert "Failed to extract pitch" in str(exc.value)
+    assert "Could not analyze audio" in str(exc.value)
 
 
 def test_get_score_feedback_thresholds():

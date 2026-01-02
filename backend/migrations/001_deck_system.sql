@@ -143,7 +143,7 @@ CREATE POLICY "Users can update own card progress" ON user_card_progress
 
 INSERT INTO decks (slug, title, title_ja, description, phase, is_free, card_count, sort_order)
 VALUES
-  ('primeiros-passos', 'Primeiros Passos', 'はじめの一歩', 'Learn the 4 basic pitch accent patterns with common words', 1, true, 30, 1),
+  ('first-steps', 'First Steps', 'はじめの一歩', 'Learn the 4 basic pitch accent patterns with common words', 1, true, 30, 1),
   ('minimal-pairs', 'Minimal Pairs', 'ミニマルペア', 'Words that differ only in pitch - train your ear', 1, true, 50, 2)
 ON CONFLICT (slug) DO NOTHING;
 

@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Mierutone is a Japanese pitch accent learning tool. Users type Japanese text and see visual H/L (high/low) pitch patterns instantly. The app also provides TTS playback and pronunciation comparison (record your voice vs native TTS).
 
+## Language
+
+**Always write in English.** All code, comments, documentation, commit messages, and user-facing text must be in English. Do not use Portuguese or any other language.
+
 ## Commands
 
 ### Backend (FastAPI)

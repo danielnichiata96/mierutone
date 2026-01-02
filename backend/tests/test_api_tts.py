@@ -62,7 +62,7 @@ def test_tts_timeout(client, monkeypatch):
     response = client.post("/api/tts", json={"text": "hello"})
 
     assert response.status_code == 504
-    assert response.json()["detail"] == "TTS timed out after 30s"
+    assert response.json()["detail"] == "Speech synthesis timed out - please try again"
 
 
 def test_tts_tts_error(client, monkeypatch):
@@ -74,7 +74,7 @@ def test_tts_tts_error(client, monkeypatch):
     response = client.post("/api/tts", json={"text": "hello"})
 
     assert response.status_code == 503
-    assert response.json()["detail"] == "boom"
+    assert response.json()["detail"] == "Speech synthesis temporarily unavailable"
 
 
 def test_tts_unexpected_error(client, monkeypatch):
@@ -86,7 +86,7 @@ def test_tts_unexpected_error(client, monkeypatch):
     response = client.post("/api/tts", json={"text": "hello"})
 
     assert response.status_code == 500
-    assert response.json()["detail"] == "TTS failed: boom"
+    assert response.json()["detail"] == "Speech synthesis failed - please try again"
 
 
 def test_tts_voices(client, monkeypatch):
@@ -209,7 +209,7 @@ def test_tts_with_pitch_compare_error(client, monkeypatch):
     response = client.get("/api/tts/with-pitch", params={"text": "hello"})
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "bad pitch"
+    assert response.json()["detail"] == "Could not extract pitch data"
 
 
 def test_tts_with_timings(client, monkeypatch):
@@ -248,7 +248,7 @@ def test_tts_with_timings_tts_error(client, monkeypatch):
     response = client.get("/api/tts/with-timings", params={"text": "hello"})
 
     assert response.status_code == 503
-    assert response.json()["detail"] == "bad timings"
+    assert response.json()["detail"] == "Speech synthesis temporarily unavailable"
 
 
 def test_tts_didactic_ssml(client, monkeypatch):

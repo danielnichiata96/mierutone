@@ -71,8 +71,8 @@ Problema: Por que pagar?            Solução: Pago pelo progresso
 │  • Os 4 padrões básicos (平板/頭高/中高/尾高)                    │
 │  • Minimal pairs (箸/橋, 雨/飴)                                 │
 │  • Quiz: Identifique o padrão                                  │
-│  → Deck "Primeiros Passos" (30 palavras)                       │
-│  → Deck "Minimal Pairs" (50 palavras)                          │
+│  → Deck "First Steps" (30 words)                               │
+│  → Deck "Minimal Pairs" (50 words)                             │
 │                                                                 │
 │  ══════════════ SIGNUP GATE (Magic Link) ══════════════        │
 │                                                                 │
@@ -143,8 +143,8 @@ Cada deck contém:
 
 | Deck | Palavras | Fase | Acesso |
 |------|----------|------|--------|
-| **Primeiros Passos** | 30 | 1 | 🆓 Grátis |
-| **Minimal Pairs** | 50 | 1 | 🆓 Grátis |
+| **First Steps** | 30 | 1 | 🆓 Free |
+| **Minimal Pairs** | 50 | 1 | 🆓 Free |
 | N5 Essencial | 200 | 2 | 💎 Pro |
 | Verbos Básicos | 100 | 2 | 💎 Pro |
 | Cumprimentos | 80 | 2 | 💎 Pro |
@@ -291,7 +291,7 @@ Qual é o padrão?
               │         FASE 1 🆓             │
               │  • O que é pitch?             │
               │  • 4 padrões básicos          │
-              │  • Deck "Primeiros Passos"    │
+              │  • Deck "First Steps"         │
               │  • Deck "Minimal Pairs"       │
               │  • Quiz introdutório          │
               └───────────────┬───────────────┘
@@ -487,7 +487,7 @@ Ver Pro        → Assinar             (15%)
 [ ] Estrutura de dados: Deck, Card, UserProgress
 [ ] UI: Biblioteca de decks
 [ ] UI: Card view com navegação
-[ ] 2 decks iniciais (Primeiros Passos, Minimal Pairs)
+[ ] 2 initial decks (First Steps, Minimal Pairs)
 [ ] Quiz básico (identificar padrão)
 ```
 
@@ -524,7 +524,7 @@ Ver Pro        → Assinar             (15%)
 
 ## 10. Conteúdo dos Decks (MVP)
 
-### Deck 1: Primeiros Passos (30 palavras) - GRÁTIS
+### Deck 1: First Steps (30 words) - FREE
 
 Objetivo: Entender os 4 padrões básicos
 

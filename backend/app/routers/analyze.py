@@ -69,7 +69,10 @@ async def analyze(
         # Fall through to standard analysis if 0-1 homophones found
 
     # Standard mode: tokenize and analyze
-    words = analyze_text(text)
+    try:
+        words = analyze_text(text)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Auto-save to history if user is authenticated (BE-4)
     if user:

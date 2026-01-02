@@ -1,61 +1,61 @@
 -- Migration: Seed Initial Decks
--- Description: Add cards for Primeiros Passos and Minimal Pairs decks
+-- Description: Add cards for First Steps and Minimal Pairs decks
 -- Run in Supabase SQL Editor AFTER 001_deck_system.sql
 
 -- Get deck IDs
 DO $$
 DECLARE
-  primeiros_passos_id UUID;
+  first_steps_id UUID;
   minimal_pairs_id UUID;
 BEGIN
-  SELECT id INTO primeiros_passos_id FROM decks WHERE slug = 'primeiros-passos';
+  SELECT id INTO first_steps_id FROM decks WHERE slug = 'first-steps';
   SELECT id INTO minimal_pairs_id FROM decks WHERE slug = 'minimal-pairs';
 
   -- ============================================================================
-  -- DECK 1: Primeiros Passos (30 cards)
+  -- DECK 1: First Steps (30 cards)
   -- Goal: Learn the 4 basic pitch accent patterns
   -- ============================================================================
 
   -- 平板 (Heiban) - Flat pattern: LHHH...
   INSERT INTO cards (deck_id, word, reading, meaning, accent_position, accent_type, pitch_pattern, sort_order, notes) VALUES
-  (primeiros_passos_id, '桜', 'さくら', 'cherry blossom', 0, 'heiban', 'LHH', 1, 'Flat pattern - pitch rises after first mora and stays high'),
-  (primeiros_passos_id, '友達', 'ともだち', 'friend', 0, 'heiban', 'LHHH', 2, 'Common word with flat pattern'),
-  (primeiros_passos_id, '名前', 'なまえ', 'name', 0, 'heiban', 'LHH', 3, 'Flat pattern'),
-  (primeiros_passos_id, '言葉', 'ことば', 'word, language', 0, 'heiban', 'LHH', 4, 'Flat pattern'),
-  (primeiros_passos_id, '窓', 'まど', 'window', 0, 'heiban', 'LH', 5, 'Two mora flat'),
-  (primeiros_passos_id, '春', 'はる', 'spring', 0, 'heiban', 'LH', 6, 'Season - flat'),
-  (primeiros_passos_id, '夏', 'なつ', 'summer', 0, 'heiban', 'LH', 7, 'Season - flat'),
+  (first_steps_id, '桜', 'さくら', 'cherry blossom', 0, 'heiban', 'LHH', 1, 'Flat pattern - pitch rises after first mora and stays high'),
+  (first_steps_id, '友達', 'ともだち', 'friend', 0, 'heiban', 'LHHH', 2, 'Common word with flat pattern'),
+  (first_steps_id, '名前', 'なまえ', 'name', 0, 'heiban', 'LHH', 3, 'Flat pattern'),
+  (first_steps_id, '言葉', 'ことば', 'word, language', 0, 'heiban', 'LHH', 4, 'Flat pattern'),
+  (first_steps_id, '窓', 'まど', 'window', 0, 'heiban', 'LH', 5, 'Two mora flat'),
+  (first_steps_id, '春', 'はる', 'spring', 0, 'heiban', 'LH', 6, 'Season - flat'),
+  (first_steps_id, '夏', 'なつ', 'summer', 0, 'heiban', 'LH', 7, 'Season - flat'),
 
   -- 頭高 (Atamadaka) - Head-high pattern: HLL...
-  (primeiros_passos_id, '雨', 'あめ', 'rain', 1, 'atamadaka', 'HL', 8, 'First mora high, then drops'),
-  (primeiros_passos_id, '箸', 'はし', 'chopsticks', 1, 'atamadaka', 'HL', 9, 'Compare with 橋 (bridge)'),
-  (primeiros_passos_id, '猫', 'ねこ', 'cat', 1, 'atamadaka', 'HL', 10, 'Common word'),
-  (primeiros_passos_id, '犬', 'いぬ', 'dog', 1, 'atamadaka', 'HL', 11, 'Common animal'),
-  (primeiros_passos_id, '秋', 'あき', 'autumn', 1, 'atamadaka', 'HL', 12, 'Season - head-high'),
-  (primeiros_passos_id, '朝', 'あさ', 'morning', 1, 'atamadaka', 'HL', 13, 'Time of day'),
-  (primeiros_passos_id, '今日', 'きょう', 'today', 1, 'atamadaka', 'HL', 14, 'Common word'),
+  (first_steps_id, '雨', 'あめ', 'rain', 1, 'atamadaka', 'HL', 8, 'First mora high, then drops'),
+  (first_steps_id, '箸', 'はし', 'chopsticks', 1, 'atamadaka', 'HL', 9, 'Compare with 橋 (bridge)'),
+  (first_steps_id, '猫', 'ねこ', 'cat', 1, 'atamadaka', 'HL', 10, 'Common word'),
+  (first_steps_id, '犬', 'いぬ', 'dog', 1, 'atamadaka', 'HL', 11, 'Common animal'),
+  (first_steps_id, '秋', 'あき', 'autumn', 1, 'atamadaka', 'HL', 12, 'Season - head-high'),
+  (first_steps_id, '朝', 'あさ', 'morning', 1, 'atamadaka', 'HL', 13, 'Time of day'),
+  (first_steps_id, '今日', 'きょう', 'today', 1, 'atamadaka', 'HL', 14, 'Common word'),
 
   -- 中高 (Nakadaka) - Middle-high pattern: LHHL, LHHHL, etc.
-  (primeiros_passos_id, '日本', 'にほん', 'Japan', 2, 'nakadaka', 'LHL', 15, 'Pitch drops after second mora'),
-  (primeiros_passos_id, '卵', 'たまご', 'egg', 2, 'nakadaka', 'LHL', 16, 'Middle-high pattern'),
-  (primeiros_passos_id, '心', 'こころ', 'heart, mind', 2, 'nakadaka', 'LHL', 17, 'Drop after こ'),
-  (primeiros_passos_id, '明日', 'あした', 'tomorrow', 2, 'nakadaka', 'LHL', 18, 'Common word'),
-  (primeiros_passos_id, '男', 'おとこ', 'man', 3, 'nakadaka', 'LHHL', 19, 'Drop after と'),
-  (primeiros_passos_id, '女', 'おんな', 'woman', 3, 'nakadaka', 'LHHL', 20, 'Drop after second ん'),
-  (primeiros_passos_id, '頭', 'あたま', 'head', 3, 'nakadaka', 'LHHL', 21, 'Body part'),
+  (first_steps_id, '日本', 'にほん', 'Japan', 2, 'nakadaka', 'LHL', 15, 'Pitch drops after second mora'),
+  (first_steps_id, '卵', 'たまご', 'egg', 2, 'nakadaka', 'LHL', 16, 'Middle-high pattern'),
+  (first_steps_id, '心', 'こころ', 'heart, mind', 2, 'nakadaka', 'LHL', 17, 'Drop after こ'),
+  (first_steps_id, '明日', 'あした', 'tomorrow', 2, 'nakadaka', 'LHL', 18, 'Common word'),
+  (first_steps_id, '男', 'おとこ', 'man', 3, 'nakadaka', 'LHHL', 19, 'Drop after と'),
+  (first_steps_id, '女', 'おんな', 'woman', 3, 'nakadaka', 'LHHL', 20, 'Drop after second ん'),
+  (first_steps_id, '頭', 'あたま', 'head', 3, 'nakadaka', 'LHHL', 21, 'Body part'),
 
   -- 尾高 (Odaka) - Tail-high pattern: LHH↘ (drops on particle)
-  (primeiros_passos_id, '橋', 'はし', 'bridge', 2, 'odaka', 'LH', 22, 'Pitch drops on following particle'),
-  (primeiros_passos_id, '花', 'はな', 'flower', 2, 'odaka', 'LH', 23, 'Drops when followed by が/を'),
-  (primeiros_passos_id, '山', 'やま', 'mountain', 2, 'odaka', 'LH', 24, 'Odaka pattern'),
-  (primeiros_passos_id, '川', 'かわ', 'river', 2, 'odaka', 'LH', 25, 'Odaka pattern'),
-  (primeiros_passos_id, '海', 'うみ', 'sea', 2, 'odaka', 'LH', 26, 'Odaka pattern'),
-  (primeiros_passos_id, '妹', 'いもうと', 'younger sister', 4, 'odaka', 'LHHH', 27, 'Drops on particle'),
-  (primeiros_passos_id, '弟', 'おとうと', 'younger brother', 4, 'odaka', 'LHHH', 28, 'Drops on particle'),
+  (first_steps_id, '橋', 'はし', 'bridge', 2, 'odaka', 'LH', 22, 'Pitch drops on following particle'),
+  (first_steps_id, '花', 'はな', 'flower', 2, 'odaka', 'LH', 23, 'Drops when followed by が/を'),
+  (first_steps_id, '山', 'やま', 'mountain', 2, 'odaka', 'LH', 24, 'Odaka pattern'),
+  (first_steps_id, '川', 'かわ', 'river', 2, 'odaka', 'LH', 25, 'Odaka pattern'),
+  (first_steps_id, '海', 'うみ', 'sea', 2, 'odaka', 'LH', 26, 'Odaka pattern'),
+  (first_steps_id, '妹', 'いもうと', 'younger sister', 4, 'odaka', 'LHHH', 27, 'Drops on particle'),
+  (first_steps_id, '弟', 'おとうと', 'younger brother', 4, 'odaka', 'LHHH', 28, 'Drops on particle'),
 
   -- Mixed review
-  (primeiros_passos_id, '冬', 'ふゆ', 'winter', 2, 'odaka', 'LH', 29, 'Season - odaka'),
-  (primeiros_passos_id, '夜', 'よる', 'night', 1, 'atamadaka', 'HL', 30, 'Time - head-high');
+  (first_steps_id, '冬', 'ふゆ', 'winter', 2, 'odaka', 'LH', 29, 'Season - odaka'),
+  (first_steps_id, '夜', 'よる', 'night', 1, 'atamadaka', 'HL', 30, 'Time - head-high');
 
   -- ============================================================================
   -- DECK 2: Minimal Pairs (50 cards = 25 pairs)

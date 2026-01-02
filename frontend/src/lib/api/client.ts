@@ -2,6 +2,27 @@ import { getSupabase } from "../supabase";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
+function buildApiUrl(endpoint: string): string {
+  return endpoint.startsWith("http") ? endpoint : `${API_URL}${endpoint}`;
+}
+
+function mergeHeaders(...sources: Array<HeadersInit | undefined>): Headers {
+  const headers = new Headers();
+  for (const source of sources) {
+    if (!source) continue;
+    const next = new Headers(source);
+    next.forEach((value, key) => headers.set(key, value));
+  }
+  return headers;
+}
+
+function ensureJsonContentType(headers: Headers, body: BodyInit | null | undefined): void {
+  if (!body || typeof body !== "string") return;
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+}
+
 export async function getAuthHeaders(): Promise<HeadersInit> {
   const supabase = getSupabase();
   if (!supabase) return {};
@@ -27,36 +48,52 @@ const STATUS_MESSAGES: Record<number, string> = {
 };
 
 export interface AuthFetchOptions extends Omit<RequestInit, "headers"> {
+  headers?: HeadersInit;
   /** Custom error messages by status code */
   errorMessages?: Record<number, string>;
   /** Return raw response instead of parsing JSON */
   raw?: boolean;
 }
 
-/**
- * Fetch with authentication headers and standardized error handling.
- * Automatically adds auth headers and handles response errors.
- */
-export async function authFetch<T = unknown>(
-  endpoint: string,
-  options: AuthFetchOptions = {}
-): Promise<T> {
-  const { errorMessages = {}, raw = false, ...fetchOptions } = options;
-  const authHeaders = await getAuthHeaders();
-
-  const headers: HeadersInit = { ...authHeaders };
-  if (fetchOptions.body && typeof fetchOptions.body === "string") {
-    (headers as Record<string, string>)["Content-Type"] = "application/json";
+async function getErrorMessage(
+  response: Response,
+  errorMessages: Record<number, string>
+): Promise<string> {
+  const override = errorMessages[response.status];
+  if (override) {
+    return override;
   }
 
-  const url = endpoint.startsWith("http") ? endpoint : `${API_URL}${endpoint}`;
-  const response = await fetch(url, { ...fetchOptions, headers });
+  const fallback =
+    STATUS_MESSAGES[response.status] || `Request failed: ${response.status}`;
+
+  try {
+    const data = (await response.json()) as { detail?: unknown };
+    if (typeof data?.detail === "string") {
+      return data.detail;
+    }
+  } catch {
+    // Ignore JSON parse errors and fall back to default message.
+  }
+
+  return fallback;
+}
+
+async function request<T = unknown>(
+  endpoint: string,
+  options: AuthFetchOptions,
+  withAuth: boolean
+): Promise<T> {
+  const { errorMessages = {}, raw = false, headers: customHeaders, ...fetchOptions } = options;
+  const authHeaders = withAuth ? await getAuthHeaders() : {};
+
+  const headers = mergeHeaders(authHeaders, customHeaders);
+  ensureJsonContentType(headers, fetchOptions.body ?? null);
+
+  const response = await fetch(buildApiUrl(endpoint), { ...fetchOptions, headers });
 
   if (!response.ok) {
-    const message =
-      errorMessages[response.status] ||
-      STATUS_MESSAGES[response.status] ||
-      `Request failed: ${response.status}`;
+    const message = await getErrorMessage(response, errorMessages);
     throw new Error(message);
   }
 
@@ -71,6 +108,24 @@ export async function authFetch<T = unknown>(
   }
 
   return JSON.parse(text) as T;
+}
+
+/**
+ * Fetch with authentication headers and standardized error handling.
+ * Automatically adds auth headers and handles response errors.
+ */
+export async function authFetch<T = unknown>(
+  endpoint: string,
+  options: AuthFetchOptions = {}
+): Promise<T> {
+  return request(endpoint, options, true);
+}
+
+export async function apiFetch<T = unknown>(
+  endpoint: string,
+  options: AuthFetchOptions = {}
+): Promise<T> {
+  return request(endpoint, options, false);
 }
 
 export function decodeBase64ToBlob(base64: string, mimeType: string): Blob {

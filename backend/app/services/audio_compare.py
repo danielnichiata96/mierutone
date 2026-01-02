@@ -54,6 +54,11 @@ def extract_pitch(audio_data: bytes) -> np.ndarray:
     return np.array(result.pitch_values)
 
 
+MIN_AUDIO_SIZE = 100  # Minimum bytes for valid WAV header
+MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB max to prevent memory issues
+MIN_VOICED_FRAMES = 5  # Minimum voiced frames for meaningful analysis
+
+
 def extract_pitch_timed(audio_data: bytes) -> TimedPitch:
     """Extract pitch curve with timing information.
 
@@ -66,17 +71,41 @@ def extract_pitch_timed(audio_data: bytes) -> TimedPitch:
 
     Returns:
         TimedPitch with both voiced-only and full curve data.
-    """
-    # Save to temp file (Parselmouth needs file path)
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-        f.write(audio_data)
-        temp_path = f.name
 
+    Raises:
+        CompareError: If audio is invalid, too short, or no voice detected.
+    """
+    # Guard: Empty or too small
+    if not audio_data or len(audio_data) < MIN_AUDIO_SIZE:
+        raise CompareError("Audio data is empty or too small")
+
+    # Guard: Too large (memory protection)
+    if len(audio_data) > MAX_AUDIO_SIZE:
+        raise CompareError(f"Audio file too large (max {MAX_AUDIO_SIZE // 1024 // 1024}MB)")
+
+    # Guard: Basic WAV header validation
+    if audio_data[:4] != b'RIFF' or audio_data[8:12] != b'WAVE':
+        raise CompareError("Invalid audio format - expected WAV file")
+
+    temp_path = None
     try:
-        snd = parselmouth.Sound(temp_path)
+        # Save to temp file (Parselmouth needs file path)
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            f.write(audio_data)
+            temp_path = f.name
+
+        try:
+            snd = parselmouth.Sound(temp_path)
+        except Exception as e:
+            logger.warning(f"Parselmouth failed to load audio: {e}")
+            raise CompareError("Could not load audio file - may be corrupted")
 
         # Get actual audio duration
         duration_ms = int(snd.duration * 1000)
+
+        # Guard: Audio too short for meaningful analysis
+        if duration_ms < 100:  # Less than 100ms
+            raise CompareError("Audio too short - need at least 100ms")
 
         # Extract pitch with settings ideal for human voice
         pitch = snd.to_pitch(
@@ -88,6 +117,10 @@ def extract_pitch_timed(audio_data: bytes) -> TimedPitch:
         pitch_values = pitch.selected_array['frequency']
         pitch_values = pitch_values.astype(float)
 
+        # Guard: No pitch data extracted
+        if len(pitch_values) == 0:
+            raise CompareError("Could not extract pitch data from audio")
+
         # Full curve with zeros for unvoiced (for timeline sync)
         full_curve = pitch_values.tolist()
 
@@ -98,8 +131,10 @@ def extract_pitch_timed(audio_data: bytes) -> TimedPitch:
         # Remove NaN values (keep only voiced segments)
         voiced_values = pitch_with_nan[~np.isnan(pitch_with_nan)]
 
-        if len(voiced_values) < 5:
-            raise CompareError("Audio too short or no voice detected")
+        if len(voiced_values) < MIN_VOICED_FRAMES:
+            raise CompareError(
+                f"Audio too short or no voice detected (need at least {MIN_VOICED_FRAMES} voiced frames)"
+            )
 
         return TimedPitch(
             pitch_values=voiced_values.tolist(),
@@ -109,7 +144,11 @@ def extract_pitch_timed(audio_data: bytes) -> TimedPitch:
 
     finally:
         # Clean up temp file
-        Path(temp_path).unlink(missing_ok=True)
+        if temp_path:
+            try:
+                Path(temp_path).unlink(missing_ok=True)
+            except Exception as e:
+                logger.warning(f"Failed to clean up temp file {temp_path}: {e}")
 
 
 def normalize_pitch(pitch_values: np.ndarray) -> np.ndarray:

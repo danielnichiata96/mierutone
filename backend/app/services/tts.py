@@ -1,7 +1,9 @@
 """Text-to-Speech service using Azure Speech AI."""
 
+import asyncio
 import html
 import re
+from dataclasses import dataclass
 import azure.cognitiveservices.speech as speechsdk
 
 from app.core.config import settings
@@ -30,6 +32,41 @@ AZURE_VOICES = {
 # Default voices
 DEFAULT_FEMALE = "female1"
 DEFAULT_MALE = "male1"
+
+
+def _resolve_voice_name(voice: str) -> str:
+    """Resolve a voice key to Azure voice name."""
+    voice_info = AZURE_VOICES.get(voice, AZURE_VOICES[DEFAULT_FEMALE])
+    return voice_info["name"]
+
+
+def _create_synthesizer(voice_name: str) -> speechsdk.SpeechSynthesizer:
+    """Create an Azure Speech synthesizer for a given voice."""
+    speech_config = _get_speech_config()
+    speech_config.speech_synthesis_voice_name = voice_name
+    return speechsdk.SpeechSynthesizer(
+        speech_config=speech_config,
+        audio_config=None  # No audio output, we get the data directly
+    )
+
+
+def _run_synthesis(
+    synthesizer: speechsdk.SpeechSynthesizer,
+    ssml: str
+) -> speechsdk.SpeechSynthesisResult:
+    """Run synthesis and normalize Azure errors."""
+    result = synthesizer.speak_ssml_async(ssml).get()
+
+    if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+        return result
+
+    if result.reason == speechsdk.ResultReason.Canceled:
+        cancellation = result.cancellation_details
+        if cancellation.reason == speechsdk.CancellationReason.Error:
+            raise TTSError(f"Azure Speech error: {cancellation.error_details}")
+        raise TTSError(f"Azure Speech canceled: {cancellation.reason}")
+
+    raise TTSError(f"Azure Speech failed with reason: {result.reason}")
 
 
 def _get_speech_config() -> speechsdk.SpeechConfig:
@@ -196,39 +233,16 @@ def synthesize_speech(
     if cached:
         return cached, True
 
-    # Get voice name
-    voice_info = AZURE_VOICES.get(voice, AZURE_VOICES[DEFAULT_FEMALE])
-    voice_name = voice_info["name"]
+    voice_name = _resolve_voice_name(voice)
 
     try:
-        speech_config = _get_speech_config()
-        speech_config.speech_synthesis_voice_name = voice_name
-
-        # Use in-memory audio output
-        synthesizer = speechsdk.SpeechSynthesizer(
-            speech_config=speech_config,
-            audio_config=None  # No audio output, we get the data directly
-        )
-
-        # Build SSML with all prosody controls (escape unless pre-processed)
+        synthesizer = _create_synthesizer(voice_name)
         ssml = _build_ssml(text, voice_name, rate, pitch, volume, escape_text=not is_ssml)
-
-        result = synthesizer.speak_ssml_async(ssml).get()
-
-        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-            audio_data = result.audio_data
-            # Save to cache
-            save_to_cache(text, voice, cache_key_params, audio_data)
-            return audio_data, False
-
-        elif result.reason == speechsdk.ResultReason.Canceled:
-            cancellation = result.cancellation_details
-            if cancellation.reason == speechsdk.CancellationReason.Error:
-                raise TTSError(f"Azure Speech error: {cancellation.error_details}")
-            raise TTSError(f"Azure Speech canceled: {cancellation.reason}")
-
-        else:
-            raise TTSError(f"Azure Speech failed with reason: {result.reason}")
+        result = _run_synthesis(synthesizer, ssml)
+        audio_data = result.audio_data
+        # Save to cache
+        save_to_cache(text, voice, cache_key_params, audio_data)
+        return audio_data, False
 
     except TTSError:
         raise
@@ -240,12 +254,23 @@ async def synthesize_speech_async(
     text: str,
     voice: str = DEFAULT_FEMALE,
     rate: float = 1.0,
+    pitch: float = 0.0,
+    volume: float = 0.0,
+    is_ssml: bool = False,
 ) -> tuple[bytes, bool]:
     """Async wrapper for synthesize_speech.
 
     Azure SDK is synchronous, so this wraps the sync function.
     """
-    return synthesize_speech(text, voice, rate)
+    return await asyncio.to_thread(
+        synthesize_speech,
+        text=text,
+        voice=voice,
+        rate=rate,
+        pitch=pitch,
+        volume=volume,
+        is_ssml=is_ssml,
+    )
 
 
 def get_available_voices() -> dict[str, dict]:
@@ -266,29 +291,21 @@ def check_azure_health() -> bool:
         return False
 
     try:
-        speech_config = _get_speech_config()
-        speech_config.speech_synthesis_voice_name = AZURE_VOICES[DEFAULT_FEMALE]["name"]
-
-        synthesizer = speechsdk.SpeechSynthesizer(
-            speech_config=speech_config,
-            audio_config=None
-        )
-
-        # Synthesize a minimal test (single character)
-        ssml = _build_ssml("あ", speech_config.speech_synthesis_voice_name)
-        result = synthesizer.speak_ssml_async(ssml).get()
-
-        return result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted
+        voice_name = _resolve_voice_name(DEFAULT_FEMALE)
+        synthesizer = _create_synthesizer(voice_name)
+        ssml = _build_ssml("あ", voice_name)
+        _run_synthesis(synthesizer, ssml)
+        return True
     except Exception:
         return False
 
 
+@dataclass(frozen=True)
 class WordTiming:
     """Word timing information from Azure Speech."""
-    def __init__(self, text: str, offset_ms: float, duration_ms: float):
-        self.text = text
-        self.offset_ms = offset_ms
-        self.duration_ms = duration_ms
+    text: str
+    offset_ms: float
+    duration_ms: float
 
     def to_dict(self) -> dict:
         return {
@@ -316,9 +333,7 @@ def synthesize_speech_with_timings(
     Raises:
         TTSError: If synthesis fails.
     """
-    # Get voice name
-    voice_info = AZURE_VOICES.get(voice, AZURE_VOICES[DEFAULT_FEMALE])
-    voice_name = voice_info["name"]
+    voice_name = _resolve_voice_name(voice)
 
     # Collect word timings
     word_timings: list[WordTiming] = []
@@ -328,9 +343,8 @@ def synthesize_speech_with_timings(
         # Azure returns offset in 100-nanosecond units, convert to ms
         offset_ms = evt.audio_offset / 10000
         # Duration might not always be available
-        duration_ms = 0
-        if hasattr(evt, 'duration') and evt.duration:
-            duration_ms = evt.duration.total_seconds() * 1000
+        duration = getattr(evt, "duration", None)
+        duration_ms = duration.total_seconds() * 1000 if duration else 0.0
 
         word_timings.append(WordTiming(
             text=evt.text,
@@ -339,36 +353,13 @@ def synthesize_speech_with_timings(
         ))
 
     try:
-        speech_config = _get_speech_config()
-        speech_config.speech_synthesis_voice_name = voice_name
-
-        # Use in-memory audio output
-        synthesizer = speechsdk.SpeechSynthesizer(
-            speech_config=speech_config,
-            audio_config=None
-        )
-
-        # Connect word boundary event handler
+        synthesizer = _create_synthesizer(voice_name)
         synthesizer.synthesis_word_boundary.connect(on_word_boundary)
-
-        # Build SSML (escape text for safety)
         ssml = _build_ssml(text, voice_name, rate)
-
-        result = synthesizer.speak_ssml_async(ssml).get()
-
-        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-            audio_data = result.audio_data
-            timings = [wt.to_dict() for wt in word_timings]
-            return audio_data, timings
-
-        elif result.reason == speechsdk.ResultReason.Canceled:
-            cancellation = result.cancellation_details
-            if cancellation.reason == speechsdk.CancellationReason.Error:
-                raise TTSError(f"Azure Speech error: {cancellation.error_details}")
-            raise TTSError(f"Azure Speech canceled: {cancellation.reason}")
-
-        else:
-            raise TTSError(f"Azure Speech failed with reason: {result.reason}")
+        result = _run_synthesis(synthesizer, ssml)
+        audio_data = result.audio_data
+        timings = [wt.to_dict() for wt in word_timings]
+        return audio_data, timings
 
     except TTSError:
         raise

@@ -144,7 +144,7 @@ def test_compare_tts_error(client, monkeypatch):
     response = client.post("/api/compare", json=payload)
 
     assert response.status_code == 503
-    assert response.json()["detail"] == "TTS failed: boom"
+    assert response.json()["detail"] == "Speech synthesis temporarily unavailable"
 
 
 def test_compare_compare_error(client, monkeypatch):
@@ -167,7 +167,7 @@ def test_compare_compare_error(client, monkeypatch):
     response = client.post("/api/compare", json=payload)
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "no pitch"
+    assert response.json()["detail"] == "Could not process audio - please try recording again"
 
 
 def test_compare_compare_unexpected_error(client, monkeypatch):
@@ -190,7 +190,7 @@ def test_compare_compare_unexpected_error(client, monkeypatch):
     response = client.post("/api/compare", json=payload)
 
     assert response.status_code == 500
-    assert response.json()["detail"] == "Comparison failed: boom"
+    assert response.json()["detail"] == "Comparison failed - please try again"
 
 
 def test_compare_upload_success(client, monkeypatch):

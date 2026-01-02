@@ -5,6 +5,9 @@ import re
 import jaconv
 from sudachipy import tokenizer
 
+# Security: Maximum text length to prevent DoS attacks
+MAX_TEXT_LENGTH = 10000
+
 from app.models.schemas import WordPitch, SourceType, ConfidenceType
 from .constants import WARNINGS, HIGH_CONFIDENCE_SOURCES
 from .mora import count_morae, split_into_morae
@@ -36,7 +39,24 @@ def analyze_text(text: str) -> list[WordPitch]:
 
     Uses SudachiPy Mode C to keep compound words together,
     then looks up pitch patterns in Kanjium database.
+
+    Args:
+        text: Japanese text to analyze (max 10000 chars).
+
+    Returns:
+        List of WordPitch objects for each token.
+
+    Raises:
+        ValueError: If text is empty or exceeds maximum length.
     """
+    # Guard: Empty text
+    if not text or not text.strip():
+        return []
+
+    # Guard: Text too long (DoS prevention)
+    if len(text) > MAX_TEXT_LENGTH:
+        raise ValueError(f"Text exceeds maximum length of {MAX_TEXT_LENGTH} characters")
+
     tok = get_tokenizer()
     mode = tokenizer.Tokenizer.SplitMode.C  # Keep compounds together
     words_result = []

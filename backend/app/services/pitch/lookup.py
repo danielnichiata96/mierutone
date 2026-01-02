@@ -188,9 +188,24 @@ def lookup_pitch(
 
 
 def is_pure_hiragana(text: str) -> bool:
-    """Check if text contains only hiragana characters."""
+    """Check if text contains only hiragana characters.
+
+    Guards against:
+    - Empty strings
+    - Unicode combining characters (Zalgo text)
+    - Non-hiragana characters mixed in
+    """
     if not text:
         return False
+
+    # Guard: Reject strings with combining characters (Zalgo protection)
+    # Combining diacritical marks: U+0300-U+036F, U+3099-U+309A (Japanese dakuten)
+    import unicodedata
+    for char in text:
+        category = unicodedata.category(char)
+        # Allow Mn (Mark, Nonspacing) only for Japanese dakuten/handakuten
+        if category == 'Mn' and char not in ('\u3099', '\u309a'):
+            return False
 
     # Hiragana Unicode range: U+3040 to U+309F
     for char in text:

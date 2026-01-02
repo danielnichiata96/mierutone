@@ -122,7 +122,7 @@ def test_analyze_text_proper_noun_unknown(monkeypatch):
 
 
 def test_analyze_text_proper_noun_in_dictionary(monkeypatch):
-    tokens = [StubToken("name", "na", "n", proper=True)]
+    tokens = [StubToken("名前", "なまえ", "名詞", proper=True)]
     monkeypatch.setattr(pitch_analyzer_module, "get_tokenizer", lambda: StubTokenizer(tokens))
     monkeypatch.setattr(pitch_analyzer_module, "is_particle", lambda _pos: False)
     monkeypatch.setattr(pitch_analyzer_module, "is_proper_noun", lambda token: token.is_proper)

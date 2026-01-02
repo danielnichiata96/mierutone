@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # =============================================================================
@@ -30,7 +30,8 @@ ConfidenceType = Literal["high", "medium", "low"]
 
 class AnalyzeRequest(BaseModel):
     """Request body for /analyze endpoint."""
-    text: str
+    # Limit text length to prevent DoS attacks
+    text: str = Field(..., max_length=10000)
 
 
 class ComponentPitch(BaseModel):
