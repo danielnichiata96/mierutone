@@ -2012,7 +2012,7 @@ def test_check_achievements(authenticated_client: TestClient):
 - [x] FE-13: RetentionWarningBanner
 
 ### Tests
-- [ ] TEST-1: Backend API tests
+- [x] TEST-1: Backend API tests
 
 ---
 
