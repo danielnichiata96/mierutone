@@ -104,8 +104,14 @@ async def get_deck(
     """Get deck with all cards."""
     supabase = get_public_supabase_client()
 
-    # Fetch deck
-    deck_result = supabase.table("decks").select("*").eq("slug", slug).single().execute()
+    # Fetch deck with cards in single query (JOIN)
+    deck_result = (
+        supabase.table("decks")
+        .select("*, cards(*)")
+        .eq("slug", slug)
+        .single()
+        .execute()
+    )
 
     if not deck_result.data:
         raise HTTPException(404, "Deck not found")
@@ -118,14 +124,9 @@ async def get_deck(
             raise HTTPException(401, "Sign in to access this deck")
         # TODO: Check if user is Pro (for now, allow all authenticated users)
 
-    # Fetch cards
-    cards_result = (
-        supabase.table("cards")
-        .select("*")
-        .eq("deck_id", deck["id"])
-        .order("sort_order")
-        .execute()
-    )
+    # Sort cards by sort_order and build response
+    raw_cards = deck.get("cards") or []
+    raw_cards.sort(key=lambda c: c.get("sort_order", 0))
 
     cards = [
         Card(
@@ -141,17 +142,17 @@ async def get_deck(
             notes=c.get("notes"),
             sort_order=c["sort_order"],
         )
-        for c in cards_result.data or []
+        for c in raw_cards
     ]
 
-    # Get user progress
+    # Get user progress (separate query - requires auth)
     last_card_index = 0
     cards_seen = 0
     if user:
         auth_supabase = get_supabase_client(user.access_token)
         progress_result = (
             auth_supabase.table("user_deck_progress")
-            .select("*")
+            .select("last_card_index, cards_seen")
             .eq("deck_id", deck["id"])
             .maybe_single()
             .execute()
