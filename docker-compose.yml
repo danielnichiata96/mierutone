@@ -1,3 +1,8 @@
+# Docker Compose for local development
+# Note: Uses production builds, no hot reload. For development:
+#   - Backend: cd backend && uvicorn app.main:app --reload
+#   - Frontend: cd frontend && npm run dev
+
 version: "3.8"
 
 services:
@@ -16,9 +21,6 @@ services:
       # - AZURE_SPEECH_REGION=eastus
     depends_on:
       - redis
-    volumes:
-      # Mount backend code for hot reload (dev only)
-      - ./backend/app:/app/app:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -35,10 +37,6 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api
     depends_on:
       - backend
-    volumes:
-      # Mount frontend code for hot reload (dev only)
-      - ./frontend/src:/app/src:ro
-      - ./frontend/public:/app/public:ro
 
   redis:
     image: redis:7-alpine

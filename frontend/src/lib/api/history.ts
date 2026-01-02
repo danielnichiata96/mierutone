@@ -1,5 +1,7 @@
-import type { PaginatedHistoryResponse } from "@/types/user";
+import type { PaginatedHistoryResponse, StatsResponse } from "@/types/user";
 import { authFetch } from "./client";
+
+export type { StatsResponse };
 
 export interface HistoryAnalysis {
   id: string;
@@ -18,12 +20,6 @@ export interface HistoryScore {
 export interface HistoryResponse {
   analyses: HistoryAnalysis[];
   scores: HistoryScore[];
-}
-
-export interface StatsResponse {
-  total_analyses: number;
-  total_comparisons: number;
-  average_score: number;
 }
 
 export async function saveAnalysis(

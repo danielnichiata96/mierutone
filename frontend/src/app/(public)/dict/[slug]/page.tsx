@@ -53,7 +53,7 @@ function safeJsonLd(obj: object): string {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const text = safeDecodeSlug(params.slug);
-    if (!text) {
+    if (!text || !isValidJapaneseText(text)) {
         return { title: "Dictionary | MieruTone" };
     }
 
