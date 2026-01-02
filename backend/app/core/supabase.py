@@ -18,3 +18,12 @@ def get_supabase_client(access_token: str | None = None) -> Client:
         client.postgrest.auth(access_token)
 
     return client
+
+
+def get_public_supabase_client() -> Client:
+    """Create Supabase client for public (anonymous) access.
+
+    Use this for reading public content like decks and cards.
+    RLS policies should allow SELECT for anonymous users on these tables.
+    """
+    return create_client(settings.supabase_url, settings.supabase_anon_key)

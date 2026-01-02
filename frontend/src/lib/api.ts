@@ -445,3 +445,63 @@ export async function deleteAccount(): Promise<void> {
   });
   if (!response.ok) throw new Error(`Failed to delete account: ${response.status}`);
 }
+
+// ============================================================================
+// Decks & Learning API
+// ============================================================================
+
+import type {
+  DeckSummary,
+  DeckDetail,
+  DeckListResponse,
+  LearningStats,
+} from "@/types/deck";
+
+export async function getDecks(phase?: number): Promise<DeckListResponse> {
+  const headers = await getAuthHeaders();
+  const params = phase ? `?phase=${phase}` : "";
+  const response = await fetch(`${API_URL}/decks${params}`, { headers });
+  if (!response.ok) throw new Error(`Failed to get decks: ${response.status}`);
+  return response.json();
+}
+
+export async function getDeck(slug: string): Promise<DeckDetail> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/decks/${slug}`, { headers });
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Sign in to access this deck");
+    }
+    if (response.status === 404) {
+      throw new Error("Deck not found");
+    }
+    throw new Error(`Failed to get deck: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function updateDeckProgress(
+  slug: string,
+  cardIndex: number,
+  options: { seen?: boolean; mastered?: boolean; cardId?: string } = {}
+): Promise<void> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/decks/${slug}/progress`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify({
+      card_index: cardIndex,
+      card_id: options.cardId,
+      seen: options.seen ?? true,
+      mastered: options.mastered ?? false,
+    }),
+  });
+  if (!response.ok) throw new Error(`Failed to update progress: ${response.status}`);
+}
+
+export async function getLearningStats(): Promise<LearningStats> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_URL}/decks/stats/summary`, { headers });
+  if (!response.ok) throw new Error(`Failed to get learning stats: ${response.status}`);
+  return response.json();
+}

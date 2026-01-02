@@ -124,3 +124,7 @@ async def require_auth(
             detail="Authentication required",
         )
     return user
+
+
+# Alias for optional auth (returns None if not authenticated)
+optional_auth = get_current_user

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import analyze, tts, compare, history, user, achievements
+from app.routers import analyze, tts, compare, history, user, achievements, decks
 
 app = FastAPI(
     title=settings.app_name,
@@ -28,6 +28,7 @@ app.include_router(compare.router, prefix=settings.api_prefix)
 app.include_router(history.router, prefix=settings.api_prefix)
 app.include_router(user.router, prefix=settings.api_prefix)
 app.include_router(achievements.router, prefix=settings.api_prefix)
+app.include_router(decks.router, prefix=settings.api_prefix)
 
 
 @app.get("/health")
