@@ -351,6 +351,17 @@ export default function StudyDeckPage() {
 
   const currentCard = deck.cards[currentIndex];
 
+  // Guard against out-of-bounds access during navigation
+  if (!currentCard) {
+    return (
+      <div className="container mx-auto px-6 py-8 pt-16 lg:pt-8 max-w-4xl">
+        <div className="riso-card p-8 text-center">
+          <p className="text-ink-black/60">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-6 py-8 pt-16 lg:pt-8 max-w-4xl">
       {/* Header */}
