@@ -68,10 +68,10 @@ export function WordCard({ word, displayPrefs = {} }: WordCardProps) {
   const { morae, pitch_pattern, surface, reading, accent_type, mora_count, origin, origin_jp, lemma, source, confidence, warning } = word;
 
   // Skip words with no morae (shouldn't happen normally)
-  if (!morae.length) return null;
+  if (!morae?.length) return null;
 
   // Check if we have pitch data
-  const hasPitchData = pitch_pattern.length > 0;
+  const hasPitchData = pitch_pattern?.length > 0;
   // Particles (助詞) and auxiliaries (助動詞) both follow context pitch
   const isParticleLike = source === "particle" || source === "auxiliary";
 

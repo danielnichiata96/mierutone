@@ -68,6 +68,9 @@ function buildPhrasePoints(words: WordPitch[]): MoraPoint[] {
   const points: MoraPoint[] = [];
 
   words.forEach((word, wordIndex) => {
+    // Skip words without morae data
+    if (!word.morae || word.morae.length === 0) return;
+
     const particleLike = isParticleLike(word);
 
     if (particleLike && wordIndex > 0) {
@@ -98,7 +101,7 @@ function buildPhrasePoints(words: WordPitch[]): MoraPoint[] {
       word.morae.forEach((mora, moraIndex) => {
         const pitch = isUncertain
           ? "?"
-          : (word.pitch_pattern[moraIndex] as "H" | "L") || "L";
+          : (word.pitch_pattern?.[moraIndex] as "H" | "L") || "L";
         points.push({
           mora,
           pitch,
@@ -127,7 +130,7 @@ function buildMoraTimings(
 
   words.forEach((word, wordIndex) => {
     const timing = wordTimings.find((t) => t.text === word.surface);
-    const wordMoraCount = word.morae.length;
+    const wordMoraCount = word.morae?.length || 0;
 
     if (timing && wordMoraCount > 0) {
       // Distribute word duration evenly across its morae

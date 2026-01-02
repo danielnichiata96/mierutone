@@ -210,7 +210,7 @@ export default function DashboardPage() {
                 <p className="text-ink-black/60 mb-4">
                   No analyses yet. Start practicing!
                 </p>
-                <Link href="/app" className="riso-button-primary">
+                <Link href="/" className="riso-button-primary">
                   Analyze Text
                 </Link>
               </div>
@@ -266,7 +266,7 @@ export default function DashboardPage() {
                 <p className="text-ink-black/60 mb-4">
                   No practice sessions yet.
                 </p>
-                <Link href="/app" className="riso-button-primary">
+                <Link href="/" className="riso-button-primary">
                   Start Practice
                 </Link>
               </div>
@@ -316,7 +316,7 @@ export default function DashboardPage() {
                 Analyze Japanese text and improve your pitch accent.
               </p>
             </div>
-            <Link href="/app" className="riso-button-primary whitespace-nowrap">
+            <Link href="/" className="riso-button-primary whitespace-nowrap">
               Start Practicing
             </Link>
           </div>

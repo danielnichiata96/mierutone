@@ -5,9 +5,10 @@ import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { AnalyticsIcon, BookIcon, TargetIcon } from "./icons/DoodleIcons";
 import { useAuth } from "@/hooks/useAuth";
+import { Logo } from "./Logo";
 
 const navLinks = [
-  { href: "/app", label: "Practice", icon: AnalyticsIcon },
+  { href: "/", label: "Analyze", icon: AnalyticsIcon },
   { href: "/learn", label: "Learn", icon: BookIcon },
   { href: "/examples", label: "Examples", icon: TargetIcon },
 ];
@@ -34,16 +35,7 @@ export function Navigation() {
       <div className="container mx-auto px-6 max-w-5xl">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-8 h-5">
-              <span className="absolute w-3.5 h-3.5 rounded-full bg-primary-500 riso-multiply left-0 top-0.5" />
-              <span className="absolute w-3.5 h-3.5 rounded-full bg-accent-500 riso-multiply left-1.5 top-0" />
-              <span className="absolute w-3.5 h-3.5 rounded-full bg-energy-500 riso-multiply left-3 top-0.5" />
-            </div>
-            <span className="font-display font-bold text-lg text-ink-black group-hover:text-primary-500 transition-colors">
-              MieruTone
-            </span>
-          </Link>
+          <Logo />
 
           {/* Navigation Links + User Menu */}
           <div className="flex items-center gap-4">
@@ -58,11 +50,11 @@ export function Navigation() {
                     aria-label={link.label}
                     aria-current={isActive ? "page" : undefined}
                     className={`
-                      flex items-center gap-2 px-4 py-2 rounded-riso font-medium text-sm
+                      flex items-center gap-2 px-3 py-1.5 rounded-riso font-medium text-sm
                       transition-all duration-200
                       ${isActive
-                        ? "bg-primary-500 text-ink-black shadow-riso"
-                        : "text-ink-black/60 hover:text-ink-black hover:bg-primary-300/20"
+                        ? "text-ink-black bg-ink-black/5"
+                        : "text-ink-black/50 hover:text-ink-black hover:bg-ink-black/5"
                       }
                     `}
                   >

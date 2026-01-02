@@ -41,6 +41,7 @@ module.exports = {
         mono: ["JetBrains Mono", "monospace"],
         sans: ["Zen Kaku Gothic New", "sans-serif"],
         display: ["JetBrains Mono", "monospace"],
+        logo: ["Clash Display", "sans-serif"],
       },
       boxShadow: {
         riso: "4px 4px 0 rgba(130, 168, 229, 0.5)",
