@@ -26,7 +26,7 @@ Problema: Por que pagar?            Solução: Pago pelo progresso
 | **Fase 1** | ✅ Completa | ✅ Completa | ✅ Completa |
 | **Fase 2+** | ❌ | ❌ | ✅ |
 | **Decks** | 2 (sem salvar) | 2 (progresso salvo) | Todos (12+) |
-| **Analyzer** | 3/dia | 5/dia | Ilimitado |
+| **Analyzer** | 10/dia | Ilimitado | Ilimitado |
 | **Quiz** | ✅ Básico | ✅ Básico | ✅ Avançado |
 | **Shadowing** | ❌ | 3/dia | Ilimitado |
 | **SRS** | ❌ | ❌ | ✅ |
@@ -230,14 +230,14 @@ Qual é o padrão?
 │                         PRICING                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  GRÁTIS                           PRO ($9/mês ou $69/ano)      │
-│  ══════                           ═══════════════════════       │
+│  GRÁTIS (com conta)               PRO ($9/mês ou $69/ano)      │
+│  ═══════════════════              ═══════════════════════       │
 │                                                                 │
-│  ✓ Analyzer (5/dia)               ✓ Analyzer ilimitado         │
+│  ✓ Analyzer ilimitado             ✓ Analyzer ilimitado         │
 │  ✓ 2 decks introdutórios          ✓ Biblioteca completa        │
 │  ✓ Quiz básico                    ✓ Todos os modos de prática  │
 │  ✓ Preview de progresso           ✓ Tracking completo          │
-│  ✗ Shadowing limitado             ✓ Shadowing ilimitado        │
+│  ✓ Shadowing (3/dia)              ✓ Shadowing ilimitado        │
 │  ✗ SRS                            ✓ SRS personalizado          │
 │  ✗ Certificados                   ✓ Certificados de domínio    │
 │  ✗ Decks temáticos                ✓ Todos os decks             │
@@ -258,8 +258,7 @@ Qual é o padrão?
 | Fase 1 completa | SIGNUP | Pede email | "Salve seu progresso para continuar!" |
 | Tenta Fase 2+ | UPGRADE | Pede pagamento | "Desbloqueie o currículo completo" |
 | Deck Pro clicado | UPGRADE | Preview + paywall | "Este deck é Pro. Veja 3 cards grátis..." |
-| 4ª análise/dia (anon) | SIGNUP | Pede email | "Crie conta grátis para mais análises" |
-| 6ª análise/dia (free) | UPGRADE | Pede pagamento | "Análises ilimitadas no Pro" |
+| 11ª análise/dia (anon) | SIGNUP | Pede email | "Crie conta grátis para análises ilimitadas" |
 | Shadowing #4 | UPGRADE | Pede pagamento | "Shadowing ilimitado no Pro" |
 | 7 dias streak | UPGRADE | Oferta | "Você está consistente! 50% off" |
 
@@ -432,7 +431,7 @@ Qual é o padrão?
 | ID | Requisito | Prioridade | Status |
 |----|-----------|------------|--------|
 | RF-6.1 | Análise de texto livre | P0 | ✅ |
-| RF-6.2 | Limite diário (5 Free, ilimitado Pro) | P1 | 🔲 |
+| RF-6.2 | Limite diário (10 anon, ilimitado com conta) | P2 | 🔲 |
 | RF-6.3 | "Adicionar ao meu deck" (salvar palavra) | P1 | 🔲 |
 | RF-6.4 | TTS playback | P0 | ✅ |
 | RF-6.5 | Record & Compare | P0 | ✅ |
