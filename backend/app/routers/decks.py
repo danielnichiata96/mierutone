@@ -156,7 +156,7 @@ async def get_deck(
             .maybe_single()
             .execute()
         )
-        if progress_result.data:
+        if progress_result and progress_result.data:
             last_card_index = progress_result.data.get("last_card_index", 0)
             cards_seen = progress_result.data.get("cards_seen", 0)
 
@@ -216,7 +216,7 @@ async def update_progress(
 
     now_iso = datetime.now(timezone.utc).isoformat()
 
-    if existing.data:
+    if existing and existing.data:
         # Update existing progress
         update_data = {
             "last_card_index": data.card_index,
