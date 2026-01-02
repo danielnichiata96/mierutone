@@ -129,6 +129,48 @@ export default function DashboardPage() {
         </p>
       </section>
 
+      {/* Streak Card - Prominent Display */}
+      <section className="mb-6">
+        <div className="riso-card p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-amber-100 rounded-xl flex items-center justify-center">
+                <span className="text-3xl">🔥</span>
+              </div>
+              <div>
+                {loadingStats ? (
+                  <>
+                    <Skeleton className="h-8 w-16 mb-1" />
+                    <Skeleton className="h-4 w-24" />
+                  </>
+                ) : (
+                  <>
+                    <p className="text-3xl font-bold text-ink-black">
+                      {stats?.current_streak ?? 0} day{(stats?.current_streak ?? 0) !== 1 ? "s" : ""}
+                    </p>
+                    <p className="text-sm text-ink-black/60">
+                      {stats?.is_active_today
+                        ? "Current streak - Keep it going!"
+                        : stats?.current_streak
+                          ? "Practice today to extend!"
+                          : "Start your streak today!"}
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+            {!loadingStats && (stats?.longest_streak ?? 0) > 0 && (
+              <div className="text-right hidden sm:block">
+                <p className="text-sm text-ink-black/40">Best streak</p>
+                <p className="text-lg font-bold text-amber-600">
+                  {stats?.longest_streak ?? 0} days
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* Stats Cards */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard

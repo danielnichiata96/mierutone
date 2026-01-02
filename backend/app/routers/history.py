@@ -4,7 +4,7 @@ import base64
 import csv
 import io
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -192,30 +192,114 @@ async def get_history_paginated(
 # ============================================================================
 
 
+def calculate_streak(activity_dates: list[datetime]) -> dict:
+    """Calculate current streak and longest streak from activity dates.
+
+    Args:
+        activity_dates: List of datetime objects representing activity timestamps.
+
+    Returns:
+        Dict with current_streak, longest_streak, and last_activity_date.
+    """
+    if not activity_dates:
+        return {
+            "current_streak": 0,
+            "longest_streak": 0,
+            "last_activity_date": None,
+            "is_active_today": False,
+        }
+
+    # Convert to dates only (no time) and get unique dates
+    unique_dates = sorted(set(d.date() for d in activity_dates), reverse=True)
+
+    if not unique_dates:
+        return {
+            "current_streak": 0,
+            "longest_streak": 0,
+            "last_activity_date": None,
+            "is_active_today": False,
+        }
+
+    today = datetime.now(timezone.utc).date()
+    yesterday = today - timedelta(days=1)
+
+    # Check if active today or yesterday (streak continues if active yesterday)
+    most_recent = unique_dates[0]
+    is_active_today = most_recent == today
+    streak_starts = most_recent in (today, yesterday)
+
+    # Calculate current streak
+    current_streak = 0
+    if streak_starts:
+        current_streak = 1
+        check_date = most_recent - timedelta(days=1)
+
+        for date in unique_dates[1:]:
+            if date == check_date:
+                current_streak += 1
+                check_date -= timedelta(days=1)
+            elif date < check_date:
+                break
+
+    # Calculate longest streak (scan all dates)
+    longest_streak = 0
+    if unique_dates:
+        streak = 1
+        for i in range(1, len(unique_dates)):
+            if unique_dates[i - 1] - unique_dates[i] == timedelta(days=1):
+                streak += 1
+            else:
+                longest_streak = max(longest_streak, streak)
+                streak = 1
+        longest_streak = max(longest_streak, streak)
+
+    return {
+        "current_streak": current_streak,
+        "longest_streak": longest_streak,
+        "last_activity_date": most_recent.isoformat(),
+        "is_active_today": is_active_today,
+    }
+
+
 @router.get("/stats")
 async def get_stats(user: TokenData = Depends(require_auth)):
-    """Get user statistics via RPC function."""
+    """Get user statistics including streak info."""
     supabase = get_supabase_client(user.access_token)
 
-    try:
-        result = supabase.rpc("get_user_stats").execute()
-        if result.data:
-            return result.data
-    except Exception:
-        pass
+    # Fetch analyses and scores with timestamps
+    analyses = (
+        supabase.table("analysis_history").select("id, text, created_at").execute()
+    )
+    scores = supabase.table("comparison_scores").select("score, text, created_at").execute()
 
-    # Fallback to manual calculation if RPC fails
-    analyses = supabase.table("analysis_history").select("id, text").execute()
-    scores = supabase.table("comparison_scores").select("score, text").execute()
-
+    # Calculate basic stats
     avg_score = (
         sum(s["score"] for s in scores.data) / len(scores.data) if scores.data else None
     )
 
-    # Calculate unique texts across both tables
     unique_texts = len(
         {a["text"] for a in analyses.data} | {s["text"] for s in scores.data}
     )
+
+    # Calculate streak from activity dates
+    activity_dates = []
+    for a in analyses.data:
+        if a.get("created_at"):
+            try:
+                dt = datetime.fromisoformat(a["created_at"].replace("Z", "+00:00"))
+                activity_dates.append(dt)
+            except (ValueError, TypeError):
+                pass
+
+    for s in scores.data:
+        if s.get("created_at"):
+            try:
+                dt = datetime.fromisoformat(s["created_at"].replace("Z", "+00:00"))
+                activity_dates.append(dt)
+            except (ValueError, TypeError):
+                pass
+
+    streak_info = calculate_streak(activity_dates)
 
     return {
         "total_analyses": len(analyses.data),
@@ -223,6 +307,7 @@ async def get_stats(user: TokenData = Depends(require_auth)):
         "avg_score": round(avg_score, 1) if avg_score else None,
         "unique_texts": unique_texts,
         "current_record_count": len(analyses.data) + len(scores.data),
+        **streak_info,
     }
 
 

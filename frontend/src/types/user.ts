@@ -21,6 +21,11 @@ export interface StatsResponse {
   avg_score: number | null;
   unique_texts: number;
   current_record_count: number;
+  // Streak fields
+  current_streak: number;
+  longest_streak: number;
+  last_activity_date: string | null;
+  is_active_today: boolean;
 }
 
 export interface Achievement {
