@@ -26,9 +26,30 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
   );
 }
 
+// Split Japanese text into mora (handles small kana properly)
+function splitIntoMorae(text: string): string[] {
+  const morae: string[] = [];
+  const smallKana = /^[ゃゅょぁぃぅぇぉャュョァィゥェォー]$/;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    // Check if next char is small kana (combines with current)
+    if (nextChar && smallKana.test(nextChar)) {
+      morae.push(char + nextChar);
+      i++; // Skip next char
+    } else {
+      morae.push(char);
+    }
+  }
+
+  return morae;
+}
+
 function PitchPattern({ pattern, reading }: { pattern: string; reading: string }) {
   // Convert pattern like "LH" or "HLL" to visual representation
-  const morae = reading.split("");
+  const morae = splitIntoMorae(reading);
   const patternChars = pattern.split("");
 
   return (

@@ -1,5 +1,8 @@
 """Deck and learning endpoints."""
 
+from datetime import datetime, timezone
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
@@ -61,7 +64,7 @@ async def list_decks(
         card_count = d["card_count"]
 
         total_cards += card_count
-        cards_learned += cards_mastered
+        cards_learned += cards_seen  # Use cards_seen (studied), not mastered
 
         decks.append(
             DeckSummary(
@@ -133,7 +136,7 @@ async def get_deck(
             accent_position=c["accent_position"],
             accent_type=c["accent_type"],
             pitch_pattern=c["pitch_pattern"],
-            audio_url=f"/api/tts?text={c['reading']}&voice=female1" if c["reading"] else None,
+            audio_url=f"/api/tts?text={quote(c['reading'], safe='')}&voice=female1" if c["reading"] else None,
             pair_word=c.get("pair_word"),
             notes=c.get("notes"),
             sort_order=c["sort_order"],
@@ -211,26 +214,26 @@ async def update_progress(
         .execute()
     )
 
-    now = "now()"
+    now_iso = datetime.now(timezone.utc).isoformat()
 
     if existing.data:
         # Update existing progress
         update_data = {
             "last_card_index": data.card_index,
-            "last_studied_at": now,
+            "last_studied_at": now_iso,
         }
 
-        # Update cards_seen if this is a new card
-        if data.seen and data.card_index >= existing.data["cards_seen"]:
-            update_data["cards_seen"] = data.card_index + 1
+        # Update cards_seen if this is a new card (only increment, never decrease)
+        new_cards_seen = max(data.card_index + 1, existing.data["cards_seen"])
+        if new_cards_seen > existing.data["cards_seen"]:
+            update_data["cards_seen"] = new_cards_seen
 
-        # Mark as mastered if applicable
-        if data.mastered:
-            update_data["cards_mastered"] = existing.data["cards_mastered"] + 1
+        # Note: cards_mastered is now tracked via user_card_progress table
+        # to avoid double-counting. We don't increment it here.
 
         # Check if completed
         if update_data.get("cards_seen", existing.data["cards_seen"]) >= card_count:
-            update_data["completed_at"] = now
+            update_data["completed_at"] = now_iso
 
         supabase.table("user_deck_progress").update(update_data).eq(
             "id", existing.data["id"]
@@ -242,9 +245,9 @@ async def update_progress(
             "user_id": user.user_id,
             "deck_id": deck_id,
             "last_card_index": data.card_index,
-            "cards_seen": 1 if data.seen else 0,
-            "cards_mastered": 1 if data.mastered else 0,
-            "last_studied_at": now,
+            "cards_seen": data.card_index + 1 if data.seen else 0,
+            "cards_mastered": 0,  # Tracked via user_card_progress
+            "last_studied_at": now_iso,
         }
 
         supabase.table("user_deck_progress").insert(insert_data).execute()
@@ -274,10 +277,11 @@ async def get_learning_stats(user: TokenData = Depends(require_auth)):
 
     # Get cards due for review (SRS) - simplified for now
     # TODO: Implement full SRS query
+    now_iso = datetime.now(timezone.utc).isoformat()
     cards_due_result = (
         supabase.table("user_card_progress")
         .select("id")
-        .lte("next_review_at", "now()")
+        .lte("next_review_at", now_iso)
         .execute()
     )
     cards_due = len(cards_due_result.data or [])
